@@ -1,0 +1,25 @@
+---
+import type { CardItem } from '~/lib/cards';
+import { formatDate, formatMonthYear, isoDate } from '~/lib/format';
+
+/** "Author · 9 Oct 2026", or "Updated October 2026" for buying guides. */
+interface Props {
+  item: CardItem;
+  class?: string;
+}
+const { item, class: className } = Astro.props;
+const isGuide = item.collection === 'guides';
+---
+
+<p class:list={['text-[13px] text-muted', className]}>
+  {isGuide ? (
+    <>
+      Updated <time datetime={isoDate(item.date)}>{formatMonthYear(item.date)}</time>
+    </>
+  ) : (
+    <>
+      {item.authorName && <>{item.authorName} · </>}
+      <time datetime={isoDate(item.publishDate)}>{formatDate(item.publishDate)}</time>
+    </>
+  )}
+</p>

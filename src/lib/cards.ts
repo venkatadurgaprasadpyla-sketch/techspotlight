@@ -1,0 +1,141 @@
+/**
+ * Turns content entries into the flat `CardItem` every card, listing and sidebar renders.
+ * Pure (type-only imports), so listings can be unit tested without Astro.
+ */
+import type { CollectionEntry } from 'astro:content';
+import { contentTypes, findTopic, type ContentType } from '~/config/taxonomy';
+import { lowestOffer } from './affiliate';
+import { leafSlug } from './content-schema';
+import { articlePath, type ArticleCollection } from './urls';
+
+export type ArticleEntry = CollectionEntry<ArticleCollection>;
+export type Badge = 'editors-choice' | 'recommended' | 'best-value';
+
+export interface Offer {
+  retailer: string;
+  url: string;
+  price: number;
+}
+
+export interface CardItem {
+  collection: ArticleCollection;
+  id: string;
+  url: string;
+  type: ContentType;
+  title: string;
+  description: string;
+  image: ArticleEntry['data']['heroImage'];
+  imageAlt: string;
+  hub: string;
+  category: string;
+  subcategory?: string;
+  /** Subcategory, or category when it has no subcategories. */
+  leaf: string;
+  leafLabel: string;
+  brands: string[];
+  author: string;
+  authorName?: string;
+  publishDate: Date;
+  updatedDate?: Date;
+  /** updatedDate ?? publishDate; listings sort on it. */
+  date: Date;
+  featured: boolean;
+  sample: boolean;
+  // Reviews only.
+  productName?: string;
+  rating?: number;
+  badge?: Badge;
+  verdict?: string;
+  /** Up to four spec values, joined for the review-row card. */
+  specLine?: string;
+  offers?: Offer[];
+  /** Cheapest priced offer (reviews and deals). */
+  bestOffer?: Offer;
+}
+
+const typeFor: Record<ArticleCollection, ContentType['type']> = {
+  reviews: 'review',
+  guides: 'best',
+  versus: 'versus',
+  howtos: 'how-to',
+  news: 'news',
+  deals: 'deal',
+};
+
+/** Singular label shown on cards, e.g. "Face-off". */
+export const typeLabel: Record<ContentType['type'], string> = {
+  review: 'Review',
+  best: 'Best picks',
+  versus: 'Face-off',
+  'how-to': 'How-to',
+  news: 'News',
+  deal: 'Deal',
+};
+
+export function contentTypeOf(collection: ArticleCollection): ContentType {
+  const type = contentTypes.find((t) => t.type === typeFor[collection]);
+  if (!type) throw new Error(`No content type for ${collection}`);
+  return type;
+}
+
+export function toCardItem(entry: ArticleEntry, authors: ReadonlyMap<string, string>): CardItem {
+  const { data } = entry;
+  const leaf = leafSlug(data);
+  const topic = findTopic(leaf);
+  const item: CardItem = {
+    collection: entry.collection,
+    id: entry.id,
+    url: articlePath(entry.collection, entry.id, leaf),
+    type: contentTypeOf(entry.collection),
+    title: data.title,
+    description: data.description,
+    image: data.heroImage,
+    imageAlt: data.heroAlt,
+    hub: data.hub,
+    category: data.category,
+    ...(data.subcategory && { subcategory: data.subcategory }),
+    leaf,
+    leafLabel: topic?.subcategory?.label ?? topic?.category.label ?? leaf,
+    brands: data.brands.map((b) => b.id),
+    author: data.author.id,
+    ...(authors.has(data.author.id) && { authorName: authors.get(data.author.id) }),
+    publishDate: data.publishDate,
+    ...(data.updatedDate && { updatedDate: data.updatedDate }),
+    date: data.updatedDate ?? data.publishDate,
+    featured: data.featured,
+    sample: data.sample,
+  };
+  if (entry.collection === 'reviews') {
+    const review = entry.data as CollectionEntry<'reviews'>['data'];
+    const offers = review.retailers.flatMap((r) =>
+      r.price ? [{ retailer: r.name, url: r.url, price: r.price }] : [],
+    );
+    const best = lowestOffer(offers);
+    Object.assign(item, {
+      productName: review.product.name,
+      rating: review.rating,
+      ...(review.badge && { badge: review.badge }),
+      verdict: review.verdict,
+      specLine: review.specs
+        .slice(0, 4)
+        .map((s) => s.value)
+        .join(' · '),
+      offers,
+      ...(best && { bestOffer: best }),
+    });
+    if (review.brands.length === 0) item.brands = [review.product.brand.id];
+  } else if (entry.collection === 'deals') {
+    const deal = entry.data as CollectionEntry<'deals'>['data'];
+    const offer = { retailer: deal.retailer, url: deal.url, price: deal.dealPrice };
+    Object.assign(item, { offers: [offer], bestOffer: offer });
+  }
+  return item;
+}
+
+/** Newest first; ties broken by title so builds are stable. */
+export const byDate = (a: CardItem, b: CardItem) =>
+  b.date.getTime() - a.date.getTime() || a.title.localeCompare(b.title);
+
+/** Highest rated first, then newest. */
+export const byRating = (a: CardItem, b: CardItem) =>
+  (b.rating ?? 0) - (a.rating ?? 0) || byDate(a, b);

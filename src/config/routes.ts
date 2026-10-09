@@ -1,7 +1,8 @@
 /**
  * Routes that exist only as "coming soon" placeholders so navigation never links to a 404.
- * This list is the single source for those pages: the dynamic routes build them from it and
- * astro.config.mjs keeps every one of them out of the sitemap (they are also noindex).
+ * Hubs not yet launched (`mvp: false`) and their whole tree, the static pages built in later
+ * tasks, and brand pages. Every placeholder is noindex, which also keeps it out of the sitemap.
+ * Live hubs and the content-type pages are real listings (src/lib/listings.ts).
  * When a task ships a real page, remove its entry here.
  */
 import {
@@ -32,8 +33,7 @@ export const staticPlaceholders: PlaceholderPage[] = [
 
 function buildPlaceholders(): PlaceholderPage[] {
   const pages: PlaceholderPage[] = [...staticPlaceholders];
-  for (const type of contentTypes) pages.push({ path: contentTypePath(type), title: type.label });
-  for (const hub of hubs) {
+  for (const hub of hubs.filter((h) => !h.mvp)) {
     pages.push({ path: hubPath(hub), title: hub.label, intro: hub.intro });
     for (const type of contentTypes) {
       pages.push({

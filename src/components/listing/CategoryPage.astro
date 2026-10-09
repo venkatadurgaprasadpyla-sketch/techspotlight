@@ -1,0 +1,178 @@
+---
+import { Image } from 'astro:assets';
+import AdSlot from '~/components/AdSlot.astro';
+import ArticleCard from '~/components/cards/ArticleCard.astro';
+import BadgeTag from '~/components/cards/BadgeTag.astro';
+import Rating from '~/components/cards/Rating.astro';
+import Pagination from '~/components/Pagination.astro';
+import { subcategoryPath } from '~/config/taxonomy';
+import { getRetailer } from '~/lib/affiliate';
+import { byRating, type CardItem } from '~/lib/cards';
+import { formatInr } from '~/lib/format';
+import type { Page } from '~/lib/listing';
+import { trending, type Listing } from '~/lib/listings';
+import EmptyState from './EmptyState.astro';
+import ListingLayout from './ListingLayout.astro';
+import Sidebar from './Sidebar.astro';
+
+interface Props {
+  listing: Extract<Listing, { kind: 'category' }>;
+  page: Page<CardItem>;
+  all: CardItem[];
+}
+const { listing, page } = Astro.props;
+const { hub, category, items } = listing;
+const first = page.current === 1;
+const noun = category.label.toLowerCase();
+const intro = `Reviews, buying guides and news about ${noun} sold in India, with prices in rupees from Amazon.in and Flipkart.`;
+const reviews = items.filter((i) => i.collection === 'reviews');
+const guides = items.filter((i) => i.collection === 'guides');
+const topRated = [...reviews].sort(byRating).slice(0, 4);
+const subs = category.subcategories.map((sub) => {
+  const inSub = items.filter((i) => i.subcategory === sub.slug);
+  return { sub, count: inSub.length, image: inSub[0] };
+});
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+---
+
+<ListingLayout listing={listing} page={page} description={intro}>
+  <Fragment slot="header">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div class="flex max-w-[760px] flex-col gap-2.5">
+        <h1 class="text-[36px] sm:text-[44px]">
+          {category.label}
+          {!first && <span class="text-muted">, page {page.current}</span>}
+        </h1>
+        <p class="text-[17px] text-muted">{intro}</p>
+      </div>
+      <p class="text-[13px] text-muted">
+        {plural(reviews.length, 'review')} · {plural(guides.length, 'guide')}
+      </p>
+    </div>
+  </Fragment>
+
+  {first && subs.length > 0 && (
+    <nav aria-label={`${category.label} types`} class="pb-8">
+      <ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,200px),1fr))] gap-4">
+        {subs.map(({ sub, count, image }) => (
+          <li class="relative flex flex-col gap-2 rounded-[10px] border border-border p-3 hover:border-accent">
+            {image ? (
+              <Image
+                src={image.image}
+                alt=""
+                widths={[240, 400]}
+                sizes="(min-width: 640px) 240px, 100vw"
+                class="aspect-video w-full rounded-md object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div class="placeholder aspect-video" aria-hidden="true">
+                {sub.label}
+              </div>
+            )}
+            <h2 class="text-[17px]">
+              <a
+                href={subcategoryPath(hub, category, sub)}
+                class="text-text no-underline after:absolute after:inset-0 hover:text-text"
+              >
+                {sub.label}
+              </a>
+            </h2>
+            <span class="text-[13px] text-muted">{plural(count, 'article')}</span>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )}
+
+  {first && topRated.length > 0 && (
+    <section class="flex flex-col gap-5 pb-8" aria-labelledby="top-rated">
+      <div class="sec-head">
+        <h2 id="top-rated" class="text-2xl">
+          Our top-rated {noun}
+        </h2>
+        {guides[0] && (
+          <a class="lbl" href={guides[0].url}>
+            Full buying guide ›
+          </a>
+        )}
+      </div>
+      <ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-6">
+        {topRated.map((item) => (
+          <li class="relative flex flex-col gap-2">
+            <Image
+              src={item.image}
+              alt={item.imageAlt}
+              widths={[240, 480]}
+              sizes="(min-width: 640px) 260px, 100vw"
+              class="aspect-[4/3] w-full rounded-md object-cover"
+              loading="lazy"
+            />
+            {item.badge && <BadgeTag badge={item.badge} />}
+            <h3 class="text-base">
+              <a
+                href={item.url}
+                class="text-text no-underline after:absolute after:inset-0 hover:text-text hover:underline"
+              >
+                {item.productName ?? item.title}
+              </a>
+            </h3>
+            {item.rating !== undefined && <Rating value={item.rating} />}
+            {item.bestOffer && (
+              <p class="text-[13px]">
+                <b class="font-mono font-medium">{formatInr(item.bestOffer.price)}</b>{' '}
+                <span class="text-muted">at {getRetailer(item.bestOffer.retailer)?.name}</span>
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {first && <AdSlot size="leaderboard" />}
+
+  <div class="flex flex-wrap items-start gap-10 py-8">
+    <div class="flex min-w-0 flex-[999_1_620px] flex-col gap-6">
+      <section class="flex flex-col gap-5" aria-labelledby="coverage">
+        <div class="sec-head">
+          <h2 id="coverage" class="text-2xl">
+            All {noun} coverage
+          </h2>
+          <span class="text-[13px] text-muted">{plural(items.length, 'article')}</span>
+        </div>
+        {page.items.length ? (
+          <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-6">
+            {page.items.map((item) => (
+              <ArticleCard item={item} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState what={`${noun} articles`} />
+        )}
+        <Pagination page={page} base={listing.path} />
+      </section>
+      {hub.topBrands.length > 0 && (
+        <section class="flex flex-col gap-4" aria-labelledby="brands">
+          <div class="sec-head">
+            <h2 id="brands" class="text-2xl">
+              {hub.label} brands we cover
+            </h2>
+          </div>
+          <ul class="flex flex-wrap gap-2">
+            {hub.topBrands.map((brand) => (
+              <li>
+                <a class="chip" href={`/brands/${brand.slug}/`}>
+                  {brand.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+    <div class="flex-[1_1_300px]">
+      <Sidebar scope={category.label} latest={items} trending={trending(items)} />
+    </div>
+  </div>
+</ListingLayout>

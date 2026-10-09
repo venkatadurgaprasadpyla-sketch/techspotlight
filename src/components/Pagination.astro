@@ -1,0 +1,59 @@
+---
+import { pageHref, pageWindow, type Page } from '~/lib/listing';
+import Icon from './Icon.astro';
+
+interface Props {
+  page: Pick<Page<unknown>, 'current' | 'total' | 'prev' | 'next'>;
+  base: string;
+}
+const { page, base } = Astro.props;
+const item =
+  'inline-flex min-w-11 h-11 items-center justify-center rounded-lg border border-border px-3 font-semibold text-text no-underline hover:border-text hover:text-text';
+---
+
+{page.total > 1 && (
+  <nav aria-label="Pagination">
+    <ul class="flex flex-wrap gap-1.5">
+      <li>
+        {page.prev ? (
+          <a href={page.prev} class={item} rel="prev">
+            <Icon name="chevron-left" label="Previous page" />
+          </a>
+        ) : (
+          <span class:list={[item, 'opacity-40']} aria-hidden="true">
+            <Icon name="chevron-left" />
+          </span>
+        )}
+      </li>
+      {pageWindow(page.current, page.total).map((n) =>
+        n === 'gap' ? (
+          <li class="inline-flex h-11 items-end px-1 text-muted" aria-hidden="true">
+            …
+          </li>
+        ) : (
+          <li>
+            <a
+              href={pageHref(base, n)}
+              class:list={[item, n === page.current && 'border-text bg-text text-bg hover:text-bg']}
+              aria-current={n === page.current ? 'page' : undefined}
+            >
+              <span class="sr-only">Page </span>
+              {n}
+            </a>
+          </li>
+        ),
+      )}
+      <li>
+        {page.next ? (
+          <a href={page.next} class={item} rel="next">
+            <Icon name="chevron-right" label="Next page" />
+          </a>
+        ) : (
+          <span class:list={[item, 'opacity-40']} aria-hidden="true">
+            <Icon name="chevron-right" />
+          </span>
+        )}
+      </li>
+    </ul>
+  </nav>
+)}

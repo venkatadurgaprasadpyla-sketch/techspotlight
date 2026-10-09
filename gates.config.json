@@ -1,6 +1,14 @@
 {
   "$comment": "Pages audited by Lighthouse (G5), axe (G6) and screenshots (G9). Each task adds the pages it touches.",
-  "pages": ["/", "/styleguide/", "/computing/laptops/"],
+  "pages": [
+    "/",
+    "/styleguide/",
+    "/computing/",
+    "/computing/laptops/",
+    "/computing/laptops/gaming-laptops/",
+    "/phones/",
+    "/reviews/"
+  ],
   "lighthouse": {
     "performance": 0.95,
     "accessibility": 1,

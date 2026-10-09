@@ -1,0 +1,15 @@
+---
+import type { Badge } from '~/lib/cards';
+
+interface Props {
+  badge: Badge;
+}
+const labels: Record<Badge, { text: string; class: string }> = {
+  'editors-choice': { text: "Editor's choice", class: 'badge-ec' },
+  recommended: { text: 'Recommended', class: '' },
+  'best-value': { text: 'Best value', class: 'badge-bv' },
+};
+const { text, class: variant } = labels[Astro.props.badge];
+---
+
+<span class:list={['badge self-start', variant]}>{text}</span>

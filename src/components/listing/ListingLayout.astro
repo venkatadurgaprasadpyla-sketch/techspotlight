@@ -1,0 +1,36 @@
+---
+/** Shared frame for listing pages: SEO title and description, breadcrumbs, then the page. */
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import type { CardItem } from '~/lib/cards';
+import type { Page } from '~/lib/listing';
+import type { Listing } from '~/lib/listings';
+
+interface Props {
+  listing: Listing;
+  page: Page<CardItem>;
+  description: string;
+  /** Extra classes for the breadcrumb row (e.g. to sit inside a tinted band). */
+  band?: boolean;
+}
+const { listing, page, description, band = false } = Astro.props;
+const title = page.current > 1 ? `${listing.title}, page ${page.current}` : listing.title;
+// Empty listings are thin content: keep them out of search until they have articles.
+const noindex = listing.items.length === 0;
+const crumbs =
+  page.current > 1
+    ? [...listing.crumbs, { label: `Page ${page.current}`, href: page.href }]
+    : listing.crumbs;
+---
+
+<BaseLayout title={title} description={description} noindex={noindex}>
+  <div class:list={[band && 'border-b border-border bg-surface']}>
+    <div class="wrap flex flex-col gap-3.5 pt-6 pb-8 sm:pt-8">
+      <Breadcrumbs crumbs={crumbs} />
+      <slot name="header" />
+    </div>
+  </div>
+  <div class="wrap">
+    <slot />
+  </div>
+</BaseLayout>

@@ -1,0 +1,40 @@
+---
+/** Visible breadcrumb trail plus BreadcrumbList structured data. The last crumb is the page. */
+import { site } from '~/config/site';
+import type { Crumb } from '~/lib/listings';
+
+interface Props {
+  crumbs: Crumb[];
+}
+const { crumbs } = Astro.props;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: crumbs.map((crumb, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: crumb.label,
+    item: new URL(crumb.href, site.url).href,
+  })),
+};
+---
+
+<nav aria-label="Breadcrumb" class="text-[13px] text-muted">
+  <ol class="flex flex-wrap items-center gap-x-2 gap-y-1">
+    {crumbs.map((crumb, i) => (
+      <li class="flex items-center gap-2">
+        {i > 0 && <span aria-hidden="true">›</span>}
+        {i === crumbs.length - 1 ? (
+          <span aria-current="page" class="text-text">
+            {crumb.label}
+          </span>
+        ) : (
+          <a href={crumb.href} class="text-muted hover:text-text">
+            {crumb.label}
+          </a>
+        )}
+      </li>
+    ))}
+  </ol>
+</nav>
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd).replaceAll('<', '\\u003c')} />

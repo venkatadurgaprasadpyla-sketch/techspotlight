@@ -1,0 +1,18 @@
+---
+/** Reserved space for an ad so the layout never shifts when ads load (wired up in T10). */
+const sizes = {
+  leaderboard: 'h-[90px] w-full',
+  sidebar: 'h-[250px] w-full max-w-[300px]',
+  'in-feed': 'h-[120px] w-full',
+} as const;
+
+interface Props {
+  size: keyof typeof sizes;
+  class?: string;
+}
+const { size, class: className } = Astro.props;
+---
+
+<div class:list={['ad-slot', sizes[size], className]} data-ad-slot={size} aria-hidden="true">
+  Advertisement
+</div>

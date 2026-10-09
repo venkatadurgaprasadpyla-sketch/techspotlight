@@ -1,0 +1,63 @@
+---
+/**
+ * Every page under a hub or content-type section: live listings (hubs, categories,
+ * subcategories, content types, each paginated), "coming soon" placeholders for hubs not yet
+ * launched, and placeholders for article pages until their templates ship (T4 to T7).
+ * Files in src/pages (about, search, brands …) take priority over this catch-all route.
+ */
+import type { GetStaticPaths } from 'astro';
+import CategoryPage from '~/components/listing/CategoryPage.astro';
+import HubPage from '~/components/listing/HubPage.astro';
+import SubcategoryPage from '~/components/listing/SubcategoryPage.astro';
+import TypePage from '~/components/listing/TypePage.astro';
+import { isOutsideSections, placeholderPages, type PlaceholderPage } from '~/config/routes';
+import Placeholder from '~/layouts/Placeholder.astro';
+import { getArticles } from '~/lib/articles';
+import type { CardItem } from '~/lib/cards';
+import { paginate, type Page } from '~/lib/listing';
+import { buildListings, type Listing } from '~/lib/listings';
+
+type Props =
+  | { kind: 'placeholder'; page: PlaceholderPage }
+  | { kind: 'listing'; listing: Listing; page: Page<CardItem>; all: CardItem[] };
+
+export const getStaticPaths = (async () => {
+  const articles = await getArticles();
+  const routes: { path: string; props: Props }[] = [];
+  for (const page of placeholderPages.filter((p) => !isOutsideSections(p.path))) {
+    routes.push({ path: page.path, props: { kind: 'placeholder', page } });
+  }
+  for (const listing of buildListings(articles)) {
+    for (const page of paginate(listing.items, listing.path)) {
+      routes.push({ path: page.href, props: { kind: 'listing', listing, page, all: articles } });
+    }
+  }
+  for (const item of articles) {
+    const page = { path: item.url, title: item.title, intro: item.description };
+    routes.push({ path: item.url, props: { kind: 'placeholder', page } });
+  }
+  const seen = new Set<string>();
+  for (const { path } of routes) {
+    if (seen.has(path)) throw new Error(`Two pages want the URL ${path}; rename one of them.`);
+    seen.add(path);
+  }
+  return routes.map(({ path, props }) => ({
+    params: { path: path.replace(/^\/|\/$/g, '') },
+    props,
+  }));
+}) satisfies GetStaticPaths;
+
+const props = Astro.props as Props;
+---
+
+{props.kind === 'placeholder' ? (
+  <Placeholder title={props.page.title} intro={props.page.intro} />
+) : props.listing.kind === 'hub' ? (
+  <HubPage listing={props.listing} page={props.page} all={props.all} />
+) : props.listing.kind === 'category' ? (
+  <CategoryPage listing={props.listing} page={props.page} all={props.all} />
+) : props.listing.kind === 'subcategory' ? (
+  <SubcategoryPage listing={props.listing} page={props.page} all={props.all} />
+) : (
+  <TypePage listing={props.listing} page={props.page} all={props.all} />
+)}

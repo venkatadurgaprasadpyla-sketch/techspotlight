@@ -1,0 +1,49 @@
+---
+/** Hub "Explore" tiles: content types (dark, with counts) then categories (with subcategories). */
+import { categoryPath, contentTypePath, contentTypes, type Hub } from '~/config/taxonomy';
+import type { CardItem } from '~/lib/cards';
+
+interface Props {
+  hub: Hub;
+  items: CardItem[];
+}
+const { hub, items } = Astro.props;
+const count = (type: string) => items.filter((i) => i.type.type === type).length;
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const tile =
+  'flex min-h-24 flex-col justify-between gap-4 rounded-[10px] border p-4 font-semibold no-underline';
+---
+
+<ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,150px),1fr))] gap-3 sm:gap-4">
+  {contentTypes.map((type) => (
+    <li>
+      <a
+        href={contentTypePath(type, hub)}
+        class:list={[
+          tile,
+          'border-inverse bg-inverse text-on-inverse hover:border-accent hover:text-on-inverse',
+        ]}
+      >
+        {type.label}
+        <span class="text-[13px] font-normal text-on-inverse-muted">
+          {plural(count(type.type), type.type === 'best' ? 'guide' : 'article')}
+        </span>
+      </a>
+    </li>
+  ))}
+  {hub.categories.map((category) => (
+    <li>
+      <a
+        href={categoryPath(hub, category)}
+        class:list={[tile, 'border-border text-text hover:border-accent hover:text-text']}
+      >
+        {category.label}
+        {category.subcategories.length > 0 && (
+          <span class="line-clamp-2 text-[13px] font-normal text-muted">
+            {category.subcategories.map((s) => s.label).join(', ')}
+          </span>
+        )}
+      </a>
+    </li>
+  ))}
+</ul>

@@ -1,0 +1,160 @@
+---
+/**
+ * One article in a listing.
+ * - standard: image on top, for grids (category coverage, content-type pages)
+ * - compact: image left, text right, for the hub "Latest" list
+ * - hero: large featured card (a hub's editor's pick)
+ * - review: review row with verdict, key specs and buy buttons (subcategory pages)
+ */
+import { Image } from 'astro:assets';
+import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import { typeLabel, type CardItem } from '~/lib/cards';
+import { formatInr, formatMonthYear } from '~/lib/format';
+import BadgeTag from './BadgeTag.astro';
+import CardMeta from './CardMeta.astro';
+import Rating from './Rating.astro';
+
+interface Props {
+  item: CardItem;
+  variant?: 'standard' | 'compact' | 'hero' | 'review';
+  /** Load the image eagerly (the first card above the fold). */
+  eager?: boolean;
+  headingLevel?: 2 | 3;
+}
+
+const { item, variant = 'standard', eager = false, headingLevel = 3 } = Astro.props;
+const Heading = `h${headingLevel}` as const;
+const isReview = item.collection === 'reviews';
+const label = isReview || variant === 'compact' ? item.leafLabel : typeLabel[item.type.type];
+const loading = eager ? 'eager' : 'lazy';
+const fetchpriority = eager ? 'high' : undefined;
+const titleLink =
+  'text-text no-underline after:absolute after:inset-0 hover:text-text hover:underline';
+const retailerName = (id: string) => getRetailer(id)?.name ?? id;
+---
+
+{variant === 'standard' && (
+  <article class="relative flex flex-col gap-2">
+    <Image
+      src={item.image}
+      alt={item.imageAlt}
+      widths={[320, 480, 640]}
+      sizes="(min-width: 1024px) 260px, (min-width: 640px) 45vw, 100vw"
+      class="aspect-video w-full rounded-md object-cover"
+      {loading}
+      {fetchpriority}
+    />
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="lbl">{label}</span>
+      {item.rating !== undefined && (
+        <Rating value={item.rating} showNumber={false} class="text-[13px]" />
+      )}
+    </div>
+    <Heading class="text-lg">
+      <a href={item.url} class={titleLink}>
+        {item.title}
+      </a>
+    </Heading>
+    <CardMeta item={item} />
+  </article>
+)}
+
+{variant === 'compact' && (
+  <article class="relative flex flex-wrap gap-5 border-b border-border py-5">
+    <Image
+      src={item.image}
+      alt={item.imageAlt}
+      widths={[320, 520]}
+      sizes="(min-width: 640px) 260px, 100vw"
+      class="aspect-video w-full rounded-md object-cover sm:w-[260px] sm:flex-none"
+      {loading}
+      {fetchpriority}
+    />
+    <div class="flex min-w-[min(100%,300px)] flex-1 flex-col gap-1.5">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="lbl">{label}</span>
+        {item.badge && <BadgeTag badge={item.badge} />}
+      </div>
+      <Heading class="text-xl">
+        <a href={item.url} class={titleLink}>
+          {item.title}
+        </a>
+      </Heading>
+      <p class="text-muted">{item.description}</p>
+      <CardMeta item={item} />
+    </div>
+  </article>
+)}
+
+{variant === 'hero' && (
+  <article class="relative flex flex-wrap items-center gap-7 rounded-xl border border-border p-5">
+    <Image
+      src={item.image}
+      alt={item.imageAlt}
+      widths={[400, 640, 1040]}
+      sizes="(min-width: 1024px) 520px, 100vw"
+      class="aspect-video w-full rounded-md object-cover md:max-w-[520px] md:flex-1"
+      {loading}
+      {fetchpriority}
+    />
+    <div class="flex min-w-[min(100%,320px)] flex-1 flex-col gap-2.5">
+      <span class="lbl">Editor's pick · Updated {formatMonthYear(item.date)}</span>
+      <Heading class="text-[26px] sm:text-[30px]">
+        <a href={item.url} class={titleLink}>
+          {item.title}
+        </a>
+      </Heading>
+      <p class="text-muted">{item.description}</p>
+      <span class="btn self-start" aria-hidden="true">
+        {item.collection === 'guides' ? 'See all picks' : 'Read more'}
+      </span>
+    </div>
+  </article>
+)}
+
+{variant === 'review' && (
+  <article class="flex flex-wrap gap-5 border-b border-border py-5">
+    <Image
+      src={item.image}
+      alt={item.imageAlt}
+      widths={[320, 480]}
+      sizes="(min-width: 640px) 240px, 100vw"
+      class="aspect-[4/3] w-full rounded-md object-cover sm:w-[240px] sm:flex-none"
+      {loading}
+      {fetchpriority}
+    />
+    <div class="flex min-w-[min(100%,320px)] flex-1 flex-col gap-2">
+      <div class="flex flex-wrap items-center gap-2">
+        {item.badge && <BadgeTag badge={item.badge} />}
+        {item.rating !== undefined && <Rating value={item.rating} />}
+      </div>
+      <Heading class="text-xl">
+        <a href={item.url} class="text-text no-underline hover:text-text hover:underline">
+          {item.title}
+        </a>
+      </Heading>
+      {item.verdict && (
+        <p>
+          <b>Verdict:</b> {item.verdict}
+        </p>
+      )}
+      {item.specLine && <p class="font-mono text-[13px] text-muted">{item.specLine}</p>}
+      {item.offers && item.offers.length > 0 && (
+        <div class="flex flex-wrap gap-2">
+          {item.offers.map((offer) => (
+            <a
+              class="btn btn-buy"
+              href={affiliateHref(offer.retailer, offer.url)}
+              rel={AFFILIATE_REL}
+              target="_blank"
+            >
+              <span class="font-mono">{formatInr(offer.price)}</span>
+              {retailerName(offer.retailer)}
+              <span class="sr-only">: {item.productName ?? item.title}, opens in a new tab</span>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  </article>
+)}

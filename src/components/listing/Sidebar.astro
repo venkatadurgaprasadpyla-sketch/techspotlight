@@ -1,0 +1,54 @@
+---
+/** Listing sidebar: numbered latest five, trending, newsletter box and an ad slot. */
+import AdSlot from '~/components/AdSlot.astro';
+import NewsletterForm from '~/components/NewsletterForm.astro';
+import type { CardItem } from '~/lib/cards';
+
+interface Props {
+  /** Shown in the headings, e.g. "Computing". Omit for site-wide pages. */
+  scope?: string;
+  latest: CardItem[];
+  trending: CardItem[];
+}
+const { scope, latest, trending } = Astro.props;
+const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
+---
+
+<aside class="flex flex-col gap-6" aria-label="More to read">
+  {latest.length > 0 && (
+    <section class="flex flex-col gap-3 rounded-[10px] border border-border p-5">
+      <h2 class="text-lg">Latest{scope ? ` in ${scope}` : ''}</h2>
+      <ol class="flex flex-col gap-3">
+        {latest.slice(0, 5).map((item, i) => (
+          <li class="flex items-start gap-3">
+            <span
+              class="min-w-7 font-heading text-[26px] leading-none font-bold text-muted"
+              aria-hidden="true"
+            >
+              {i + 1}
+            </span>
+            <a href={item.url} class={linkClass}>
+              {item.title}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )}
+  <AdSlot size="sidebar" class="self-center" />
+  <section class="rounded-[10px] bg-surface p-5">
+    <NewsletterForm id="sidebar-newsletter" />
+  </section>
+  {trending.length > 0 && (
+    <section class="flex flex-col gap-3 rounded-[10px] border border-border p-5">
+      <h2 class="text-lg">Trending{scope ? ` in ${scope}` : ''}</h2>
+      <ul class="flex flex-col gap-2.5">
+        {trending.slice(0, 4).map((item) => (
+          <li>
+            <a href={item.url}>{item.title}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</aside>
