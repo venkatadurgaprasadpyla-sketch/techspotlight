@@ -40,7 +40,6 @@ if (!topic) throw new Error(`Guide ${entry.id}: unknown topic ${leaf}`);
 const url = articlePath('guides', entry.id, leaf);
 const crumbs = [...topicCrumbs(topic), { label: data.title, href: url }];
 const updated = data.updatedDate ?? data.publishDate;
-const noun = (topic.subcategory?.label ?? topic.category.label).toLowerCase();
 
 assertNoHeadingClash(`Guide ${entry.id}`, headings, [
   'quick-list',
@@ -49,6 +48,9 @@ assertNoHeadingClash(`Guide ${entry.id}`, headings, [
   'also-tested',
   'how-we-test',
   'faq',
+  'on-this-page',
+  'related-guides',
+  ...data.picks.map((p) => `pick-${p.rank}-scores`),
 ]);
 
 const author = await getPublishedEntry('authors', data.author.id);
@@ -72,9 +74,12 @@ const picks = data.picks.map((pick) => {
   };
 });
 const tested = data.picks.length + data.alsoTested.length;
+// Same category first, then the same hub, then any other guide.
+const closeness = (a: { hub: string; category: string }) =>
+  Number(a.category === data.category) * 2 + Number(a.hub === data.hub);
 const related = articles
-  .filter((a) => a.collection === 'guides' && a.url !== url && a.hub === data.hub)
-  .sort((a, b) => Number(b.category === data.category) - Number(a.category === data.category))
+  .filter((a) => a.collection === 'guides' && a.url !== url)
+  .sort((a, b) => closeness(b) - closeness(a))
   .slice(0, 4);
 const bodyHeadings = headings.filter((h) => h.depth === 2);
 const toc = [
@@ -116,7 +121,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
               <span aria-hidden="true"> · </span>
             </>
           )}
-          {`${tested} ${noun} tested for this guide`}
+          {`${tested} ${tested === 1 ? 'product' : 'products'} tested for this guide`}
         </p>
       </div>
     </header>
@@ -133,8 +138,8 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
       />
     </div>
 
-    <div class="wrap flex flex-wrap items-start gap-12 pt-2 pb-12">
-      <div class="flex max-w-[780px] min-w-0 flex-[999_1_640px] flex-col gap-9">
+    <div class="wrap flex flex-col gap-12 pt-2 pb-12 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div class="flex max-w-[780px] min-w-0 flex-col gap-9">
         <div class="flex flex-col gap-3">
           <p class="text-[13px] text-muted">
             We may earn a commission when you buy through links on this page.{' '}
@@ -180,32 +185,14 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
         <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
           <Content />
         </div>
-        <HowWeTest noun={noun} />
+        <HowWeTest />
         {data.faq.length > 0 && <Faq items={data.faq} />}
       </div>
 
       <aside
-        class="flex flex-[1_1_300px] flex-col gap-6 self-stretch"
-        aria-label="On this page and related guides"
+        class:list={['flex-col gap-6', related.length ? 'flex' : 'hidden lg:flex']}
+        aria-label="Related guides and contents"
       >
-        <nav
-          class="hidden flex-col gap-3 rounded-[10px] border border-border bg-bg p-5 lg:sticky lg:top-6 lg:z-10 lg:flex"
-          aria-labelledby="on-this-page"
-        >
-          <h2 id="on-this-page" class="text-lg">
-            On this page
-          </h2>
-          <ul class="flex flex-col gap-2 text-[14px]">
-            {toc.map((item) => (
-              <li>
-                <a href={item.href} class="text-text">
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <AdSlot size="skyscraper" class="hidden self-center lg:flex" />
         {related.length > 0 && (
           <section
             class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
@@ -225,6 +212,25 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
             </ul>
           </section>
         )}
+        <AdSlot size="skyscraper" class="hidden self-center lg:flex" />
+        {/* Last in the aside, so nothing slides under it while it sticks. */}
+        <nav
+          class="hidden flex-col gap-3 rounded-[10px] border border-border bg-bg p-5 lg:sticky lg:top-6 lg:flex lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto"
+          aria-labelledby="on-this-page"
+        >
+          <h2 id="on-this-page" class="text-lg">
+            On this page
+          </h2>
+          <ul class="flex flex-col gap-2 text-[14px]">
+            {toc.map((item) => (
+              <li>
+                <a href={item.href} class="text-text">
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </aside>
     </div>
   </article>

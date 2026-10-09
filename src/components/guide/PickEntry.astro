@@ -48,7 +48,9 @@ const store = (retailer: string) => getRetailer(retailer)?.name ?? retailer;
       <span class="font-heading text-[40px] leading-none font-bold" aria-hidden="true">
         {pick.rank}
       </span>
-      <span class="lbl">{pick.label}</span>
+      <span class="lbl" aria-hidden="true">
+        {pick.label}
+      </span>
     </p>
     <h2 id={`${id}-title`} class="text-[28px]">
       <span class="sr-only">

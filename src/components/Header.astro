@@ -28,7 +28,7 @@ import ThemeToggle from './ThemeToggle.astro';
       </span>
     </div>
   </div>
-  <div class="wrap flex min-h-[68px] items-center gap-3 sm:gap-5">
+  <div class="wrap flex min-h-[68px] items-center gap-3 sm:gap-5 lg:gap-3 xl:gap-5">
     <button
       type="button"
       class="icon-btn"
@@ -57,7 +57,7 @@ import ThemeToggle from './ThemeToggle.astro';
         <Icon name="search" />
       </a>
       <ThemeToggle class="hidden sm:inline-flex" />
-      <a class="btn hidden sm:inline-flex" href="#newsletter">
+      <a class="btn hidden sm:inline-flex lg:hidden xl:inline-flex" href="#newsletter">
         Newsletter
       </a>
     </div>
@@ -75,6 +75,7 @@ import ThemeToggle from './ThemeToggle.astro';
     border-radius: 8px;
     font-size: 15px;
     font-weight: 500;
+    white-space: nowrap;
     color: var(--ts-text);
     text-decoration: none;
     background: none;
