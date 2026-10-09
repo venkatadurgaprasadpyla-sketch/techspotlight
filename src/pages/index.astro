@@ -1,48 +1,308 @@
 ---
-import { categoryPath, hubPath, hubs } from '~/config/taxonomy';
+/** Homepage. Section order follows the Home board; what goes where is in src/lib/home.ts. */
+import { Image } from 'astro:assets';
+import AdSlot from '~/components/AdSlot.astro';
+import ArticleCard from '~/components/cards/ArticleCard.astro';
+import BadgeTag from '~/components/cards/BadgeTag.astro';
+import CardMeta from '~/components/cards/CardMeta.astro';
+import Rating from '~/components/cards/Rating.astro';
+import DealCard from '~/components/deals/DealCard.astro';
+import HomeRow from '~/components/home/HomeRow.astro';
+import NewsletterForm from '~/components/NewsletterForm.astro';
+import { site } from '~/config/site';
+import { contentTypePath, contentTypes, hubPath } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import { getArticles } from '~/lib/articles';
+import { typeLabel, type CardItem, type DealInfo } from '~/lib/cards';
+import { percentOff } from '~/lib/deals';
+import { formatInr } from '~/lib/format';
+import { homeSections } from '~/lib/home';
 
-// Interim homepage: the full Home board (hero, rows, sidebar) is task T7.
-const mvpHubs = hubs.filter((hub) => hub.mvp);
+const now = new Date();
+const articles = await getArticles();
+const home = homeSections(articles, now);
+const [lead, ...secondary] = home.hero;
+const typePath = (type: string) => {
+  const found = contentTypes.find((t) => t.type === type);
+  return found ? contentTypePath(found) : '/';
+};
+const label = (item: CardItem) =>
+  item.collection === 'reviews'
+    ? `${typeLabel[item.type.type]} · ${item.leafLabel}`
+    : typeLabel[item.type.type];
+const deals = home.deals.filter((i): i is CardItem & { deal: DealInfo } => i.deal !== undefined);
+const topDeal = home.topDeal?.deal && { ...home.topDeal, deal: home.topDeal.deal };
+const topOff = topDeal ? percentOff(topDeal.deal.originalPrice, topDeal.deal.dealPrice) : 0;
+const hasAside = home.trending.length > 0 || topDeal !== undefined;
+const titleLink =
+  'text-text no-underline after:absolute after:inset-0 hover:text-text hover:underline';
+const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
 ---
 
-<BaseLayout>
-  <div class="wrap flex flex-col gap-10 py-14">
-    <section class="flex max-w-[820px] flex-col gap-4">
-      <p class="lbl">Launching soon</p>
-      <h1 class="text-[40px] sm:text-5xl">Independent tech reviews and buying advice for India</h1>
-      <p class="text-lg text-muted">
-        Hands-on reviews, buying guides and face-offs for laptops, phones and more, with prices in
-        rupees from the stores you already use.
-      </p>
-    </section>
-    <section aria-labelledby="start-here" class="flex flex-col gap-5">
-      <div class="sec-head">
-        <h2 id="start-here" class="text-2xl">
-          Start here
-        </h2>
+<BaseLayout description={site.description} noindex={articles.length === 0}>
+  <h1 class="sr-only">
+    {site.name}: {site.tagline}
+  </h1>
+
+  {lead && (
+    <section class="wrap pt-6 pb-8" aria-labelledby="top-stories">
+      <h2 id="top-stories" class="sr-only">
+        Top stories
+      </h2>
+      <div
+        class:list={[
+          'grid gap-7',
+          secondary.length > 0 && 'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]',
+        ]}
+      >
+        <article class="relative flex flex-col gap-3">
+          <Image
+            src={lead.image}
+            alt={lead.imageAlt}
+            widths={[480, 800, 1100, 1500]}
+            sizes="(min-width: 1200px) 700px, (min-width: 1024px) 60vw, 100vw"
+            class="aspect-video w-full rounded-[10px] object-cover"
+            loading="eager"
+            fetchpriority="high"
+          />
+          <span class="lbl">{label(lead)}</span>
+          <h3 class="text-[28px] sm:text-[36px]">
+            <a href={lead.url} class={titleLink}>
+              {lead.title}
+            </a>
+          </h3>
+          <p class="max-w-[640px] text-[17px] text-muted">{lead.description}</p>
+          <div class="flex flex-wrap items-center gap-3 text-[13px]">
+            {lead.badge && <BadgeTag badge={lead.badge} />}
+            {lead.rating !== undefined && <Rating value={lead.rating} />}
+            <CardMeta item={lead} />
+          </div>
+        </article>
+        <div class="flex flex-col gap-5">
+          {secondary.map((item, i) => (
+            <article
+              class:list={[
+                'relative flex gap-4',
+                i === 0 ? 'flex-col' : 'items-start border-t border-border pt-5',
+              ]}
+            >
+              <Image
+                src={item.image}
+                alt={item.imageAlt}
+                widths={i === 0 ? [400, 640, 900] : [200, 320]}
+                sizes={i === 0 ? '(min-width: 1024px) 420px, 100vw' : '140px'}
+                class:list={[
+                  'aspect-video rounded-md object-cover',
+                  i === 0 ? 'w-full' : 'w-[120px] flex-none sm:w-[140px]',
+                ]}
+              />
+              <div class="flex flex-col gap-1.5">
+                <span class="lbl">{label(item)}</span>
+                <h3 class={i === 0 ? 'text-xl' : 'text-[17px]'}>
+                  <a href={item.url} class={titleLink}>
+                    {item.title}
+                  </a>
+                </h3>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,420px),1fr))] gap-6">
-        {mvpHubs.map((hub) => (
-          <div class="flex flex-col gap-3 rounded-[10px] border border-border p-5">
-            <h3 class="text-xl">
-              <a href={hubPath(hub)} class="text-text no-underline hover:text-accent">
-                {hub.label}
-              </a>
-            </h3>
-            <p class="text-muted">{hub.intro}</p>
-            <ul class="flex flex-wrap gap-2">
-              {hub.categories.slice(0, 6).map((category) => (
-                <li>
-                  <a class="chip" href={categoryPath(hub, category)}>
-                    {category.label}
+    </section>
+  )}
+
+  <div class="wrap pb-8">
+    <AdSlot size="leaderboard" />
+  </div>
+
+  {home.guideChips.length > 0 && (
+    <nav class="wrap pb-8" aria-label="Popular buying guides">
+      <ul class="flex flex-wrap items-center gap-2">
+        <li class="mr-1.5 text-[13px] text-muted">Shop by budget:</li>
+        {home.guideChips.map((item) => (
+          <li>
+            <a class="chip" href={item.url}>
+              {item.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )}
+
+  <div
+    class:list={[
+      'wrap flex flex-col gap-12 pb-12',
+      hasAside && 'lg:grid lg:grid-cols-[minmax(0,1fr)_300px]',
+    ]}
+  >
+    <div class="flex min-w-0 flex-col gap-12">
+      {home.reviews.length > 0 && (
+        <HomeRow
+          id="latest-reviews"
+          title="Latest reviews"
+          href={typePath('review')}
+          linkLabel="All reviews"
+        >
+          {home.reviews.map((item) => (
+            <ArticleCard item={item} showVerdict />
+          ))}
+        </HomeRow>
+      )}
+      {home.guides.length > 0 && (
+        <HomeRow
+          id="best-picks"
+          title="Best picks"
+          href={typePath('best')}
+          linkLabel="All buying guides"
+          min={280}
+        >
+          {home.guides.map((item) => (
+            <ArticleCard item={item} />
+          ))}
+        </HomeRow>
+      )}
+      {home.faceOffs.length > 0 && (
+        <HomeRow
+          id="face-offs"
+          title="Face-offs"
+          href={typePath('versus')}
+          linkLabel="All face-offs"
+        >
+          {home.faceOffs.map((item) => (
+            <ArticleCard item={item} />
+          ))}
+        </HomeRow>
+      )}
+    </div>
+
+    {hasAside && (
+      <aside class="hidden flex-col gap-6 lg:flex" aria-label="Trending and top deal">
+        {home.trending.length > 0 && (
+          <section
+            class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
+            aria-labelledby="trending"
+          >
+            <h2 id="trending" class="text-lg">
+              Trending
+            </h2>
+            <ol class="flex flex-col gap-3">
+              {home.trending.map((item, i) => (
+                <li class="flex items-start gap-3">
+                  <span
+                    class="min-w-7 font-heading text-[26px] leading-none font-bold text-muted"
+                    aria-hidden="true"
+                  >
+                    {i + 1}
+                  </span>
+                  <a href={item.url} class={linkClass}>
+                    {item.title}
                   </a>
                 </li>
               ))}
-            </ul>
-          </div>
+            </ol>
+          </section>
+        )}
+        <AdSlot size="sidebar" class="hidden self-center lg:flex" />
+        {topDeal && (
+          <section
+            class="group relative flex flex-col gap-3 rounded-[10px] bg-surface p-5"
+            aria-labelledby="top-deal"
+            data-ends={topDeal.deal.endsAt?.toISOString()}
+          >
+            <h2 id="top-deal" class="text-lg">
+              Today's top deal
+            </h2>
+            <Image
+              src={topDeal.image}
+              alt={topDeal.imageAlt}
+              widths={[320, 560]}
+              sizes="(min-width: 1024px) 260px, 100vw"
+              class="aspect-video w-full rounded-md object-cover"
+            />
+            <b>{topDeal.deal.product}</b>
+            <p class="flex flex-wrap items-baseline gap-2.5">
+              <span class="font-mono text-lg">
+                <span class="sr-only">Deal price </span>
+                {formatInr(topDeal.deal.dealPrice)}
+              </span>
+              <s class="text-[13px] text-muted">
+                <span class="sr-only">usual price </span>
+                {formatInr(topDeal.deal.originalPrice)}
+              </s>
+              {topOff > 0 && <span class="text-[13px] text-muted">{topOff}% off</span>}
+            </p>
+            <a class="btn btn-buy group-data-[ended]:hidden" href={topDeal.url}>
+              See the deal<span class="sr-only">: {topDeal.title}</span>
+            </a>
+            <span class="btn btn-ended hidden group-data-[ended]:inline-flex">Deal ended</span>
+          </section>
+        )}
+      </aside>
+    )}
+  </div>
+
+  <section class="bg-inverse py-10" aria-labelledby="home-newsletter-title">
+    <div class="wrap max-w-[760px]">
+      <NewsletterForm
+        id="home-newsletter"
+        tone="inverse"
+        headingLevel={2}
+        title="The Spotlight, every Friday"
+        blurb="The week's best reviews, real deals and one thing worth buying. No spam."
+        button="Subscribe"
+        buttonClass="btn btn-buy"
+      />
+    </div>
+  </section>
+
+  <div class="wrap flex flex-col gap-12 py-12">
+    {deals.length > 0 && (
+      <HomeRow
+        id="deals"
+        compactOnPhones
+        title="Deals worth your money"
+        href={typePath('deal')}
+        linkLabel="All deals"
+        min={200}
+      >
+        {deals.map((item) => (
+          <DealCard item={item} now={now} />
         ))}
-      </div>
-    </section>
+      </HomeRow>
+    )}
+    {home.howtos.length > 0 && (
+      <HomeRow
+        id="how-tos"
+        compactOnPhones
+        title="How-tos"
+        href={typePath('how-to')}
+        linkLabel="All how-tos"
+        min={200}
+      >
+        {home.howtos.map((item) => (
+          <ArticleCard item={item} />
+        ))}
+      </HomeRow>
+    )}
+    {home.hubs.map(({ hub, items }) => (
+      <HomeRow
+        id={`hub-${hub.slug}`}
+        compactOnPhones
+        title={hub.label}
+        href={hubPath(hub)}
+        linkLabel={`More in ${hub.label}`}
+        min={200}
+      >
+        {items.map((item) => (
+          <ArticleCard item={item} />
+        ))}
+      </HomeRow>
+    ))}
   </div>
 </BaseLayout>
+
+<script>
+  import { initDeals } from '~/scripts/deals';
+  initDeals();
+</script>

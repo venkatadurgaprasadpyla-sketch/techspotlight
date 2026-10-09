@@ -21,9 +21,17 @@ interface Props {
   /** Load the image eagerly (the first card above the fold). */
   eager?: boolean;
   headingLevel?: 2 | 3;
+  /** Standard cards: add the review verdict and "From ₹…" (homepage review row). */
+  showVerdict?: boolean;
 }
 
-const { item, variant = 'standard', eager = false, headingLevel = 3 } = Astro.props;
+const {
+  item,
+  variant = 'standard',
+  eager = false,
+  headingLevel = 3,
+  showVerdict = false,
+} = Astro.props;
 const Heading = `h${headingLevel}` as const;
 const isReview = item.collection === 'reviews';
 const label = isReview || variant === 'compact' ? item.leafLabel : typeLabel[item.type.type];
@@ -60,6 +68,16 @@ const dealEnded = item.deal !== undefined && dealStatus(item.deal.endsAt, new Da
         {item.title}
       </a>
     </Heading>
+    {showVerdict && item.verdict && (
+      <p class="line-clamp-3 text-[14px]">
+        <b>Verdict:</b> {item.verdict}
+      </p>
+    )}
+    {showVerdict && item.bestOffer && (
+      <p class="text-[13px] text-muted">
+        From <span class="font-mono">{formatInr(item.bestOffer.price)}</span>
+      </p>
+    )}
     <CardMeta item={item} />
   </article>
 )}

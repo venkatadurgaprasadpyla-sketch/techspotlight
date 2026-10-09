@@ -4,8 +4,23 @@ import { site } from '~/config/site';
 interface Props {
   id?: string;
   tone?: 'inverse' | 'default';
+  /** Render the title as an h2 (for a standalone band) instead of a paragraph. */
+  headingLevel?: 2;
+  title?: string;
+  blurb?: string;
+  button?: string;
+  buttonClass?: string;
 }
-const { id = 'newsletter', tone = 'default' } = Astro.props;
+const {
+  id = 'newsletter',
+  tone = 'default',
+  headingLevel,
+  title = 'Get the TechSpotlight newsletter',
+  blurb = "The week's best reviews and deals in India, once a week.",
+  button = 'Sign up',
+  buttonClass = 'btn',
+} = Astro.props;
+const Title = headingLevel ? 'h2' : 'p';
 const endpoint = site.newsletterEndpoint;
 const inputId = `${id}-email`;
 const consentId = `${id}-consent`;
@@ -20,16 +35,18 @@ const consentId = `${id}-consent`;
   data-newsletter
   data-endpoint={endpoint ? 'set' : 'missing'}
 >
-  <p
+  <Title
+    id={`${id}-title`}
     class:list={[
       'font-heading text-lg font-bold',
+      headingLevel && 'text-2xl',
       tone === 'inverse' ? 'text-on-inverse' : 'text-text',
     ]}
   >
-    Get the TechSpotlight newsletter
-  </p>
+    {title}
+  </Title>
   <p class:list={['text-sm', tone === 'inverse' ? 'text-on-inverse-muted' : 'text-muted']}>
-    The week's best reviews and deals in India, once a week.
+    {blurb}
   </p>
   <div class="flex flex-wrap gap-2">
     <label for={inputId} class="sr-only">
@@ -44,8 +61,8 @@ const consentId = `${id}-consent`;
       placeholder="you@example.com"
       class="min-h-11 min-w-0 flex-1 rounded-lg border border-border-strong bg-bg px-3 text-text placeholder:text-muted"
     />
-    <button type="submit" class="btn">
-      Sign up
+    <button type="submit" class={buttonClass}>
+      {button}
     </button>
   </div>
   <label
