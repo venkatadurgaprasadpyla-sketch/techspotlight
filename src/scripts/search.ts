@@ -182,7 +182,7 @@ export function initSearch(root: ParentNode = document) {
       const results = await Promise.all(found.results.slice(0, 12).map((r) => r.data()));
       if (mine !== run) return;
       clear();
-      if (total) total.textContent = ` (${found.unfilteredResultCount})`;
+      if (total) total.textContent = `\u00a0(${found.unfilteredResultCount})`;
       const n = found.results.length;
       status.textContent = `${n} ${n === 1 ? 'result' : 'results'} for “${query}”`;
       show(empty, n === 0);

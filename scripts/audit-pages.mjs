@@ -161,7 +161,7 @@ try {
           );
           for (const v of serious)
             failures.push(`G6 ${page} ${vp.name}/${theme}: ${v.id} (${v.nodes.length})`);
-          const slug = page.replace(/^\/+|\/+$/g, '').replaceAll('/', '_') || 'home';
+          const slug = page.replace(/^\/+|\/+$/g, '').replace(/[^a-z0-9-]+/gi, '_') || 'home';
           const name = `${slug}-${vp.name}-${theme}.png`;
           await tab.screenshot({ path: `gate-reports/screens/${name}`, fullPage: true });
           lines.push(`G6 ${page} ${vp.name}/${theme}: ${serious.length} serious/critical`);

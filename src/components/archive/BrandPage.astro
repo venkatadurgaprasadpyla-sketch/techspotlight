@@ -79,12 +79,12 @@ const cell = 'border-b border-border px-3.5 py-3 text-left align-middle';
           {!first && <span class="text-muted">, page {page.current}</span>}
         </h1>
         <p class="max-w-[760px] text-[17px]">
-          <b>Our take:</b>
+          <b>Our take:</b>{' '}
           {description}
         </p>
         <ul class="flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-muted">
           <li>
-            <b class="text-text">{reviews.length}</b>
+            <b class="text-text">{reviews.length}</b>{' '}
             {reviews.length === 1 ? 'product' : 'products'} tested
           </li>
           {averageRating !== undefined && (
