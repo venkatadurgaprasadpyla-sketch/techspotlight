@@ -104,8 +104,25 @@ describe('review schema', () => {
   });
 
   it('refuses TODO placeholders unless the entry is a draft', () => {
-    expect(parse({ verdict: 'TODO: write me' }).join()).toMatch(/Replace every TODO/);
+    expect(parse({ verdict: 'TODO: write me' }).join()).toMatch(/Replace this TODO/);
     expect(parse({ verdict: 'TODO: write me', draft: true })).toEqual([]);
+  });
+
+  it('names the field that still holds a TODO, numbers included', () => {
+    const result = schemas.reviews.safeParse({ ...base, rating: 'TODO' });
+    expect(result.error?.issues.map((i) => i.path.join('.'))).toContain('rating');
+    expect(schemas.reviews.parse({ ...base, rating: 'TODO', draft: true }).rating).toBe(0);
+    const retailers = [
+      {
+        name: 'flipkart',
+        url: 'https://www.flipkart.com/x',
+        price: 'TODO',
+        lastChecked: '2026-10-01',
+      },
+    ];
+    expect(issues(schemas.reviews.safeParse({ ...base, retailers })).join()).toMatch(
+      /retailers\.0\.price: Replace this TODO/,
+    );
   });
 
   it('validates the YouTube id', () => {

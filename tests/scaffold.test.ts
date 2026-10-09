@@ -42,7 +42,7 @@ describe('npm run new', () => {
       expect(data.draft).toBe(true);
       expect(issues(schemas[type].safeParse(data))).toEqual([]);
       expect(issues(schemas[type].safeParse({ ...data, draft: false })).join()).toMatch(
-        /Replace every TODO/,
+        /Replace this TODO/,
       );
     });
   }

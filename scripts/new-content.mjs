@@ -8,8 +8,9 @@
 // Types: review, best, versus, howto, news, deal, author, brand.
 // Articles start as `draft: true`. The schema refuses to publish anything that still contains
 // "TODO", so flip `draft` to false only when every field is filled in. See CONTENT-GUIDE.md.
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { findTopic, slugify } from '../src/config/taxonomy.ts';
 
@@ -30,14 +31,19 @@ const IMAGE = '../../assets/samples/TODO-replace.jpg';
 /** YAML double-quoted string (JSON strings are valid YAML). */
 const q = (text) => JSON.stringify(text);
 
-function firstId(contentDir, folder, fallback) {
+/**
+ * A default author or brand id: the first real (non-sample) entry, else the first sample one so
+ * the draft still builds. Tests stop a published article from pointing at a sample entry.
+ */
+function defaultId(contentDir, folder) {
   const dir = join(contentDir, folder);
-  if (!existsSync(dir)) return fallback;
-  const ids = readdirSync(dir)
+  if (!existsSync(dir)) return undefined;
+  const files = readdirSync(dir)
     .filter((f) => f.endsWith('.yaml'))
-    .map((f) => f.replace(/\.yaml$/, ''))
     .sort();
-  return ids[0] ?? fallback;
+  const isSample = (f) => /^sample:\s*true\b/m.test(readFileSync(join(dir, f), 'utf8'));
+  const file = files.find((f) => !isSample(f)) ?? files[0];
+  return file?.replace(/\.yaml$/, '');
 }
 
 function base({ name, type, topic, author, today }) {
@@ -62,19 +68,19 @@ featured: false
 noindex: false`;
 }
 
-const retailer = `  - name: amazon-in # amazon-in or flipkart
+const retailer = (today) => `  - name: amazon-in # amazon-in or flipkart
     url: https://www.amazon.in/dp/TODO
-    price: 0 # check: rupees, whole number
-    lastChecked: TODAY`;
+    price: TODO # rupees, whole number
+    lastChecked: ${today}`;
 
 const bodies = {
-  review: ({ name }) => `product:
+  review: ({ name, brand, today }) => `product:
   name: ${q(name)}
-  brand: BRAND # check: brand id from src/content/brands
+  brand: ${brand} # check: brand id from src/content/brands
   model: ${q('TODO: model number')}
   # releaseDate: 2026-01-01
-  msrp: 0 # check: launch price in rupees
-rating: 0 # check: 0 to 5 in half steps
+  msrp: TODO # launch price in rupees
+rating: TODO # 0 to 5 in half steps
 badge: null # editors-choice, recommended, best-value or null
 verdict: ${q('TODO: one short paragraph')}
 pros:
@@ -96,7 +102,7 @@ specs:
 scores: [] # e.g. - { label: Battery, score: 4.5, note: optional }
 benchmarks: [] # see CONTENT-GUIDE.md
 retailers:
-${retailer}
+${retailer(today)}
 # youtubeId: 11-character id
 gallery: [] # - { src: ../../assets/..., alt: ..., caption: optional }
 testingNotes: ${q('TODO: how long and how it was tested')}
@@ -109,8 +115,8 @@ faq: [] # - { q: ..., a: ... }`,
     image: ${IMAGE}
     imageAlt: ${q('TODO: describe the image')}
     tagline: ${q(`TODO: one line on why it leads ${name}`)}
-    rating: 0 # check
-    price: 0 # check
+    rating: TODO # 0 to 5 in half steps
+    price: TODO # rupees
     specs: []
     pros: [${q('TODO')}]
     cons: [${q('TODO')}]
@@ -125,8 +131,8 @@ faq: [] # - { q: ..., a: ... }`,
   productName: ${q(`TODO: product ${label}`)}
   image: ${IMAGE}
   imageAlt: ${q('TODO: describe the image')}
-  rating: 0 # check
-  price: 0 # check
+  rating: TODO # 0 to 5 in half steps
+  price: TODO # rupees
   retailers: []`;
     const round = (n) =>
       `  - { name: ${q(`TODO: round ${n}`)}, winner: tie, summary: ${q('TODO')} }`;
@@ -150,8 +156,8 @@ steps:
   news: () => `# source: { name: ..., url: https://... }
 relatedReviews: [] # review ids`,
   deal: ({ name }) => `product: ${q(name)}
-originalPrice: 1 # check: rupees
-dealPrice: 0 # check: must be lower than originalPrice
+originalPrice: TODO # rupees
+dealPrice: TODO # rupees, lower than originalPrice
 retailer: amazon-in # amazon-in or flipkart
 url: https://www.amazon.in/dp/TODO
 # expiresAt: 2026-12-31
@@ -208,6 +214,9 @@ export function scaffold({
   }
   const slug = slugify(name ?? '');
   if (!slug) throw new Error('Give the new entry a name, e.g. "Northwind Aero 14"');
+  if (author !== undefined && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(author)) {
+    throw new Error(`--author takes an author id such as asha-rao, got "${author}"`);
+  }
   const date = today ?? new Date().toISOString().slice(0, 10);
   const dir = join(contentDir, folders[type]);
   const isData = type in dataFiles;
@@ -223,14 +232,11 @@ export function scaffold({
         name,
         type: articleTypes[type],
         topic: topic ?? DEFAULT_TOPIC,
-        author: author ?? firstId(contentDir, 'authors', 'AUTHOR'),
+        author: author ?? defaultId(contentDir, 'authors') ?? 'TODO-author',
         today: date,
       }),
-      bodies[type]({ name }),
-    ]
-      .join('\n')
-      .replaceAll('BRAND', firstId(contentDir, 'brands', 'BRAND'))
-      .replaceAll('TODAY', date);
+      bodies[type]({ name, brand: defaultId(contentDir, 'brands') ?? 'TODO-brand', today: date }),
+    ].join('\n');
     content = `---\n${fm}\n---\n\nTODO: write the article. See CONTENT-GUIDE.md for the sections each type needs.\n`;
   }
   mkdirSync(dir, { recursive: true });
@@ -266,12 +272,14 @@ function main() {
     author: values.author,
     mdx: values.mdx,
   });
-  console.log(
-    `Created ${relative(process.cwd(), file)}. Fill in every TODO, then set draft: false.`,
-  );
+  const next =
+    type in dataFiles
+      ? 'Fill in every TODO before the next build.'
+      : 'Fill in every TODO, then set draft: false.';
+  console.log(`Created ${relative(process.cwd(), file)}. ${next}`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     main();
   } catch (error) {

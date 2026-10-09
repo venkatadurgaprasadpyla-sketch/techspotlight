@@ -40,14 +40,18 @@ set the author. `--topic` takes a subcategory slug, or a category slug when the 
 subcategories (`android-phones`, `iphones`, `phone-accessories`). See `src/config/taxonomy.ts` for
 the full list.
 
-The new file has every field, with `TODO` wherever you need to write something and `# check`
-comments on values that were filled with a placeholder (prices, ratings, the brand). Articles
-start as `draft: true`, which the dev server shows and production hides. **The build refuses to
-publish a file that still contains `TODO`**, including the placeholder hero image, so set
-`draft: false` only when everything is filled in. Authors and brands have no draft mode: fill
-them in before the next build.
+The new file has every field, with `TODO` wherever you need to write something (prices and
+ratings included) and `# check` comments on values that were filled with a default (topic,
+author, brand). Articles start as `draft: true`, which the dev server shows and production
+hides. **A file that still contains `TODO` cannot be published**: the build names the field in
+the frontmatter (the placeholder hero image counts), and `npm run gates` (unit tests) catches a
+`TODO` left in the body. Set `draft: false` only when everything is filled in. Authors and
+brands have no draft mode: fill them in before the next build.
 
-## Rules the build enforces
+The scaffolder picks the first real author and brand it finds, or a sample one when none exist
+yet. `npm run gates` fails if a published, non-sample article credits a sample author or brand.
+
+## Rules the build and gates enforce
 
 - `description`: 160 characters or fewer (it is the meta description).
 - `heroAlt`: required; describe what is in the image.
@@ -63,7 +67,9 @@ them in before the next build.
 - Face-offs: at least three rounds; each `winner` is `a`, `b` or `tie`.
 - How-tos: a step with an `image` needs `imageAlt`.
 - Deals: `dealPrice` lower than `originalPrice`.
-- `author`, `brands`, `product.brand`, `reviewRef` and `relatedReviews` must name files that exist.
+- `author`, `brands`, `product.brand`, `reviewRef` and `relatedReviews` must name files that
+  exist. Astro only logs this as an error, so it is enforced by `npm run gates` (G1), not by
+  `npm run build` alone.
 - `updatedDate` cannot be before `publishDate`.
 
 ## Pasting a review from the TechSpotlight review-writer skill

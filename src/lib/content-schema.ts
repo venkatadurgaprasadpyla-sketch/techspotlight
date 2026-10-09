@@ -33,6 +33,10 @@ export const rating = z
 /** Whole rupees. */
 export const rupees = z.number().int().nonnegative();
 
+/** A number the scaffolder leaves as `TODO`; parses to 0 so drafts still build. */
+const orTodo = <T extends z.ZodType<number>>(schema: T) =>
+  z.union([schema, z.literal('TODO').transform(() => 0)]);
+
 const nonEmpty = z.string().trim().min(1);
 const sentenceList = (min: number, max: number) => z.array(nonEmpty).min(min).max(max);
 
@@ -57,7 +61,7 @@ export const retailerLink = z
     /** Retailer id from src/config/site.ts, e.g. `amazon-in`. */
     name: z.enum(retailerIds),
     url: z.url({ protocol: /^https$/ }),
-    price: rupees.optional(),
+    price: orTodo(rupees).optional(),
     lastChecked: z.coerce.date(),
   })
   .superRefine((value, ctx) => {
@@ -109,20 +113,52 @@ type TopicFields = {
   updatedDate?: Date | undefined;
 };
 
-/** The scaffolder fills every field with TODO; anything still holding one can't be published. */
-export function checkNoTodos(
+/** Path of the first string inside `value` that still contains "TODO", if any. */
+export function findTodo(
   value: unknown,
-  ctx: z.RefinementCtx,
-  message = 'Replace every TODO in this file (authors and brands have no draft mode)',
-) {
-  if (JSON.stringify(value).includes('TODO')) ctx.addIssue({ code: 'custom', message });
+  path: (string | number)[] = [],
+): (string | number)[] | undefined {
+  if (typeof value === 'string') return value.includes('TODO') ? path : undefined;
+  if (Array.isArray(value)) {
+    for (const [i, item] of value.entries()) {
+      const found = findTodo(item, [...path, i]);
+      if (found) return found;
+    }
+  } else if (value && typeof value === 'object' && !(value instanceof Date)) {
+    for (const [key, item] of Object.entries(value)) {
+      const found = findTodo(item, [...path, key]);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The scaffolder marks every field it can't fill with TODO (numbers included, see `orTodo`).
+ * This runs on the raw frontmatter, so it sees placeholders before they are parsed, and refuses
+ * any that remain. Articles may keep them while `draft: true`; authors and brands never can.
+ */
+export function guardTodos<T extends z.ZodType>(schema: T, { draftsMayHaveTodos = false } = {}) {
+  return z.preprocess((raw, ctx) => {
+    const isDraft = typeof raw === 'object' && raw !== null && 'draft' in raw && raw.draft === true;
+    if (draftsMayHaveTodos && isDraft) return raw;
+    const path = findTodo(raw);
+    if (path) {
+      ctx.addIssue({
+        code: 'custom',
+        path,
+        input: raw,
+        message: draftsMayHaveTodos
+          ? 'Replace this TODO before publishing (keep draft: true until then)'
+          : 'Replace this TODO (authors and brands have no draft mode)',
+      });
+    }
+    return raw;
+  }, schema);
 }
 
 /** Cross-field checks shared by every article schema. */
 export function checkArticle(value: TopicFields, ctx: z.RefinementCtx) {
-  if (!value.draft) {
-    checkNoTodos(value, ctx, 'Replace every TODO before publishing (keep draft: true until then)');
-  }
   const hub = getHub(value.hub);
   if (!hub) {
     ctx.addIssue({ code: 'custom', path: ['hub'], message: `Unknown hub "${value.hub}"` });
@@ -169,52 +205,55 @@ export const leafSlug = (value: { category: string; subcategory?: string | undef
 
 export function reviewSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
   const { image, reference } = helpers;
-  return articleBase(helpers, 'review')
-    .extend({
-      product: z.object({
-        name: nonEmpty,
-        brand: reference('brands'),
-        model: z.string().optional(),
-        releaseDate: z.coerce.date().optional(),
-        msrp: rupees,
-        currency: z.literal('INR').default('INR'),
-      }),
-      rating,
-      badge: z.enum(['editors-choice', 'recommended', 'best-value']).nullable().default(null),
-      verdict: nonEmpty,
-      pros: sentenceList(3, 6),
-      cons: sentenceList(3, 6),
-      cheatSheet: z.object({
-        whatIsIt: nonEmpty,
-        whoIsItFor: nonEmpty,
-        price: nonEmpty,
-        likes: nonEmpty,
-        dislikes: nonEmpty,
-      }),
-      specs: z.array(spec).min(1),
-      scores: z.array(score).default([]),
-      benchmarks: z
-        .array(
-          z.object({
-            title: nonEmpty,
-            unit: z.string(),
-            higherIsBetter: z.boolean(),
-            rows: z.array(z.object({ product: nonEmpty, value: z.number() })).min(2),
-          }),
-        )
-        .default([]),
-      retailers: z.array(retailerLink).min(1),
-      youtubeId: z
-        .string()
-        .regex(/^[\w-]{11}$/, 'Use the 11-character YouTube video id')
-        .optional(),
-      gallery: z
-        .array(z.object({ src: image(), alt: nonEmpty, caption: z.string().optional() }))
-        .default([]),
-      testingNotes: z.string().optional(),
-      faq: z.array(z.object({ q: nonEmpty, a: nonEmpty })).default([]),
-    })
-    .superRefine(checkArticle);
+  return guardTodos(
+    articleBase(helpers, 'review')
+      .extend({
+        product: z.object({
+          name: nonEmpty,
+          brand: reference('brands'),
+          model: z.string().optional(),
+          releaseDate: z.coerce.date().optional(),
+          msrp: orTodo(rupees),
+          currency: z.literal('INR').default('INR'),
+        }),
+        rating: orTodo(rating),
+        badge: z.enum(['editors-choice', 'recommended', 'best-value']).nullable().default(null),
+        verdict: nonEmpty,
+        pros: sentenceList(3, 6),
+        cons: sentenceList(3, 6),
+        cheatSheet: z.object({
+          whatIsIt: nonEmpty,
+          whoIsItFor: nonEmpty,
+          price: nonEmpty,
+          likes: nonEmpty,
+          dislikes: nonEmpty,
+        }),
+        specs: z.array(spec).min(1),
+        scores: z.array(score).default([]),
+        benchmarks: z
+          .array(
+            z.object({
+              title: nonEmpty,
+              unit: z.string(),
+              higherIsBetter: z.boolean(),
+              rows: z.array(z.object({ product: nonEmpty, value: z.number() })).min(2),
+            }),
+          )
+          .default([]),
+        retailers: z.array(retailerLink).min(1),
+        youtubeId: z
+          .string()
+          .regex(/^[\w-]{11}$/, 'Use the 11-character YouTube video id')
+          .optional(),
+        gallery: z
+          .array(z.object({ src: image(), alt: nonEmpty, caption: z.string().optional() }))
+          .default([]),
+        testingNotes: z.string().optional(),
+        faq: z.array(z.object({ q: nonEmpty, a: nonEmpty })).default([]),
+      })
+      .superRefine(checkArticle),
+    { draftsMayHaveTodos: true },
+  );
 }
 
 const productPick = <I extends z.ZodType>(helpers: SchemaHelpers<I>) =>
@@ -223,136 +262,151 @@ const productPick = <I extends z.ZodType>(helpers: SchemaHelpers<I>) =>
     productName: nonEmpty,
     image: helpers.image(),
     imageAlt: nonEmpty,
-    rating,
-    price: rupees,
+    rating: orTodo(rating),
+    price: orTodo(rupees),
     retailers: z.array(retailerLink).default([]),
   });
 
 export function guideSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
-  return articleBase(helpers, 'best')
-    .extend({
-      picks: z
-        .array(
-          productPick(helpers).extend({
-            rank: z.number().int().positive(),
-            label: nonEmpty,
-            tagline: nonEmpty,
-            specs: z.array(spec).default([]),
-            pros: sentenceList(1, 6),
-            cons: sentenceList(1, 6),
-            buyIf: z.array(nonEmpty).default([]),
-            dontBuyIf: z.array(nonEmpty).default([]),
-            scores: z.array(score).default([]),
-            bestFor: z.string().optional(),
-          }),
-        )
-        .min(1),
-      alsoTested: z
-        .array(
-          z.object({
-            productName: nonEmpty,
-            rating,
-            summary: nonEmpty,
-            reviewRef: helpers.reference('reviews').optional(),
-          }),
-        )
-        .default([]),
-      faq: z.array(z.object({ q: nonEmpty, a: nonEmpty })).default([]),
-    })
-    .superRefine((value, ctx) => {
-      checkArticle(value, ctx);
-      value.picks.forEach((pick, i) => {
-        if (pick.rank !== i + 1) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['picks', i, 'rank'],
-            message: `Picks must be listed in rank order 1, 2, 3…; expected ${i + 1}`,
-          });
-        }
-      });
-    });
+  return guardTodos(
+    articleBase(helpers, 'best')
+      .extend({
+        picks: z
+          .array(
+            productPick(helpers).extend({
+              rank: z.number().int().positive(),
+              label: nonEmpty,
+              tagline: nonEmpty,
+              specs: z.array(spec).default([]),
+              pros: sentenceList(1, 6),
+              cons: sentenceList(1, 6),
+              buyIf: z.array(nonEmpty).default([]),
+              dontBuyIf: z.array(nonEmpty).default([]),
+              scores: z.array(score).default([]),
+              bestFor: z.string().optional(),
+            }),
+          )
+          .min(1),
+        alsoTested: z
+          .array(
+            z.object({
+              productName: nonEmpty,
+              rating,
+              summary: nonEmpty,
+              reviewRef: helpers.reference('reviews').optional(),
+            }),
+          )
+          .default([]),
+        faq: z.array(z.object({ q: nonEmpty, a: nonEmpty })).default([]),
+      })
+      .superRefine((value, ctx) => {
+        checkArticle(value, ctx);
+        value.picks.forEach((pick, i) => {
+          if (pick.rank !== i + 1) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['picks', i, 'rank'],
+              message: `Picks must be listed in rank order 1, 2, 3…; expected ${i + 1}`,
+            });
+          }
+        });
+      }),
+    { draftsMayHaveTodos: true },
+  );
 }
 
 export function versusSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
   const side = z.enum(['a', 'b', 'tie']);
-  return articleBase(helpers, 'versus')
-    .extend({
-      productA: productPick(helpers),
-      productB: productPick(helpers),
-      rounds: z.array(z.object({ name: nonEmpty, winner: side, summary: nonEmpty })).min(3),
-      overallWinner: side,
-      verdict: nonEmpty,
-    })
-    .superRefine(checkArticle);
+  return guardTodos(
+    articleBase(helpers, 'versus')
+      .extend({
+        productA: productPick(helpers),
+        productB: productPick(helpers),
+        rounds: z.array(z.object({ name: nonEmpty, winner: side, summary: nonEmpty })).min(3),
+        overallWinner: side,
+        verdict: nonEmpty,
+      })
+      .superRefine(checkArticle),
+    { draftsMayHaveTodos: true },
+  );
 }
 
 export function howtoSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
-  return articleBase(helpers, 'how-to')
-    .extend({
-      difficulty: z.enum(['easy', 'medium', 'hard']),
-      timeRequired: nonEmpty,
-      tools: z.array(nonEmpty).default([]),
-      steps: z
-        .array(
-          z.object({
-            title: nonEmpty,
-            body: nonEmpty,
-            image: helpers.image().optional(),
-            imageAlt: z.string().optional(),
-          }),
-        )
-        .min(1),
-    })
-    .superRefine((value, ctx) => {
-      checkArticle(value, ctx);
-      value.steps.forEach((step, i) => {
-        if (step.image && !step.imageAlt?.trim()) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['steps', i, 'imageAlt'],
-            message: 'Step images need alt text',
-          });
-        }
-      });
-    });
+  return guardTodos(
+    articleBase(helpers, 'how-to')
+      .extend({
+        difficulty: z.enum(['easy', 'medium', 'hard']),
+        timeRequired: nonEmpty,
+        tools: z.array(nonEmpty).default([]),
+        steps: z
+          .array(
+            z.object({
+              title: nonEmpty,
+              body: nonEmpty,
+              image: helpers.image().optional(),
+              imageAlt: z.string().optional(),
+            }),
+          )
+          .min(1),
+      })
+      .superRefine((value, ctx) => {
+        checkArticle(value, ctx);
+        value.steps.forEach((step, i) => {
+          if (step.image && !step.imageAlt?.trim()) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['steps', i, 'imageAlt'],
+              message: 'Step images need alt text',
+            });
+          }
+        });
+      }),
+    { draftsMayHaveTodos: true },
+  );
 }
 
 export function newsSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
-  return articleBase(helpers, 'news')
-    .extend({
-      source: z.object({ name: nonEmpty, url: z.url({ protocol: /^https$/ }) }).optional(),
-      relatedReviews: z.array(helpers.reference('reviews')).default([]),
-    })
-    .superRefine(checkArticle);
+  return guardTodos(
+    articleBase(helpers, 'news')
+      .extend({
+        source: z.object({ name: nonEmpty, url: z.url({ protocol: /^https$/ }) }).optional(),
+        relatedReviews: z.array(helpers.reference('reviews')).default([]),
+      })
+      .superRefine(checkArticle),
+    { draftsMayHaveTodos: true },
+  );
 }
 
 export function dealSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
-  return articleBase(helpers, 'deal')
-    .extend({
-      product: nonEmpty,
-      originalPrice: rupees,
-      dealPrice: rupees,
-      retailer: z.enum(retailerIds),
-      url: z.url({ protocol: /^https$/ }),
-      expiresAt: z.coerce.date().optional(),
-      couponCode: z.string().optional(),
-    })
-    .superRefine((value, ctx) => {
-      checkArticle(value, ctx);
-      if (value.dealPrice >= value.originalPrice) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['dealPrice'],
-          message: 'dealPrice must be lower than originalPrice',
-        });
-      }
-      checkRetailerHost(value.retailer, value.url, ctx);
-    });
+  return guardTodos(
+    articleBase(helpers, 'deal')
+      .extend({
+        product: nonEmpty,
+        originalPrice: orTodo(rupees),
+        dealPrice: orTodo(rupees),
+        retailer: z.enum(retailerIds),
+        url: z.url({ protocol: /^https$/ }),
+        expiresAt: z.coerce.date().optional(),
+        couponCode: z.string().optional(),
+      })
+      .superRefine((value, ctx) => {
+        checkArticle(value, ctx);
+        if (!value.draft && value.dealPrice >= value.originalPrice) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['dealPrice'],
+            message: 'dealPrice must be lower than originalPrice',
+          });
+        }
+        checkRetailerHost(value.retailer, value.url, ctx);
+      }),
+    { draftsMayHaveTodos: true },
+  );
 }
 
 export function authorSchema<I extends z.ZodType>({ image }: Pick<SchemaHelpers<I>, 'image'>) {
-  return z
-    .object({
+  return guardTodos(
+    z.object({
       name: nonEmpty,
       role: nonEmpty,
       bio: nonEmpty,
@@ -362,20 +416,20 @@ export function authorSchema<I extends z.ZodType>({ image }: Pick<SchemaHelpers<
         .array(z.object({ label: nonEmpty, href: z.url({ protocol: /^https$/ }) }))
         .default([]),
       sample: z.boolean().default(false),
-    })
-    .superRefine((value, ctx) => checkNoTodos(value, ctx));
+    }),
+  );
 }
 
 export function brandSchema<I extends z.ZodType>({ image }: Pick<SchemaHelpers<I>, 'image'>) {
-  return z
-    .object({
+  return guardTodos(
+    z.object({
       name: nonEmpty,
       description: nonEmpty,
       logo: image().optional(),
       website: z.url({ protocol: /^https$/ }).optional(),
       sample: z.boolean().default(false),
-    })
-    .superRefine((value, ctx) => checkNoTodos(value, ctx));
+    }),
+  );
 }
 
 /** Leaf topic exists? Exposed for the scaffolder. */
