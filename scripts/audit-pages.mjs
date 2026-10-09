@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // G5 Lighthouse (mobile), G6 axe (light/dark, 1280/390) and G9 screenshots for the pages in
-// gates.config.json. Expects `dist/` to exist; serves it with `astro preview`.
-import { spawn } from 'node:child_process';
+// gates.config.json. Expects `dist/` to exist and serves it on a local port.
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { extname, join, resolve } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import * as chromeLauncher from 'chrome-launcher';
@@ -23,27 +25,58 @@ const viewports = [
 ];
 const themes = ['light', 'dark'];
 
-async function waitForServer(url, tries = 60) {
-  for (let i = 0; i < tries; i++) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return;
-    } catch {
-      // not up yet
-    }
-    await new Promise((r) => setTimeout(r, 500));
+async function isUp(url) {
+  try {
+    return (await fetch(url)).ok;
+  } catch {
+    return false;
   }
-  throw new Error(`Preview server did not start at ${url}`);
 }
 
 const median = (values) => values.sort((a, b) => a - b)[Math.floor(values.length / 2)];
 
-const server = spawn('npx', ['astro', 'preview', '--port', String(PORT)], { stdio: 'ignore' });
+if (!existsSync('dist')) throw new Error('dist/ not found: run `npm run build` first.');
+if (await isUp(BASE + '/')) {
+  throw new Error(`Port ${PORT} is already in use; stop whatever is on it and retry.`);
+}
+// A tiny in-process static server for dist/ (astro preview daemonises itself in non-TTY shells,
+// which made it easy to leave stale servers behind). Mirrors Cloudflare Pages: /x/ -> x/index.html.
+const TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css',
+  '.js': 'text/javascript',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
+  '.woff2': 'font/woff2',
+  '.xml': 'application/xml',
+  '.txt': 'text/plain; charset=utf-8',
+  '.json': 'application/json',
+};
+const root = resolve('dist');
+const server = createServer(async (req, res) => {
+  const pathname = decodeURIComponent(new URL(req.url ?? '/', BASE).pathname);
+  let file = resolve(join(root, pathname.endsWith('/') ? pathname + 'index.html' : pathname));
+  if (!file.startsWith(root)) file = join(root, '404.html');
+  try {
+    const body = await readFile(file);
+    res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream' });
+    res.end(body);
+  } catch {
+    const notFound = await readFile(join(root, '404.html')).catch(() => 'Not found');
+    res.writeHead(404, { 'Content-Type': TYPES['.html'] });
+    res.end(notFound);
+  }
+});
+await new Promise((ok) => server.listen(PORT, ok));
+const stopServer = () => server.close();
+
 const failures = [];
 const lines = [];
 
 try {
-  await waitForServer(BASE + '/');
   mkdirSync('gate-reports/screens', { recursive: true });
 
   const chrome = await chromeLauncher.launch({
@@ -95,7 +128,8 @@ try {
           );
           for (const v of serious)
             failures.push(`G6 ${page} ${vp.name}/${theme}: ${v.id} (${v.nodes.length})`);
-          const name = `${page.replaceAll('/', '_') || 'home'}-${vp.name}-${theme}.png`;
+          const slug = page.replace(/^\/+|\/+$/g, '').replaceAll('/', '_') || 'home';
+          const name = `${slug}-${vp.name}-${theme}.png`;
           await tab.screenshot({ path: `gate-reports/screens/${name}`, fullPage: true });
           lines.push(`G6 ${page} ${vp.name}/${theme}: ${serious.length} serious/critical`);
           await context.close();
@@ -106,7 +140,7 @@ try {
     await browser.close();
   }
 } finally {
-  server.kill();
+  stopServer();
 }
 
 const report = [...lines, '', failures.length ? 'Failures:' : 'No failures.', ...failures].join(

@@ -46,6 +46,7 @@ When a task adds a page type, add a representative URL to `gates.config.json` â†
 ```
 src/pages/      routes
 src/styles/     global.css (Tailwind + design tokens)
+src/config/     site.ts (public config)
 src/lib/        pure helpers (unit tested), e.g. formatInr
 scripts/        gates.mjs, audit-pages.mjs
 tests/          Vitest specs
