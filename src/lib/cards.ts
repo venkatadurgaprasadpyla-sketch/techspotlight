@@ -6,6 +6,7 @@ import type { CollectionEntry } from 'astro:content';
 import { contentTypes, findTopic, type ContentType } from '~/config/taxonomy';
 import { lowestOffer } from './affiliate';
 import { leafSlug } from './content-schema';
+import { dealEndsAt, type DealBadge } from './deals';
 import { articlePath, type ArticleCollection } from './urls';
 
 export type ArticleEntry = CollectionEntry<ArticleCollection>;
@@ -15,6 +16,21 @@ export interface Offer {
   retailer: string;
   url: string;
   price: number;
+}
+
+export interface DealInfo {
+  product: string;
+  originalPrice: number;
+  dealPrice: number;
+  retailer: string;
+  url: string;
+  endsAt?: Date;
+  couponCode?: string;
+  badge?: DealBadge;
+  /** From the linked review, when it is published (filled in by getArticles). */
+  rating?: number;
+  reviewUrl?: string;
+  reviewId?: string;
 }
 
 export interface CardItem {
@@ -51,6 +67,8 @@ export interface CardItem {
   offers?: Offer[];
   /** Cheapest priced offer (reviews and deals). */
   bestOffer?: Offer;
+  // Deals only.
+  deal?: DealInfo;
 }
 
 const typeFor: Record<ArticleCollection, ContentType['type']> = {
@@ -127,9 +145,34 @@ export function toCardItem(entry: ArticleEntry, authors: ReadonlyMap<string, str
   } else if (entry.collection === 'deals') {
     const deal = entry.data as CollectionEntry<'deals'>['data'];
     const offer = { retailer: deal.retailer, url: deal.url, price: deal.dealPrice };
-    Object.assign(item, { offers: [offer], bestOffer: offer });
+    const info: DealInfo = {
+      product: deal.product,
+      originalPrice: deal.originalPrice,
+      dealPrice: deal.dealPrice,
+      retailer: deal.retailer,
+      url: deal.url,
+      ...(deal.expiresAt && { endsAt: dealEndsAt(deal.expiresAt, deal.expiresTime) }),
+      ...(deal.couponCode && { couponCode: deal.couponCode }),
+      ...(deal.badge && { badge: deal.badge }),
+      ...(deal.reviewRef && { reviewId: deal.reviewRef.id }),
+    };
+    Object.assign(item, { offers: [offer], bestOffer: offer, deal: info });
   }
   return item;
+}
+
+/** Gives each deal the rating and URL of its linked review, when that review is published. */
+export function linkDealsToReviews(items: CardItem[]) {
+  const reviews = new Map(
+    items.filter((i) => i.collection === 'reviews').map((i) => [i.id, i] as const),
+  );
+  for (const item of items) {
+    const review = item.deal?.reviewId ? reviews.get(item.deal.reviewId) : undefined;
+    if (item.deal && review) {
+      item.deal.reviewUrl = review.url;
+      if (review.rating !== undefined) item.deal.rating = review.rating;
+    }
+  }
 }
 
 /** Newest first; ties broken by title so builds are stable. */

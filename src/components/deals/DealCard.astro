@@ -1,0 +1,115 @@
+---
+/**
+ * One deal on the Deals board: badge and discount, image, product, our rating, deal price
+ * against the usual price, a buy button and when the price was checked. Ended deals keep their
+ * card for a week with "Deal ended" in place of the buy button. The deals island
+ * (src/scripts/deals.ts) re-checks the end time in the browser, so a deal that ends between
+ * builds is labelled too, and reads the data-* attributes for its filters and sorting.
+ */
+import { Image } from 'astro:assets';
+import Rating from '~/components/cards/Rating.astro';
+import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import type { CardItem, DealInfo } from '~/lib/cards';
+import { dealBadgeLabel, dealEndLabel, dealStatus, percentOff } from '~/lib/deals';
+import { formatDate, formatInr } from '~/lib/format';
+
+interface Props {
+  item: CardItem & { deal: DealInfo };
+  now: Date;
+  eager?: boolean;
+  headingLevel?: 2 | 3;
+}
+const { item, now, eager = false, headingLevel = 3 } = Astro.props;
+const { deal } = item;
+const Heading = `h${headingLevel}` as const;
+const ended = dealStatus(deal.endsAt, now) !== 'live';
+const off = percentOff(deal.originalPrice, deal.dealPrice);
+const store = getRetailer(deal.retailer)?.name ?? deal.retailer;
+const badgeClass = { 'lowest-price': 'badge-ec', 'great-value': 'badge-bv', 'editors-pick': '' };
+---
+
+<article
+  class="group relative flex flex-col gap-2.5 rounded-[10px] border border-border p-5"
+  data-deal
+  data-ended={ended ? '' : undefined}
+  data-ends={deal.endsAt?.toISOString()}
+  data-store={deal.retailer}
+  data-price={deal.dealPrice}
+  data-off={off}
+  data-rating={deal.rating ?? 0}
+  data-lowest={deal.badge === 'lowest-price' ? '' : undefined}
+  data-date={item.date.toISOString()}
+>
+  <div class="flex min-h-7 flex-wrap items-center gap-2">
+    <span class="badge hidden group-data-[ended]:inline-flex">Expired</span>
+    {deal.badge && (
+      <span class:list={['badge group-data-[ended]:hidden', badgeClass[deal.badge]]}>
+        {dealBadgeLabel[deal.badge]}
+      </span>
+    )}
+    {off > 0 && <span class="text-[13px] text-muted group-data-[ended]:hidden">{off}% off</span>}
+  </div>
+  <Image
+    src={item.image}
+    alt={item.imageAlt}
+    widths={[320, 480, 640]}
+    sizes="(min-width: 1024px) 260px, (min-width: 640px) 45vw, 100vw"
+    class="aspect-video w-full rounded-md object-cover"
+    loading={eager ? 'eager' : 'lazy'}
+    fetchpriority={eager ? 'high' : undefined}
+  />
+  <span class="lbl">{item.leafLabel}</span>
+  <Heading class="text-lg">
+    <a href={item.url} class="text-text no-underline hover:text-text hover:underline">
+      {item.title}
+    </a>
+  </Heading>
+  {deal.rating !== undefined && (
+    <p class="flex flex-wrap items-baseline gap-2 text-[13px]">
+      <Rating value={deal.rating} />
+      {deal.reviewUrl && (
+        <a href={deal.reviewUrl}>
+          Our review<span class="sr-only"> of the {deal.product}</span>
+        </a>
+      )}
+    </p>
+  )}
+  <p class="flex flex-wrap items-baseline gap-2.5">
+    <span class="font-mono text-xl text-text">
+      <span class="sr-only">Deal price </span>
+      {formatInr(deal.dealPrice)}
+    </span>
+    <s class="text-[13px] text-muted">
+      <span class="sr-only">usual price </span>
+      {formatInr(deal.originalPrice)}
+    </s>
+  </p>
+  <p class="text-[13px] text-muted">{item.description}</p>
+  <div class="mt-auto flex flex-col gap-2 pt-1">
+    <a
+      class="btn btn-buy group-data-[ended]:hidden"
+      href={affiliateHref(deal.retailer, deal.url)}
+      rel={AFFILIATE_REL}
+      target="_blank"
+    >
+      Buy at {store}
+      <span class="sr-only">: {deal.product}, opens in a new tab</span>
+    </a>
+    <span class="btn btn-ended hidden group-data-[ended]:inline-flex">Deal ended</span>
+    <p class="text-[13px] text-muted">
+      Checked <time datetime={item.date.toISOString()}>{formatDate(item.date)}</time>
+      {deal.endsAt && (
+        <span class="group-data-[ended]:hidden">
+          {' '}
+          · Ends <time datetime={deal.endsAt.toISOString()}>{dealEndLabel(deal.endsAt)}</time>
+        </span>
+      )}
+      {deal.couponCode && (
+        <span class="group-data-[ended]:hidden">
+          {' '}
+          · Coupon: <code class="font-mono text-text">{deal.couponCode}</code>
+        </span>
+      )}
+    </p>
+  </div>
+</article>

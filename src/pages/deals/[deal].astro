@@ -1,0 +1,233 @@
+---
+/**
+ * One deal: /deals/<id>/. The deal box (price against the usual price, % off, store, end date,
+ * coupon and buy button), the write-up, then more deals. A deal that has ended keeps its page
+ * with "Deal ended" in place of the buy button; a week later it leaves the lists and the page
+ * turns noindex. The deals island re-checks the end time in the browser.
+ */
+import type { GetStaticPaths } from 'astro';
+import { Image } from 'astro:assets';
+import { render, type CollectionEntry } from 'astro:content';
+import AdSlot from '~/components/AdSlot.astro';
+import ArticleByline from '~/components/ArticleByline.astro';
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import Rating from '~/components/cards/Rating.astro';
+import DealCard from '~/components/deals/DealCard.astro';
+import { contentTypePath, contentTypes } from '~/config/taxonomy';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import { getArticles } from '~/lib/articles';
+import type { CardItem, DealInfo } from '~/lib/cards';
+import { getPublished, getPublishedEntry } from '~/lib/content';
+import { leafSlug } from '~/lib/content-schema';
+import {
+  byDealOrder,
+  dealBadgeLabel,
+  dealEndLabel,
+  dealEndsAt,
+  dealStatus,
+  percentOff,
+} from '~/lib/deals';
+import { formatDate, formatInr, isoDate } from '~/lib/format';
+import { assertNoHeadingClash } from '~/lib/headings';
+import { closestTo } from '~/lib/related';
+import { articlePath } from '~/lib/urls';
+
+interface Props {
+  entry: CollectionEntry<'deals'>;
+}
+
+export const getStaticPaths = (async () => {
+  const deals = await getPublished('deals');
+  return deals.map((entry) => ({ params: { deal: entry.id }, props: { entry } }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props as Props;
+const { data } = entry;
+const { Content, headings } = await render(entry);
+const url = articlePath('deals', entry.id, leafSlug(data));
+const dealsType = contentTypes.find((t) => t.type === 'deal');
+if (!dealsType) throw new Error('No deals content type');
+const dealsPath = contentTypePath(dealsType);
+const crumbs = [
+  { label: 'Home', href: '/' },
+  { label: dealsType.label, href: dealsPath },
+  { label: data.product, href: url },
+];
+assertNoHeadingClash(`Deal ${entry.id}`, headings, ['the-deal', 'more-deals']);
+
+const now = new Date();
+const endsAt = data.expiresAt && dealEndsAt(data.expiresAt, data.expiresTime);
+const status = dealStatus(endsAt, now);
+const off = percentOff(data.originalPrice, data.dealPrice);
+const saving = data.originalPrice - data.dealPrice;
+const store = getRetailer(data.retailer)?.name ?? data.retailer;
+const checked = data.updatedDate ?? data.publishDate;
+const author = await getPublishedEntry('authors', data.author.id);
+const articles = await getArticles();
+const review = data.reviewRef
+  ? articles.find((a) => a.collection === 'reviews' && a.id === data.reviewRef?.id)
+  : undefined;
+const moreDeals = closestTo(
+  { url, hub: data.hub, category: data.category },
+  articles
+    .filter((a): a is CardItem & { deal: DealInfo } => a.deal !== undefined)
+    .filter((a) => dealStatus(a.deal.endsAt, now) === 'live')
+    .sort(byDealOrder(now)),
+  3,
+);
+const badgeClass = { 'lowest-price': 'badge-ec', 'great-value': 'badge-bv', 'editors-pick': '' };
+---
+
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  noindex={data.noindex || status === 'gone'}
+>
+  <article>
+    <header class="wrap flex flex-col gap-3.5 pt-5 pb-6">
+      <Breadcrumbs crumbs={crumbs} />
+      <span class="lbl">Deal</span>
+      <h1 class="max-w-[900px] text-[30px] sm:text-[42px]">{data.title}</h1>
+      <p class="max-w-[780px] text-lg text-muted">{data.description}</p>
+      <ArticleByline
+        author={author}
+        publishDate={data.publishDate}
+        updatedDate={data.updatedDate}
+      />
+    </header>
+
+    <div class="wrap flex flex-col gap-12 pb-12 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div class="flex max-w-[780px] min-w-0 flex-col gap-9">
+        <section
+          id="the-deal"
+          class="group flex flex-wrap gap-6 rounded-[10px] border border-border p-5"
+          aria-labelledby="the-deal-title"
+          data-ended={status === 'live' ? undefined : ''}
+          data-ends={endsAt?.toISOString()}
+        >
+          <Image
+            src={data.heroImage}
+            alt={data.heroAlt}
+            widths={[320, 480, 640]}
+            sizes="(min-width: 640px) 300px, 100vw"
+            class="aspect-[4/3] w-full rounded-md object-cover sm:w-[300px] sm:flex-none"
+            loading="eager"
+            fetchpriority="high"
+          />
+          <div class="flex min-w-[min(100%,260px)] flex-1 flex-col gap-3">
+            <div class="flex min-h-7 flex-wrap items-center gap-2">
+              <span class="badge hidden group-data-[ended]:inline-flex">Expired</span>
+              {data.badge && (
+                <span class:list={['badge group-data-[ended]:hidden', badgeClass[data.badge]]}>
+                  {dealBadgeLabel[data.badge]}
+                </span>
+              )}
+            </div>
+            <h2 id="the-deal-title" class="text-2xl">
+              {data.product}
+            </h2>
+            {review?.rating !== undefined && (
+              <p class="flex flex-wrap items-baseline gap-2 text-[14px]">
+                <Rating value={review.rating} />
+                <a href={review.url}>Read our review</a>
+              </p>
+            )}
+            <dl class="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1.5 text-[14px]">
+              <dt class="text-muted">Deal price</dt>
+              <dd class="font-mono text-[26px] leading-tight font-medium">
+                {formatInr(data.dealPrice)}
+              </dd>
+              <dt class="text-muted">Usual price</dt>
+              <dd class="font-mono">
+                <s>{formatInr(data.originalPrice)}</s>
+              </dd>
+              <dt class="text-muted">You save</dt>
+              <dd class="font-mono">
+                {formatInr(saving)} ({off}% off)
+              </dd>
+              <dt class="text-muted">Store</dt>
+              <dd>{store}</dd>
+              {endsAt && (
+                <>
+                  <dt class="text-muted">Ends</dt>
+                  <dd>
+                    <time datetime={endsAt.toISOString()}>{dealEndLabel(endsAt)}</time>
+                    <span class="hidden text-bad group-data-[ended]:inline"> (ended)</span>
+                  </dd>
+                </>
+              )}
+            </dl>
+            {data.couponCode && (
+              <div class="flex flex-wrap items-center gap-2.5 rounded-lg bg-surface p-3 group-data-[ended]:hidden">
+                <span class="text-[14px]">
+                  Coupon code:{' '}
+                  <code class="font-mono text-base font-medium text-text select-all">
+                    {data.couponCode}
+                  </code>
+                </span>
+                <button
+                  type="button"
+                  class="btn btn-ghost min-h-9 px-3"
+                  data-copy={data.couponCode}
+                  data-needs-js
+                >
+                  Copy code
+                </button>
+                <span class="text-[13px] text-muted" data-copy-status role="status" />
+              </div>
+            )}
+            <a
+              class="btn btn-buy self-start group-data-[ended]:hidden"
+              href={affiliateHref(data.retailer, data.url)}
+              rel={AFFILIATE_REL}
+              target="_blank"
+            >
+              Buy at {store} for {formatInr(data.dealPrice)}
+              <span class="sr-only">: {data.product}, opens in a new tab</span>
+            </a>
+            <span class="btn btn-ended hidden self-start group-data-[ended]:inline-flex">
+              Deal ended
+            </span>
+            <p class="text-[13px] text-muted">
+              Price checked <time datetime={isoDate(checked)}>{formatDate(checked)}</time>. Prices
+              and coupons change often, so check the total at the store. We may earn a commission
+              from this link.
+            </p>
+          </div>
+        </section>
+
+        <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
+          <Content />
+        </div>
+
+        {moreDeals.length > 0 && (
+          <section class="flex flex-col gap-5" aria-labelledby="more-deals">
+            <div class="sec-head">
+              <h2 id="more-deals" class="text-2xl">
+                More deals
+              </h2>
+              <a class="lbl" href={dealsPath}>
+                All deals ›
+              </a>
+            </div>
+            <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-5">
+              {moreDeals.map((item) => (
+                <DealCard item={item} now={now} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      <div class="hidden flex-col gap-6 lg:flex">
+        <AdSlot size="skyscraper" class="self-center lg:sticky lg:top-6" />
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<script>
+  import { initDeals } from '~/scripts/deals';
+  initDeals();
+</script>

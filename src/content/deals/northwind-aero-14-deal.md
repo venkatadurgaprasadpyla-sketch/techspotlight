@@ -17,7 +17,11 @@ originalPrice: 74990
 dealPrice: 64990
 retailer: amazon-in
 url: https://www.amazon.in/dp/SAMPLE00001
-expiresAt: 2026-10-20
+expiresAt: 2026-12-31
+badge: lowest-price
+reviewRef: northwind-aero-14
 ---
 
 _This is sample content. The product and deal are invented._
+
+This is the lowest price we have seen for the Aero 14, our favourite thin and light laptop under ₹75,000.

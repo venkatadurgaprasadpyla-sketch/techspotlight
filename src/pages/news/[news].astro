@@ -1,0 +1,244 @@
+---
+/** News story: /news/<id>/. Section order follows the News board. */
+import type { GetStaticPaths } from 'astro';
+import { Image } from 'astro:assets';
+import { render, type CollectionEntry } from 'astro:content';
+import AdSlot from '~/components/AdSlot.astro';
+import ArticleByline from '~/components/ArticleByline.astro';
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import ArticleCard from '~/components/cards/ArticleCard.astro';
+import Rating from '~/components/cards/Rating.astro';
+import { categoryPath, contentTypePath, contentTypes, findTopic, hubPath } from '~/config/taxonomy';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { getArticles } from '~/lib/articles';
+import type { CardItem } from '~/lib/cards';
+import { getPublished, getPublishedEntry } from '~/lib/content';
+import { leafSlug } from '~/lib/content-schema';
+import { formatDate, isoDate } from '~/lib/format';
+import { assertNoHeadingClash } from '~/lib/headings';
+import { topicCrumbs } from '~/lib/listings';
+import { closestTo } from '~/lib/related';
+import { articlePath } from '~/lib/urls';
+
+interface Props {
+  entry: CollectionEntry<'news'>;
+}
+
+export const getStaticPaths = (async () => {
+  const stories = await getPublished('news');
+  return stories.map((entry) => ({ params: { news: entry.id }, props: { entry } }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props as Props;
+const { data } = entry;
+const { Content, headings } = await render(entry);
+const leaf = leafSlug(data);
+const topic = findTopic(leaf);
+if (!topic) throw new Error(`News ${entry.id}: unknown topic ${leaf}`);
+const url = articlePath('news', entry.id, leaf);
+const crumbs = [...topicCrumbs(topic), { label: data.title, href: url }];
+assertNoHeadingClash(`News ${entry.id}`, headings, [
+  'key-facts',
+  'related-review',
+  'latest-news',
+  'related-coverage',
+]);
+
+const author = await getPublishedEntry('authors', data.author.id);
+const articles = await getArticles();
+const here = { url, hub: data.hub, category: data.category };
+const reviewIds = new Set(data.relatedReviews.map((r) => r.id));
+// Only reviews that are published in this build.
+const reviews = articles.filter((a) => a.collection === 'reviews' && reviewIds.has(a.id));
+const [guide] = reviews.length
+  ? []
+  : closestTo(
+      here,
+      articles.filter((a) => a.collection === 'guides' && a.hub === data.hub),
+      1,
+    );
+const versus = await getPublished('versus');
+const faceOffUrls = new Set(
+  versus
+    .filter((v) =>
+      [v.data.productA, v.data.productB].some((p) => reviewIds.has(p.reviewRef?.id ?? '')),
+    )
+    .map((v) => articlePath('versus', v.id, leafSlug(v.data))),
+);
+const faceOffs = articles.filter((a) => faceOffUrls.has(a.url));
+const otherNews = articles.filter((a) => a.collection === 'news' && a.url !== url);
+const latest = otherNews.slice(0, 4);
+const seen = new Set<string>();
+const coverage: CardItem[] = [...reviews, ...faceOffs, ...closestTo(here, otherNews, 4)]
+  .filter((item) => !seen.has(item.url) && seen.add(item.url))
+  .slice(0, 4);
+const newsType = contentTypes.find((t) => t.type === 'news');
+const topics = [
+  { label: topic.category.label, href: categoryPath(topic.hub, topic.category) },
+  { label: topic.hub.label, href: hubPath(topic.hub) },
+  ...(newsType
+    ? [{ label: `${topic.hub.label} news`, href: contentTypePath(newsType, topic.hub) }]
+    : []),
+];
+const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
+---
+
+<BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
+  <div class="wrap flex flex-col gap-12 pt-5 pb-12 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
+    <article class="flex max-w-[780px] min-w-0 flex-col gap-8">
+      <header class="flex flex-col gap-3.5">
+        <Breadcrumbs crumbs={crumbs} />
+        <span class="lbl">News</span>
+        <h1 class="text-[30px] sm:text-[40px]">{data.title}</h1>
+        <p class="text-lg text-muted">{data.description}</p>
+        <ArticleByline
+          author={author}
+          publishDate={data.publishDate}
+          updatedDate={data.updatedDate}
+        />
+        <figure class="flex flex-col gap-1.5 pt-2">
+          <Image
+            src={data.heroImage}
+            alt={data.heroAlt}
+            widths={[480, 780, 1100, 1560]}
+            sizes="(min-width: 840px) 780px, 100vw"
+            class="aspect-video w-full rounded-[10px] object-cover"
+            loading="eager"
+            fetchpriority="high"
+          />
+          {data.heroCredit && (
+            <figcaption class="text-[13px] text-muted">{data.heroCredit}</figcaption>
+          )}
+        </figure>
+      </header>
+
+      {data.keyFacts.length > 0 && (
+        <section
+          class="flex flex-col gap-3 rounded-[10px] bg-surface p-5"
+          aria-labelledby="key-facts"
+        >
+          <h2 id="key-facts" class="text-xl">
+            Key facts
+          </h2>
+          <dl class="flex flex-col divide-y divide-border">
+            {data.keyFacts.map((fact) => (
+              <div class="flex flex-wrap justify-between gap-x-4 gap-y-0.5 py-2">
+                <dt class="text-muted">{fact.label}</dt>
+                <dd class="font-semibold">{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
+
+      <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
+        <Content />
+      </div>
+
+      {data.source && (
+        <p class="text-[14px] text-muted">
+          Source:{' '}
+          <a href={data.source.url} rel="noopener" target="_blank">
+            {data.source.name}
+            <span class="sr-only"> (opens in a new tab)</span>
+          </a>
+        </p>
+      )}
+
+      {reviews.length > 0 && (
+        <section
+          class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
+          aria-labelledby="related-review"
+        >
+          <h2 id="related-review" class="lbl font-sans">
+            {reviews.length === 1 ? 'Our review' : 'Our reviews'}
+          </h2>
+          <ul class="flex flex-col gap-3">
+            {reviews.map((review) => (
+              <li class="flex flex-wrap items-center justify-between gap-3">
+                <span class="flex flex-col gap-1">
+                  <a href={review.url} class={linkClass}>
+                    {review.title}
+                  </a>
+                  {review.rating !== undefined && (
+                    <Rating value={review.rating} class="text-[13px]" />
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {guide && (
+        <section
+          class="flex flex-wrap items-center justify-between gap-4 rounded-[10px] border border-border p-5"
+          aria-labelledby="related-review"
+        >
+          <div class="flex max-w-[520px] flex-col gap-1">
+            <h2 id="related-review" class="lbl font-sans">
+              We haven't reviewed it yet
+            </h2>
+            <b>Until we do, see our guide: {guide.title}</b>
+          </div>
+          <a class="btn" href={guide.url}>
+            See the guide
+          </a>
+        </section>
+      )}
+
+      <nav aria-label="More on this topic" class="flex flex-wrap items-center gap-2">
+        <span class="mr-1 text-[13px] text-muted">Topics:</span>
+        <ul class="contents">
+          {topics.map((t) => (
+            <li>
+              <a class="chip" href={t.href}>
+                {t.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </article>
+
+    <aside class="flex flex-col gap-6" aria-labelledby={latest.length ? 'latest-news' : undefined}>
+      {latest.length > 0 && (
+        <section class="flex flex-col gap-3 rounded-[10px] border border-border p-5">
+          <h2 id="latest-news" class="text-lg">
+            Latest news
+          </h2>
+          <ul class="flex flex-col divide-y divide-border">
+            {latest.map((item) => (
+              <li class="flex gap-3 py-2.5">
+                <time
+                  datetime={isoDate(item.date)}
+                  class="w-[52px] flex-none font-mono text-[12px] text-muted"
+                >
+                  {formatDate(item.date).replace(/ \d{4}$/, '')}
+                </time>
+                <a href={item.url} class={linkClass}>
+                  {item.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <AdSlot size="skyscraper" class="hidden self-center lg:flex lg:sticky lg:top-6" />
+    </aside>
+
+    {coverage.length > 0 && (
+      <section class="col-span-full flex flex-col gap-5" aria-labelledby="related-coverage">
+        <div class="sec-head">
+          <h2 id="related-coverage" class="text-2xl">
+            Related coverage
+          </h2>
+        </div>
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-6">
+          {coverage.map((item) => (
+            <ArticleCard item={item} />
+          ))}
+        </div>
+      </section>
+    )}
+  </div>
+</BaseLayout>

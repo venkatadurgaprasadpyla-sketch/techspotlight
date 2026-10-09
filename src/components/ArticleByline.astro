@@ -1,0 +1,54 @@
+---
+/** Author avatar, name and role, then publish and update dates. Used by the article templates. */
+import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import { formatDate, isoDate } from '~/lib/format';
+
+interface Props {
+  author: CollectionEntry<'authors'> | undefined;
+  publishDate: Date;
+  updatedDate?: Date | undefined;
+  /** Shown after the dates, e.g. "Checked on Windows 11". */
+  note?: string | undefined;
+}
+const { author, publishDate, updatedDate, note } = Astro.props;
+---
+
+<div class="flex items-center gap-3 text-[14px]">
+  {author?.data.avatar && (
+    <Image
+      src={author.data.avatar}
+      alt=""
+      width={40}
+      height={40}
+      class="size-10 flex-none rounded-full object-cover"
+    />
+  )}
+  <p>
+    {author && (
+      <>
+        <b>{author.data.name}</b>
+        <span class="hidden text-muted sm:inline">, {author.data.role}</span>
+        <span class="text-muted" aria-hidden="true">
+          {' '}
+          ·{' '}
+        </span>
+      </>
+    )}
+    <span class="text-muted">
+      Published <time datetime={isoDate(publishDate)}>{formatDate(publishDate)}</time>
+      {updatedDate && (
+        <>
+          <span aria-hidden="true"> · </span>Updated{' '}
+          <time datetime={isoDate(updatedDate)}>{formatDate(updatedDate)}</time>
+        </>
+      )}
+      {note && (
+        <>
+          <span aria-hidden="true"> · </span>
+          {note}
+        </>
+      )}
+    </span>
+  </p>
+</div>

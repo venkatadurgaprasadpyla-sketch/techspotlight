@@ -40,6 +40,15 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     document.documentElement.dataset.theme = t;
   })();
 </script>
+{/* Controls that only work with JS (deal filters, copy buttons) are in the HTML from the start,
+  so nothing shifts when scripts load. Without JS they are hidden. */}
+<noscript>
+  <style is:inline>
+    [data-needs-js] {
+      display: none !important;
+    }
+  </style>
+</noscript>
 <Font cssVariable="--font-plex-sans" preload={[{ weight: '400', style: 'normal' }]} />
 <Font cssVariable="--font-space-grotesk" preload={[{ weight: '700' }]} />
 <Font cssVariable="--font-plex-mono" />

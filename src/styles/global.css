@@ -141,6 +141,13 @@
       @apply border-buy-hover bg-buy-hover text-on-buy;
     }
   }
+  /* A button-shaped label for something that can no longer be done, e.g. "Deal ended". */
+  .btn-ended {
+    @apply cursor-default border-border bg-surface text-muted;
+    &:hover {
+      @apply border-border bg-surface text-muted;
+    }
+  }
   .chip {
     @apply inline-flex min-h-8 items-center rounded-full border border-border-strong bg-bg px-3 text-[13px] text-text no-underline;
     &:hover {

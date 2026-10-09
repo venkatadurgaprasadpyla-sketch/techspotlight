@@ -1,0 +1,52 @@
+---
+/** Face-off specs side by side. The better value is shaded, bold and announced, not colour alone. */
+interface Props {
+  names: { a: string; b: string };
+  specs: { label: string; a: string; b: string; better?: 'a' | 'b' | 'tie' | undefined }[];
+}
+const { names, specs } = Astro.props;
+const cell = 'border-b border-border px-3.5 py-3 font-mono text-[13px]';
+const win = 'bg-accent/10 font-bold';
+---
+
+<section id="specs" class="flex scroll-mt-20 flex-col gap-3.5" aria-labelledby="specs-title">
+  <h2 id="specs-title" class="text-[28px]">
+    Specs compared
+  </h2>
+  <div
+    class="relative overflow-x-auto rounded-[10px] border border-border"
+    role="region"
+    aria-label="Specs compared (scrolls sideways)"
+    tabindex="0"
+  >
+    <table class="w-full min-w-[520px] border-collapse text-left text-[14px]">
+      <thead>
+        <tr class="bg-inverse text-on-inverse">
+          <td class="px-3.5 py-3" />
+          <th scope="col" class="px-3.5 py-3">
+            {names.a}
+          </th>
+          <th scope="col" class="px-3.5 py-3">
+            {names.b}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {specs.map((row) => (
+          <tr>
+            <th scope="row" class="w-[28%] border-b border-border bg-surface px-3.5 py-3">
+              {row.label}
+            </th>
+            {(['a', 'b'] as const).map((side) => (
+              <td class:list={[cell, row.better === side && win]}>
+                {row[side]}
+                {row.better === side && <span class="sr-only"> (better)</span>}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-[13px] text-muted">The better value in each row is shaded and bold.</p>
+</section>
