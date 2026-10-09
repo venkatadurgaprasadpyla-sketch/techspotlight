@@ -1,0 +1,67 @@
+---
+/** One side of a face-off: photo, name, rating, best price and links. */
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+import Rating from '~/components/cards/Rating.astro';
+import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import { formatInr } from '~/lib/format';
+
+interface Props {
+  side: 'A' | 'B';
+  name: string;
+  image: ImageMetadata;
+  imageAlt: string;
+  rating: number;
+  /** Cheapest retailer offer, if any. */
+  offer?: { name: string; url: string; price: number } | undefined;
+  /** Typical price when no retailer has a price. */
+  price: number;
+  reviewUrl?: string | undefined;
+  eager?: boolean;
+}
+const { side, name, image, imageAlt, rating, offer, price, reviewUrl, eager = false } = Astro.props;
+const shownPrice = offer?.price ?? price;
+---
+
+<div class="flex flex-1 basis-[260px] flex-col gap-3 rounded-[10px] border border-border p-5">
+  <Image
+    src={image}
+    alt={imageAlt}
+    widths={[320, 480, 640]}
+    sizes="(min-width: 960px) 420px, (min-width: 640px) 45vw, 100vw"
+    class="aspect-[4/3] w-full rounded-md object-cover"
+    loading={eager ? 'eager' : 'lazy'}
+    fetchpriority={eager ? 'high' : undefined}
+  />
+  <span class="lbl">Product {side}</span>
+  <h2 class="text-2xl">{name}</h2>
+  <Rating value={rating} />
+  {shownPrice > 0 && (
+    <p class="font-mono text-lg font-medium">
+      {formatInr(shownPrice)}
+      {offer && (
+        <span class="font-sans text-[13px] font-normal text-muted">
+          {' '}
+          at {getRetailer(offer.name)?.name ?? offer.name}
+        </span>
+      )}
+    </p>
+  )}
+  <div class="mt-auto flex flex-wrap items-center gap-3 pt-1">
+    {offer && (
+      <a
+        class="btn btn-buy"
+        href={affiliateHref(offer.name, offer.url)}
+        rel={AFFILIATE_REL}
+        target="_blank"
+      >
+        Check price<span class="sr-only">: {name}, opens in a new tab</span>
+      </a>
+    )}
+    {reviewUrl && (
+      <a href={reviewUrl} class="text-[14px]">
+        Full review<span class="sr-only"> of the {name}</span>
+      </a>
+    )}
+  </div>
+</div>

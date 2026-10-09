@@ -144,6 +144,8 @@ faq: [] # - { q: ..., a: ... }`,
 ${side('A')}
 productB:
 ${side('B')}
+# shortAnswer: Pick B if … (one sentence after the score)
+specs: [] # - { label: Battery (our test), a: '14:10', b: '12:05', better: a }
 rounds: # winner: a, b or tie
 ${[1, 2, 3].map(round).join('\n')}
 overallWinner: tie # a, b or tie
@@ -151,13 +153,19 @@ verdict: ${q('TODO: which one to buy and why')}`;
   },
   howto: () => `difficulty: easy # easy, medium or hard
 timeRequired: ${q('TODO: e.g. 10 minutes')}
+# worksOn: Windows 10 and 11
+# quickAnswer: the whole answer in one or two sentences
 tools: []
 steps:
   - title: ${q('TODO: step 1')}
     body: ${q('TODO')}
     # image: ../../assets/...
-    # imageAlt: required when there is an image`,
+    # imageAlt: required when there is an image
+    # tip: optional editor's tip
+troubleshooting: [] # - { q: problem, a: fix }`,
   news: () => `# source: { name: ..., url: https://... }
+# heroCredit: 'Image: Brand'
+keyFacts: [] # - { label: India price, value: '₹24,999 (8GB/128GB)' }
 relatedReviews: [] # review ids`,
   deal: ({ name }) => `product: ${q(name)}
 originalPrice: TODO # rupees
@@ -165,7 +173,9 @@ dealPrice: TODO # rupees, lower than originalPrice
 retailer: amazon-in # amazon-in or flipkart
 url: https://www.amazon.in/dp/TODO
 # expiresAt: 2026-12-31
-# couponCode: CODE`,
+# couponCode: CODE
+# badge: lowest-price # lowest-price, great-value or editors-pick
+# reviewRef: review id`,
 };
 
 const dataFiles = {

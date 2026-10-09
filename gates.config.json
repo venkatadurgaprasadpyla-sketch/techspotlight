@@ -10,7 +10,12 @@
     "/reviews/",
     "/ultrabooks/northwind-aero-14-review/",
     "/android-phones/kestrel-nova-5g-review/",
-    "/best/best-ultrabooks/"
+    "/best/best-ultrabooks/",
+    "/vs/kestrel-nova-5g-vs-orbit-x2/",
+    "/how-to/check-laptop-battery-health-windows/",
+    "/news/northwind-announces-aero-15/",
+    "/deals/",
+    "/deals/kestrel-nova-5g-deal/"
   ],
   "lighthouse": {
     "performance": 0.95,

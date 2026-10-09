@@ -1,7 +1,13 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { byDate, toCardItem, type ArticleEntry, type CardItem } from '~/lib/cards';
+import {
+  byDate,
+  linkDealsToReviews,
+  toCardItem,
+  type ArticleEntry,
+  type CardItem,
+} from '~/lib/cards';
 import {
   dealSchema,
   guideSchema,
@@ -76,11 +82,56 @@ describe('toCardItem', () => {
   it('gives deals their deal price as the offer', () => {
     expect(find('northwind-aero-14-deal').bestOffer).toMatchObject({ price: 64990 });
   });
+
+  it('maps deal details, ending at the end of the expiry day in India', () => {
+    expect(find('kestrel-nova-5g-deal').deal).toMatchObject({
+      product: 'Kestrel Nova 5G',
+      originalPrice: 24999,
+      dealPrice: 22999,
+      retailer: 'flipkart',
+      couponCode: 'SAMPLE2000',
+      badge: 'great-value',
+      reviewId: 'kestrel-nova-5g',
+      endsAt: new Date('2026-12-31T18:30:00Z'),
+    });
+    expect(find('orbit-x2-deal').deal?.endsAt).toBeUndefined();
+    expect(find('kestrel-nova-5g').deal).toBeUndefined();
+  });
+
+  it('links deals to their published review', () => {
+    const copy = () => items.map((i) => ({ ...i, ...(i.deal && { deal: { ...i.deal } }) }));
+    const copies = copy();
+    linkDealsToReviews(copies);
+    const deal = copies.find((i) => i.id === 'northwind-aero-14-deal')?.deal;
+    expect(deal).toMatchObject({ rating: 4.5, reviewUrl: '/ultrabooks/northwind-aero-14-review/' });
+    // Without the review in the build there is nothing to link.
+    const alone = copy().filter((i) => i.id !== 'kestrel-nova-5g');
+    linkDealsToReviews(alone);
+    expect(alone.find((i) => i.id === 'kestrel-nova-5g-deal')?.deal?.reviewUrl).toBeUndefined();
+  });
 });
 
 describe('buildListings', () => {
   const listings = buildListings(items);
   const at = (path: string) => listings.find((l) => l.path === path);
+
+  it("lists live deals first, editor's picks before other badges", () => {
+    const now = new Date('2026-10-09T12:00:00Z');
+    const ended = {
+      ...find('northwind-aero-14-deal'),
+      id: 'ended-deal',
+      url: '/deals/ended-deal/',
+      date: new Date('2026-10-09'),
+      deal: { ...find('northwind-aero-14-deal').deal, endsAt: new Date('2026-10-05') },
+    } as CardItem;
+    const deals = buildListings([...items, ended], now).find((l) => l.path === '/deals/');
+    expect(deals?.items.map((i) => i.id)).toEqual([
+      'orbit-x2-deal',
+      'kestrel-nova-5g-deal',
+      'northwind-aero-14-deal',
+      'ended-deal',
+    ]);
+  });
 
   it('builds live hubs only; other hubs stay placeholders', () => {
     expect(at('/computing/')?.kind).toBe('hub');

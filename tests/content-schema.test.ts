@@ -179,6 +179,16 @@ describe('versus schema', () => {
       /overallWinner/,
     );
   });
+  it('needs two different products and a/b/tie for the better spec', () => {
+    const base = sample('versus', 'kestrel-nova-5g-vs-orbit-x2.md');
+    const productB = { ...(base.productA as object) };
+    expect(issues(schemas.versus.safeParse({ ...base, productB })).join()).toMatch(
+      /different names/,
+    );
+    const specs = [{ label: 'Weight', a: '1 kg', b: '2 kg', better: 'c' }];
+    expect(issues(schemas.versus.safeParse({ ...base, specs })).join()).toMatch(/specs/);
+    expect(schemas.versus.parse({ ...base, specs: undefined }).specs).toEqual([]);
+  });
 });
 
 describe('howto schema', () => {
@@ -186,6 +196,14 @@ describe('howto schema', () => {
     const base = sample('howtos', 'check-laptop-battery-health-windows.md');
     const steps = [{ title: 'Step', body: 'Body', image: 'x.jpg' }];
     expect(issues(schemas.howtos.safeParse({ ...base, steps })).join()).toMatch(/alt text/);
+  });
+  it('defaults troubleshooting to none and checks its entries', () => {
+    const base = sample('howtos', 'move-data-to-new-android-phone.md');
+    expect(schemas.howtos.parse(base).troubleshooting).toEqual([]);
+    const troubleshooting = [{ q: 'Problem', a: '' }];
+    expect(issues(schemas.howtos.safeParse({ ...base, troubleshooting })).join()).toMatch(
+      /troubleshooting/,
+    );
   });
 });
 
@@ -200,6 +218,15 @@ describe('deal schema', () => {
     expect(
       issues(schemas.deals.safeParse({ ...base, url: 'https://evil.example/amazon.in' })).join(),
     ).toMatch(/Amazon.in links must use/);
+  });
+  it('accepts only plain coupon codes and known badges', () => {
+    for (const couponCode of ['<b>x</b>', 'save 10', 'ab']) {
+      expect(issues(schemas.deals.safeParse({ ...base, couponCode })).join()).toMatch(/Coupon/);
+    }
+    expect(schemas.deals.parse({ ...base, couponCode: 'DIWALI-2000' }).couponCode).toBe(
+      'DIWALI-2000',
+    );
+    expect(issues(schemas.deals.safeParse({ ...base, badge: 'hot' })).join()).toMatch(/badge/);
   });
 });
 

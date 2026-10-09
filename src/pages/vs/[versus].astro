@@ -1,0 +1,235 @@
+---
+/** Face-off: /vs/<id>/. Section order follows the Versus board. */
+import type { GetStaticPaths } from 'astro';
+import { render, type CollectionEntry } from 'astro:content';
+import AdSlot from '~/components/AdSlot.astro';
+import ArticleByline from '~/components/ArticleByline.astro';
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import ArticleCard from '~/components/cards/ArticleCard.astro';
+import Contender from '~/components/versus/Contender.astro';
+import SpecsCompare from '~/components/versus/SpecsCompare.astro';
+import { contentTypePath, contentTypes, findTopic } from '~/config/taxonomy';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { AFFILIATE_REL, affiliateHref, getRetailer, lowestOffer } from '~/lib/affiliate';
+import { getArticles } from '~/lib/articles';
+import { getPublished, getPublishedEntry } from '~/lib/content';
+import { leafSlug } from '~/lib/content-schema';
+import { formatInr } from '~/lib/format';
+import { assertNoHeadingClash } from '~/lib/headings';
+import { topicCrumbs } from '~/lib/listings';
+import { closestTo } from '~/lib/related';
+import { articlePath } from '~/lib/urls';
+import { runningScores, scoreSummary } from '~/lib/versus';
+
+interface Props {
+  entry: CollectionEntry<'versus'>;
+}
+
+export const getStaticPaths = (async () => {
+  const faceOffs = await getPublished('versus');
+  return faceOffs.map((entry) => ({ params: { versus: entry.id }, props: { entry } }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props as Props;
+const { data } = entry;
+const { Content, headings } = await render(entry);
+const leaf = leafSlug(data);
+const topic = findTopic(leaf);
+if (!topic) throw new Error(`Face-off ${entry.id}: unknown topic ${leaf}`);
+const url = articlePath('versus', entry.id, leaf);
+const names = { a: data.productA.productName, b: data.productB.productName };
+const crumbs = [...topicCrumbs(topic), { label: `${names.a} vs ${names.b}`, href: url }];
+assertNoHeadingClash(`Face-off ${entry.id}`, headings, [
+  'short-answer',
+  'specs',
+  'rounds',
+  'verdict',
+  'more-face-offs',
+]);
+
+const author = await getPublishedEntry('authors', data.author.id);
+const articles = await getArticles();
+const reviewUrls = new Map(
+  articles.filter((a) => a.collection === 'reviews').map((a) => [a.id, a.url] as const),
+);
+const side = (key: 'a' | 'b') => {
+  const product = key === 'a' ? data.productA : data.productB;
+  const offer = lowestOffer(product.retailers);
+  return {
+    key,
+    ...product,
+    offer: offer && { name: offer.name, url: offer.url, price: offer.price },
+    reviewUrl: product.reviewRef ? reviewUrls.get(product.reviewRef.id) : undefined,
+  };
+};
+const [sideA, sideB] = [side('a'), side('b')];
+const scores = runningScores(data.rounds);
+const summary = scoreSummary(names, data.rounds, data.overallWinner);
+const winner = data.overallWinner === 'tie' ? undefined : data.overallWinner;
+// Winner's button first and in the buy colour.
+const buyOrder = winner === 'b' ? [sideB, sideA] : [sideA, sideB];
+const here = { url, hub: data.hub, category: data.category };
+const moreFaceOffs = closestTo(
+  here,
+  articles.filter((a) => a.collection === 'versus'),
+  2,
+);
+const guide = closestTo(
+  here,
+  articles.filter((a) => a.collection === 'guides'),
+  1,
+);
+const more = [...moreFaceOffs, ...guide];
+const versusType = contentTypes.find((t) => t.type === 'versus');
+const chip = {
+  a: 'bg-accent text-on-accent border-accent',
+  b: 'bg-inverse text-on-inverse border-inverse',
+  tie: 'bg-bg text-text border-border-strong',
+};
+---
+
+<BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
+  <article class="wrap">
+    <div class="mx-auto flex w-full max-w-[960px] min-w-0 flex-col gap-9 pt-5 pb-12">
+      <header class="flex flex-col gap-3.5">
+        <Breadcrumbs crumbs={crumbs} />
+        <span class="lbl">Face-off</span>
+        <h1 class="text-[30px] sm:text-[42px]">{data.title}</h1>
+        <p class="max-w-[780px] text-lg text-muted">{data.description}</p>
+        <ArticleByline
+          author={author}
+          publishDate={data.publishDate}
+          updatedDate={data.updatedDate}
+        />
+        <p class="text-[13px] text-muted">
+          We may earn a commission from links on this page. <a href="/how-we-test/">How we test</a>
+        </p>
+      </header>
+
+      <section class="flex flex-wrap items-stretch gap-4" aria-label="The contenders">
+        <Contender side="A" name={names.a} {...sideA} eager />
+        <div class="flex w-full items-center justify-center sm:w-auto" aria-hidden="true">
+          <span class="flex size-12 items-center justify-center rounded-full bg-inverse font-heading font-bold text-on-inverse">
+            VS
+          </span>
+        </div>
+        <Contender side="B" name={names.b} {...sideB} />
+      </section>
+
+      <section
+        id="short-answer"
+        class="flex flex-wrap items-center justify-between gap-4 rounded-[10px] bg-surface p-5"
+        aria-labelledby="short-answer-title"
+      >
+        <div class="flex max-w-[640px] flex-col gap-1.5">
+          <h2 id="short-answer-title" class="lbl font-sans">
+            The short answer
+          </h2>
+          <p class="text-lg">
+            <b>{summary}.</b>
+            {data.shortAnswer && ` ${data.shortAnswer}`}
+          </p>
+        </div>
+        <a class="btn" href="#verdict">
+          Jump to verdict
+        </a>
+      </section>
+
+      <div class="prose max-w-[780px] text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
+        <Content />
+      </div>
+
+      {data.specs.length > 0 && <SpecsCompare names={names} specs={data.specs} />}
+
+      <AdSlot size="in-feed" />
+
+      <section id="rounds" class="flex scroll-mt-20 flex-col gap-5" aria-labelledby="rounds-title">
+        <h2 id="rounds-title" class="text-[28px]">
+          Round by round
+        </h2>
+        <ol class="flex flex-col gap-5">
+          {data.rounds.map((round, i) => {
+            const score = scores[i] ?? { a: 0, b: 0 };
+            return (
+              <li class="flex flex-col gap-3 border-t border-border pt-5">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <h3 class="text-xl">
+                    {i + 1}. {round.name}
+                  </h3>
+                  <div class="flex flex-wrap items-center gap-3">
+                    <span
+                      class:list={[
+                        'inline-flex min-h-[30px] items-center rounded-full border px-3 text-[13px] font-semibold',
+                        chip[round.winner],
+                      ]}
+                    >
+                      {round.winner === 'tie' ? 'Tie' : `Winner: ${names[round.winner]}`}
+                    </span>
+                    <span class="font-mono text-[15px] font-bold text-muted">
+                      <span aria-hidden="true">
+                        A {score.a} · B {score.b}
+                      </span>
+                      <span class="sr-only">
+                        Score so far: {names.a} {score.a}, {names.b} {score.b}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+                <p>{round.summary}</p>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      <section
+        id="verdict"
+        class="flex scroll-mt-20 flex-col gap-3.5 rounded-[10px] border-2 border-text p-6"
+        aria-labelledby="verdict-title"
+      >
+        <span class="lbl">{winner ? 'Overall winner' : 'Overall'}</span>
+        <h2 id="verdict-title" class="text-[30px]">
+          {winner ? names[winner] : "It's a tie"}
+        </h2>
+        <p class="max-w-[720px] text-lg">{data.verdict}</p>
+        <div class="flex flex-wrap gap-3">
+          {buyOrder.map(
+            (side) =>
+              side.offer && (
+                <a
+                  class:list={['btn', side.key === winner ? 'btn-buy' : 'btn-ghost']}
+                  href={affiliateHref(side.offer.name, side.offer.url)}
+                  rel={AFFILIATE_REL}
+                  target="_blank"
+                >
+                  {side.productName} <span class="font-mono">{formatInr(side.offer.price)}</span> at{' '}
+                  {getRetailer(side.offer.name)?.name ?? side.offer.name}
+                  <span class="sr-only">, opens in a new tab</span>
+                </a>
+              ),
+          )}
+        </div>
+      </section>
+
+      {more.length > 0 && (
+        <section class="flex flex-col gap-5" aria-labelledby="more-face-offs">
+          <div class="sec-head">
+            <h2 id="more-face-offs" class="text-2xl">
+              More face-offs
+            </h2>
+            {versusType && (
+              <a class="lbl" href={contentTypePath(versusType)}>
+                All face-offs ›
+              </a>
+            )}
+          </div>
+          <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-6">
+            {more.map((item) => (
+              <ArticleCard item={item} />
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  </article>
+</BaseLayout>

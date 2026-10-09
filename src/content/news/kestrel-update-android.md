@@ -11,6 +11,9 @@ publishDate: 2026-10-07
 heroImage: ../../assets/samples/phone-nova.jpg
 heroAlt: Placeholder illustration of the Kestrel Nova 5G for the sample news story
 sample: true
+keyFacts:
+  - { label: Updates promised, value: Four Android versions }
+  - { label: Security patches, value: Five years }
 relatedReviews: [kestrel-nova-5g]
 ---
 

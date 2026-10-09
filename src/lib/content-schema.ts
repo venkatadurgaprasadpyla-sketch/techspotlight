@@ -339,11 +339,26 @@ export function versusSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
       .extend({
         productA: productPick(helpers),
         productB: productPick(helpers),
+        /** One sentence after the score, e.g. "Pick the Orbit if night photos matter most." */
+        shortAnswer: z.string().optional(),
+        /** Side-by-side specs; `better` shades the winning cell. */
+        specs: z
+          .array(z.object({ label: nonEmpty, a: nonEmpty, b: nonEmpty, better: side.optional() }))
+          .default([]),
         rounds: z.array(z.object({ name: nonEmpty, winner: side, summary: nonEmpty })).min(3),
         overallWinner: side,
         verdict: nonEmpty,
       })
-      .superRefine(checkArticle),
+      .superRefine((value, ctx) => {
+        checkArticle(value, ctx);
+        if (value.productA.productName === value.productB.productName) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['productB', 'productName'],
+            message: 'The two products need different names',
+          });
+        }
+      }),
     { draftsMayHaveTodos: true },
   );
 }
@@ -354,6 +369,10 @@ export function howtoSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
       .extend({
         difficulty: z.enum(['easy', 'medium', 'hard']),
         timeRequired: nonEmpty,
+        /** e.g. "Windows 10 and 11" or "Android 12 and later". */
+        worksOn: z.string().optional(),
+        /** The whole answer in one or two sentences, shown above the steps. */
+        quickAnswer: z.string().optional(),
         tools: z.array(nonEmpty).default([]),
         steps: z
           .array(
@@ -362,9 +381,12 @@ export function howtoSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
               body: nonEmpty,
               image: helpers.image().optional(),
               imageAlt: z.string().optional(),
+              tip: z.string().optional(),
             }),
           )
           .min(1),
+        /** "If it doesn't work": a problem and its fix. */
+        troubleshooting: z.array(z.object({ q: nonEmpty, a: nonEmpty })).default([]),
       })
       .superRefine((value, ctx) => {
         checkArticle(value, ctx);
@@ -387,6 +409,10 @@ export function newsSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
     articleBase(helpers, 'news')
       .extend({
         source: z.object({ name: nonEmpty, url: z.url({ protocol: /^https$/ }) }).optional(),
+        /** Credit for a press image, e.g. "Image: Kestrel". */
+        heroCredit: z.string().optional(),
+        /** "Key facts" box: India price, on-sale date, launch offers … */
+        keyFacts: z.array(spec).default([]),
         relatedReviews: z.array(helpers.reference('reviews')).default([]),
       })
       .superRefine(checkArticle),
@@ -404,7 +430,13 @@ export function dealSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
         retailer: z.enum(retailerIds),
         url: z.url({ protocol: /^https$/ }),
         expiresAt: z.coerce.date().optional(),
-        couponCode: z.string().optional(),
+        couponCode: z
+          .string()
+          .regex(/^[A-Z0-9-]{3,30}$/, 'Coupon codes use capital letters, digits and hyphens')
+          .optional(),
+        badge: z.enum(['lowest-price', 'great-value', 'editors-pick']).optional(),
+        /** Our review of the product, for its rating and a link. */
+        reviewRef: helpers.reference('reviews').optional(),
       })
       .superRefine((value, ctx) => {
         checkArticle(value, ctx);

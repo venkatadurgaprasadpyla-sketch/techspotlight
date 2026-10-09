@@ -1,0 +1,214 @@
+---
+/**
+ * Deals board: /deals/ and each live hub's /<hub>/deals/. Live deals first (src/lib/deals.ts),
+ * ended ones labelled for a week. Filters and sorting come from the deals island and only
+ * show with JS (`data-needs-js`, see BaseHead); without it every deal on the page is listed.
+ */
+import AdSlot from '~/components/AdSlot.astro';
+import ArticleCard from '~/components/cards/ArticleCard.astro';
+import DealCard from '~/components/deals/DealCard.astro';
+import NewsletterForm from '~/components/NewsletterForm.astro';
+import Pagination from '~/components/Pagination.astro';
+import { contentTypePath, type ContentType } from '~/config/taxonomy';
+import { site } from '~/config/site';
+import type { CardItem, DealInfo } from '~/lib/cards';
+import type { Page } from '~/lib/listing';
+import { liveHubs, type Listing } from '~/lib/listings';
+import EmptyState from './EmptyState.astro';
+import ListingLayout from './ListingLayout.astro';
+
+interface Props {
+  listing: Extract<Listing, { kind: 'type' }>;
+  page: Page<CardItem>;
+  all: CardItem[];
+}
+const { listing, page, all } = Astro.props;
+const { hub } = listing;
+const dealsType: ContentType = listing.type;
+const now = new Date();
+const deals = page.items.filter((i): i is CardItem & { deal: DealInfo } => i.deal !== undefined);
+const intro =
+  'Only products we have tested or rate highly, with the usual price so you know if a discount is real. Links are affiliate links.';
+const title = hub ? listing.title : "Tech deals we'd actually buy";
+const guides = all
+  .filter((i) => i.collection === 'guides' && (!hub || i.hub === hub.slug))
+  .slice(0, 3);
+const budgets = [
+  { value: '0-4999', label: 'Under ₹5,000' },
+  { value: '5000-25000', label: '₹5,000 to ₹25,000' },
+  { value: '25001-75000', label: '₹25,000 to ₹75,000' },
+  { value: '75001-', label: 'Above ₹75,000' },
+];
+const fieldset = 'flex flex-col gap-1 border-0 p-0';
+const legend = 'mb-1 text-[13px] font-semibold';
+const check = 'flex min-h-8 cursor-pointer items-center gap-2.5 text-[14px]';
+---
+
+<ListingLayout
+  listing={{ ...listing, title }}
+  page={page}
+  description={`${hub ? `${hub.label} deals. ` : ''}${intro}`}
+  band
+>
+  <Fragment slot="header">
+    <h1 class="text-[36px] sm:text-[44px]">
+      {title}
+      {page.current > 1 && <span class="text-muted">, page {page.current}</span>}
+    </h1>
+    <p class="max-w-[760px] text-[17px] text-muted">{intro}</p>
+    <nav aria-label="Deals by topic">
+      <ul class="flex flex-wrap gap-2">
+        {[undefined, ...liveHubs()].map((h) => {
+          const href = contentTypePath(dealsType, h);
+          const isHere = h?.slug === hub?.slug;
+          return (
+            <li>
+              <a
+                class:list={['chip', isHere && page.current > 1 && 'is-on']}
+                href={href}
+                aria-current={isHere && page.current === 1 ? 'page' : undefined}
+              >
+                {h ? h.label : 'All deals'}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  </Fragment>
+
+  <div class="flex flex-wrap items-start gap-10 py-8">
+    {deals.length > 0 && (
+      <aside class="flex flex-[1_1_240px] flex-col gap-6" aria-label="Filter deals">
+        <form
+          class="grid grid-cols-2 gap-x-4 gap-y-5 lg:flex lg:flex-col"
+          data-deal-filters
+          data-needs-js
+        >
+          <h2 class="col-span-2 text-lg">Filter deals</h2>
+          <fieldset class={fieldset}>
+            <legend class={legend}>Store</legend>
+            {site.retailers.map((r) => (
+              <label class={check}>
+                <input type="checkbox" name="store" value={r.id} class="size-4 accent-accent" />
+                {r.name}
+              </label>
+            ))}
+          </fieldset>
+          <fieldset class={fieldset}>
+            <legend class={legend}>Discount</legend>
+            <label class={check}>
+              <input type="checkbox" name="off" value="10" class="size-4 accent-accent" />
+              10% or more
+            </label>
+            <label class={check}>
+              <input type="checkbox" name="off" value="25" class="size-4 accent-accent" />
+              25% or more
+            </label>
+            <label class={check}>
+              <input type="checkbox" name="off" value="lowest" class="size-4 accent-accent" />
+              Lowest price we've seen
+            </label>
+          </fieldset>
+          <fieldset class={fieldset}>
+            <legend class={legend}>Budget</legend>
+            {budgets.map((b) => (
+              <label class={check}>
+                <input type="checkbox" name="budget" value={b.value} class="size-4 accent-accent" />
+                {b.label}
+              </label>
+            ))}
+          </fieldset>
+          <fieldset class={fieldset}>
+            <legend class={legend}>Our rating</legend>
+            <label class={check}>
+              <input type="checkbox" name="rated" value="4" class="size-4 accent-accent" />
+              Tested, 4 stars and up
+            </label>
+          </fieldset>
+          <button type="reset" class="btn btn-ghost col-span-2 self-start justify-self-start">
+            Clear filters
+          </button>
+        </form>
+        <div class="hidden flex-col gap-3 rounded-[10px] bg-surface p-5 lg:flex">
+          <NewsletterForm id="deal-alerts" />
+        </div>
+      </aside>
+    )}
+
+    <section class="flex min-w-0 flex-[999_1_640px] flex-col gap-6" aria-labelledby="deal-list">
+      <h2 id="deal-list" class="sr-only">
+        Deals
+      </h2>
+      {deals.length > 0 ? (
+        <>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-[13px] text-muted">
+              <span data-deal-count aria-live="polite">
+                {deals.length} {deals.length === 1 ? 'deal' : 'deals'}
+              </span>
+              {page.total > 1 && ` on page ${page.current} of ${page.total}`} · links are affiliate
+              links
+            </p>
+            <div class="flex items-center gap-2" data-needs-js>
+              <label for="deal-sort" class="text-[13px] text-muted">
+                Sort
+              </label>
+              <select
+                id="deal-sort"
+                class="min-h-11 rounded-lg border border-border-strong bg-bg px-3 text-[14px]"
+                data-deal-sort
+              >
+                <option value="">Editor's picks</option>
+                <option value="off">Biggest discount</option>
+                <option value="price">Price: low to high</option>
+                <option value="newest">Newest</option>
+              </select>
+            </div>
+          </div>
+          <div
+            class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-5"
+            data-deal-grid
+          >
+            {deals.slice(0, 4).map((item, i) => (
+              <DealCard item={item} now={now} eager={i === 0} />
+            ))}
+            <AdSlot size="sidebar" class="self-center justify-self-center" />
+            {deals.slice(4).map((item) => (
+              <DealCard item={item} now={now} />
+            ))}
+          </div>
+          <p class="text-muted" data-deal-empty hidden>
+            No deals on this page match those filters.
+          </p>
+        </>
+      ) : (
+        <EmptyState what="deals" />
+      )}
+      <Pagination page={page} base={listing.path} />
+
+      {guides.length > 0 && (
+        <section class="flex flex-col gap-5 pt-4" aria-labelledby="deal-guides">
+          <div class="sec-head">
+            <h2 id="deal-guides" class="text-2xl">
+              Buying guides
+            </h2>
+            <a class="lbl" href={contentTypePath({ slug: 'best' }, hub)}>
+              All buying guides ›
+            </a>
+          </div>
+          <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-6">
+            {guides.map((item) => (
+              <ArticleCard item={item} />
+            ))}
+          </div>
+        </section>
+      )}
+    </section>
+  </div>
+</ListingLayout>
+
+<script>
+  import { initDeals } from '~/scripts/deals';
+  initDeals();
+</script>

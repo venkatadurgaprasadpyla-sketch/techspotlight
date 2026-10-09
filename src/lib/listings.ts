@@ -17,6 +17,7 @@ import {
   type TopicLocation,
 } from '~/config/taxonomy';
 import type { CardItem } from './cards';
+import { byDealOrder } from './deals';
 
 export interface Crumb {
   label: string;
@@ -42,8 +43,13 @@ const home: Crumb = { label: 'Home', href: '/' };
 /** Hubs that get real pages; the others stay "coming soon" (src/config/routes.ts). */
 export const liveHubs = () => hubs.filter((hub) => hub.mvp);
 
-export function buildListings(items: readonly CardItem[]): Listing[] {
+export function buildListings(items: readonly CardItem[], now = new Date()): Listing[] {
   const listings: Listing[] = [];
+  // Deal pages list live deals first (src/lib/deals.ts); everything else is newest first.
+  const ofType = (list: readonly CardItem[], type: ContentType) => {
+    const matching = list.filter((i) => i.type.type === type.type);
+    return type.type === 'deal' ? matching.sort(byDealOrder(now)) : matching;
+  };
   for (const type of contentTypes) {
     const path = contentTypePath(type);
     listings.push({
@@ -52,7 +58,7 @@ export function buildListings(items: readonly CardItem[]): Listing[] {
       path,
       title: type.label,
       crumbs: [home, { label: type.label, href: path }],
-      items: items.filter((i) => i.type.type === type.type),
+      items: ofType(items, type),
     });
   }
   for (const hub of liveHubs()) {
@@ -76,7 +82,7 @@ export function buildListings(items: readonly CardItem[]): Listing[] {
         path,
         title,
         crumbs: [home, hubCrumb, { label: type.label, href: path }],
-        items: inHub.filter((i) => i.type.type === type.type),
+        items: ofType(inHub, type),
       });
     }
     for (const category of hub.categories) {

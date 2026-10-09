@@ -12,6 +12,7 @@ heroAlt: Placeholder illustration of two phones for the sample data transfer how
 sample: true
 difficulty: easy
 timeRequired: 30 minutes
+worksOn: Android 12 and later
 tools: [Both phones, A USB-C cable (optional)]
 steps:
   - title: Charge both phones
