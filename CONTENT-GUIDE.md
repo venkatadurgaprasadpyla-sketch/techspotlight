@@ -83,6 +83,38 @@ labels (`Display`, `Weight` …) across picks. Write "How to choose" in the body
 the quick list, the picks, Compare, Also tested, How we test and the FAQ, so don't use those as
 body headings.
 
+## Face-offs
+
+Fill `productA` and `productB` like guide picks (two different `productName`s), with
+`retailers` so both get buy buttons. `specs` rows take `label`, `a`, `b` and `better` (`a`, `b` or
+`tie`); the better cell is shaded and bold. Each round has a `winner` (`a`, `b` or `tie`) and the
+page keeps the running score. `overallWinner` is your call: if it is not the side with more
+rounds, the short answer says so instead of claiming a win. Add `shortAnswer` for the sentence
+after the score ("Pick the Orbit if …"). The body is the introduction.
+
+## How-tos
+
+Set `difficulty`, `timeRequired`, optional `worksOn` ("Windows 10 and 11") and `quickAnswer`
+(the whole answer in a sentence or two). `tools` becomes "What you need". Each step has a
+`title` and `body`, and optionally an `image` (with `imageAlt`) and a `tip`. `troubleshooting`
+entries (`q` problem, `a` fix) become "If it doesn't work". The body is the introduction.
+
+## News
+
+Add `keyFacts` (`label` and `value`, e.g. India price, on-sale date, launch offers),
+`heroCredit` for press images ("Image: Kestrel"), an https `source`, and `relatedReviews` so the
+story links to our reviews. Without a published review the page points to a buying guide on the
+same topic.
+
+## Deals
+
+`originalPrice` is the usual price and `dealPrice` must be lower. `expiresAt: 2026-12-31` runs to
+midnight at the end of that day in India; use a full time (`2026-12-31T18:00:00+05:30`) for a
+deal that ends during the day. Ended deals show "Deal ended" for a week, then leave the deal
+lists and their page turns noindex. `couponCode` takes capital letters, digits and hyphens.
+`badge` is `lowest-price`, `great-value` or `editors-pick`; `reviewRef` adds our rating and a
+review link. Update `updatedDate` whenever you re-check the price: cards show it as "Checked".
+
 ## Pasting a review from the TechSpotlight review-writer skill
 
 The skill writes for several markets with scores out of 10. TechSpotlight is India-only with
