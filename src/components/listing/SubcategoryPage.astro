@@ -1,0 +1,104 @@
+---
+import AdSlot from '~/components/AdSlot.astro';
+import ArticleCard from '~/components/cards/ArticleCard.astro';
+import Pagination from '~/components/Pagination.astro';
+import { categoryPath, subcategoryPath } from '~/config/taxonomy';
+import type { CardItem } from '~/lib/cards';
+import type { Page } from '~/lib/listing';
+import { trending, type Listing } from '~/lib/listings';
+import EmptyState from './EmptyState.astro';
+import ListingLayout from './ListingLayout.astro';
+import Sidebar from './Sidebar.astro';
+
+interface Props {
+  listing: Extract<Listing, { kind: 'subcategory' }>;
+  page: Page<CardItem>;
+  all: CardItem[];
+}
+const { listing, page } = Astro.props;
+const { hub, category, subcategory, items } = listing;
+const noun = subcategory.label.toLowerCase();
+const intro = `Every ${noun.replace(/s$/, '')} we have reviewed, with our verdicts, key specs and today's prices in rupees.`;
+const guide = items.find((i) => i.collection === 'guides');
+const siblings = category.subcategories.filter((s) => s.slug !== subcategory.slug);
+const from = page.start + 1;
+const to = page.start + page.items.length;
+---
+
+<ListingLayout listing={listing} page={page} description={intro}>
+  <Fragment slot="header">
+    <h1 class="text-[34px] sm:text-[40px]">
+      {subcategory.label}
+      {page.current > 1 && <span class="text-muted">, page {page.current}</span>}
+    </h1>
+    <p class="max-w-[760px] text-[17px] text-muted">{intro}</p>
+    {guide && (
+      <div class="relative flex flex-wrap items-center justify-between gap-3 rounded-[10px] bg-surface px-5 py-4">
+        <p>
+          <span class="lbl">Short on time?</span>{' '}
+          <a
+            href={guide.url}
+            class="ml-2 font-bold text-text no-underline after:absolute after:inset-0 hover:text-text"
+          >
+            {guide.title}
+          </a>
+        </p>
+        <span class="btn" aria-hidden="true">
+          See the guide
+        </span>
+      </div>
+    )}
+  </Fragment>
+
+  <div class="flex flex-wrap items-start gap-10 pb-8">
+    <section class="flex min-w-0 flex-[999_1_620px] flex-col gap-2" aria-labelledby="list">
+      <div class="sec-head">
+        <h2 id="list" class="text-2xl">
+          All {noun}
+        </h2>
+        {items.length > 0 && (
+          <span class="text-[13px] text-muted">
+            Showing {from} to {to} of {items.length}
+          </span>
+        )}
+      </div>
+      {page.items.length ? (
+        <div>
+          {page.items.map((item, i) => (
+            <>
+              <ArticleCard
+                item={item}
+                variant={item.collection === 'reviews' ? 'review' : 'compact'}
+                eager={i === 0}
+              />
+              {i === 3 && page.items.length > 4 && <AdSlot size="in-feed" class="my-5" />}
+            </>
+          ))}
+        </div>
+      ) : (
+        <EmptyState what={noun} />
+      )}
+      <div class="pt-4">
+        <Pagination page={page} base={listing.path} />
+      </div>
+      <h2 class="mt-6 text-xl">Related</h2>
+      <ul class="flex flex-wrap gap-2">
+        {siblings.map((sub) => (
+          <li>
+            <a class="chip" href={subcategoryPath(hub, category, sub)}>
+              {sub.label}
+            </a>
+          </li>
+        ))}
+        <li>
+          <a class="chip" href={categoryPath(hub, category)}>
+            All {category.label.toLowerCase()}
+          </a>
+        </li>
+      </ul>
+    </section>
+    <div class="flex-[1_1_300px]">
+      <Sidebar scope={subcategory.label} latest={items} trending={trending(items)} />
+    </div>
+  </div>
+</ListingLayout>

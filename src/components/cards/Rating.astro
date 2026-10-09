@@ -1,0 +1,28 @@
+---
+/** Half-star rating out of 5. Stars are decorative; the number carries the meaning. */
+interface Props {
+  value: number;
+  /** Show "4.5/5" next to the stars. */
+  showNumber?: boolean;
+  class?: string;
+}
+const { value, showNumber = true, class: className } = Astro.props;
+const full = Math.floor(value);
+const half = value - full >= 0.5;
+const stars = '★'.repeat(full) + (half ? '½' : '');
+---
+
+<span class:list={['inline-flex items-baseline gap-1', className]}>
+  <span class="tracking-[1px] text-rating" aria-hidden="true">
+    {stars}
+  </span>
+  {showNumber ? (
+    <span>
+      <b>{value}</b>
+      <span class="text-muted">/5</span>
+      <span class="sr-only"> stars</span>
+    </span>
+  ) : (
+    <span class="sr-only">Rated {value} out of 5</span>
+  )}
+</span>

@@ -53,7 +53,10 @@ When a task adds a page type, add a representative URL to `gates.config.json` �
 ## Taxonomy and routes
 
 - `src/config/taxonomy.ts` is the single source of truth for hubs → categories → subcategories and content types. Leaf slugs (subcategories, or categories without subcategories) are unique site-wide.
-- Pages not built yet render the `Placeholder` layout (noindex). Every placeholder path must be listed by `placeholderPaths()` in `src/config/routes.ts` (the layout throws otherwise), which also keeps them out of the sitemap. When a task ships a real page, remove its path there.
+- `src/pages/[...path].astro` builds every section page: listings from `src/lib/listings.ts` (live hubs, categories, subcategories, per-hub and site-wide content types; 12 per page, page n at `<base>page/<n>/`), placeholders for hubs with `mvp: false` (`src/config/routes.ts`), and placeholders for article URLs until T4 to T7 ship their templates (remove them there). It throws if two pages want the same URL.
+- Article URLs come from `articlePath()` in `src/lib/urls.ts`; listings render `CardItem`s (`src/lib/cards.ts`) loaded once by `getArticles()` (`src/lib/articles.ts`).
+- Placeholders and empty listings are noindex. The sitemap leaves out any page whose built HTML is noindex (`astro.config.mjs`), so there is no second list to keep in sync.
+- Components: `cards/ArticleCard` (standard, compact, hero, review), `Rating`, `BadgeTag`, `Breadcrumbs` (with BreadcrumbList JSON-LD), `Pagination`, `AdSlot`, `listing/*` (page templates, `ExploreGrid`, `Sidebar`). Outbound retailer links go through `affiliateHref()` with `rel={AFFILIATE_REL}`.
 
 ## Content
 

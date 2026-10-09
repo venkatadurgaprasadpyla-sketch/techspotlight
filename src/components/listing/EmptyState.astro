@@ -1,0 +1,13 @@
+---
+interface Props {
+  what: string;
+}
+---
+
+<div class="flex flex-col gap-2 rounded-[10px] border border-dashed border-border-strong p-6">
+  <p class="font-heading text-lg font-bold">No {Astro.props.what} yet</p>
+  <p class="text-muted">
+    We are testing products for this section now. Browse the <a href="/reviews/">latest reviews</a>{' '}
+    in the meantime.
+  </p>
+</div>

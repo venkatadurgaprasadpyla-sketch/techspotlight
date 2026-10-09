@@ -5,21 +5,27 @@ import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import { site } from './src/config/site.ts';
 
-// Internal, error and placeholder pages are noindex and must never reach the sitemap.
-import { placeholderPaths } from './src/config/routes.ts';
-const NOINDEX_PATHS = new Set(['/styleguide/', '/404/', ...placeholderPaths]);
+import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+// A page that declares <meta name="robots" content="noindex…"> never goes in the sitemap
+// (placeholders, empty listings, the style guide, 404). The sitemap is written after every
+// page, so read the built HTML rather than keeping a second list.
+const outDir = fileURLToPath(new URL('./dist/', import.meta.url));
+const NOINDEX = /<meta name="robots" content="noindex/;
+/** @param {string} page */
+function isIndexable(page) {
+  const file = `${outDir}${new URL(page).pathname.slice(1)}index.html`;
+  return !existsSync(file) || !NOINDEX.test(readFileSync(file, 'utf8'));
+}
 
 // https://docs.astro.build/en/reference/configuration-reference/
 export default defineConfig({
+  outDir,
   site: site.url,
   trailingSlash: 'always',
   prefetch: { prefetchAll: false, defaultStrategy: 'hover' },
-  integrations: [
-    mdx(),
-    sitemap({
-      filter: (page) => !NOINDEX_PATHS.has(new URL(page).pathname),
-    }),
-  ],
+  integrations: [mdx(), sitemap({ filter: isIndexable })],
   // Self-hosted latin subsets from the @fontsource packages: no network needed at build time.
   fonts: [
     {

@@ -1,0 +1,128 @@
+---
+import AdSlot from '~/components/AdSlot.astro';
+import ArticleCard from '~/components/cards/ArticleCard.astro';
+import Pagination from '~/components/Pagination.astro';
+import { contentTypePath, contentTypes, hubPath } from '~/config/taxonomy';
+import type { CardItem } from '~/lib/cards';
+import type { Page } from '~/lib/listing';
+import { trending, type Listing } from '~/lib/listings';
+import EmptyState from './EmptyState.astro';
+import ExploreGrid from './ExploreGrid.astro';
+import ListingLayout from './ListingLayout.astro';
+import Sidebar from './Sidebar.astro';
+
+interface Props {
+  listing: Extract<Listing, { kind: 'hub' }>;
+  page: Page<CardItem>;
+  all: CardItem[];
+}
+const { listing, page } = Astro.props;
+const { hub, items } = listing;
+const first = page.current === 1;
+const guides = items.filter((i) => i.collection === 'guides');
+const pick = guides.find((i) => i.featured) ?? guides[0];
+---
+
+<ListingLayout listing={listing} page={page} description={hub.intro} band>
+  <Fragment slot="header">
+    <p class="lbl">Hub</p>
+    <h1 class="text-[36px] sm:text-[44px]">
+      {hub.label}
+      {!first && <span class="text-muted">, page {page.current}</span>}
+    </h1>
+    <p class="max-w-[760px] text-[17px] text-muted">{hub.intro}</p>
+    <nav aria-label={`${hub.label} sections`}>
+      <ul class="flex flex-wrap gap-2">
+        <li>
+          <a
+            class:list={['chip', !first && 'is-on']}
+            href={hubPath(hub)}
+            aria-current={first ? 'page' : undefined}
+          >
+            Latest
+          </a>
+        </li>
+        {contentTypes.map((type) => (
+          <li>
+            <a class="chip" href={contentTypePath(type, hub)}>
+              {type.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <p class="text-[13px] text-muted">
+      We test every product we rate. When you buy through our links we may earn a commission.{' '}
+      <a href="/affiliate-disclosure/">How we make money</a>
+    </p>
+  </Fragment>
+
+  {first && (
+    <>
+      <section class="flex flex-col gap-5 py-8" aria-labelledby="explore">
+        <div class="sec-head">
+          <h2 id="explore" class="text-2xl">
+            Explore {hub.label}
+          </h2>
+          <span class="lbl">Content types and categories</span>
+        </div>
+        <ExploreGrid hub={hub} items={items} />
+      </section>
+      {pick && (
+        <section class="pb-8" aria-label="Editor's pick">
+          <ArticleCard item={pick} variant="hero" headingLevel={2} eager />
+        </section>
+      )}
+      {hub.topBrands.length > 0 && (
+        <nav class="pb-8" aria-label="Top brands">
+          <ul class="flex flex-wrap items-center gap-2">
+            <li class="mr-1.5 text-[13px] text-muted">Top brands:</li>
+            {hub.topBrands.map((brand) => (
+              <li>
+                <a class="chip" href={`/brands/${brand.slug}/`}>
+                  {brand.label}
+                </a>
+              </li>
+            ))}
+            <li>
+              <a class="chip" href="/brands/">
+                All brands ›
+              </a>
+            </li>
+          </ul>
+        </nav>
+      )}
+      <AdSlot size="leaderboard" />
+    </>
+  )}
+
+  <div class="flex flex-wrap items-start gap-10 py-8">
+    <section class="flex min-w-0 flex-[999_1_620px] flex-col gap-2" aria-labelledby="latest">
+      <div class="sec-head">
+        <h2 id="latest" class="text-2xl">
+          Latest in {hub.label}
+        </h2>
+        {page.total > 1 && (
+          <span class="text-[13px] text-muted">
+            Page {page.current} of {page.total}
+          </span>
+        )}
+      </div>
+      {page.items.length ? (
+        <div>
+          {page.items.map((item, i) => (
+            <ArticleCard item={item} variant="compact" eager={first && !pick && i === 0} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState what={`${hub.label} articles`} />
+      )}
+      <div class="pt-4">
+        <Pagination page={page} base={listing.path} />
+      </div>
+    </section>
+    <div class="flex-[1_1_300px]">
+      <Sidebar scope={hub.label} latest={items} trending={trending(items)} />
+    </div>
+  </div>
+</ListingLayout>

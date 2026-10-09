@@ -1,0 +1,106 @@
+---
+import ArticleCard from '~/components/cards/ArticleCard.astro';
+import Pagination from '~/components/Pagination.astro';
+import { contentTypePath, contentTypes, hubPath } from '~/config/taxonomy';
+import type { CardItem } from '~/lib/cards';
+import type { Page } from '~/lib/listing';
+import { liveHubs, trending, type Listing } from '~/lib/listings';
+import EmptyState from './EmptyState.astro';
+import ListingLayout from './ListingLayout.astro';
+import Sidebar from './Sidebar.astro';
+
+interface Props {
+  listing: Extract<Listing, { kind: 'type' }>;
+  page: Page<CardItem>;
+  all: CardItem[];
+}
+const { listing, page, all } = Astro.props;
+const { type, hub } = listing;
+const intros: Record<string, string> = {
+  review: 'Hands-on reviews with verdicts, scores and prices in rupees.',
+  best: 'Our tested picks for every budget, updated as prices and models change.',
+  versus: 'Two products, round by round, so you know which one to buy.',
+  'how-to': 'Step-by-step guides to set up, fix and get more from your tech.',
+  news: 'Launches, price changes and updates that matter to buyers in India.',
+  deal: 'Price drops and coupons on products we have tested.',
+};
+const scope = hub ? `${hub.label} ` : '';
+const intro = `${scope}${type.label.toLowerCase()}: ${intros[type.type]}`.replace(/^./, (c) =>
+  c.toUpperCase(),
+);
+const latest = hub ? all.filter((i) => i.hub === hub.slug) : all;
+---
+
+<ListingLayout listing={listing} page={page} description={intro}>
+  <Fragment slot="header">
+    <h1 class="text-[36px] sm:text-[44px]">
+      {listing.title}
+      {page.current > 1 && <span class="text-muted">, page {page.current}</span>}
+    </h1>
+    <p class="max-w-[760px] text-[17px] text-muted">{intros[type.type]}</p>
+    <nav aria-label={hub ? `${hub.label} sections` : 'Content types'}>
+      <ul class="flex flex-wrap gap-2">
+        {hub && (
+          <li>
+            <a class="chip" href={hubPath(hub)}>
+              Latest
+            </a>
+          </li>
+        )}
+        {contentTypes.map((t) => (
+          <li>
+            <a
+              class:list={['chip', t.slug === type.slug && page.current > 1 && 'is-on']}
+              href={contentTypePath(t, hub)}
+              aria-current={t.slug === type.slug && page.current === 1 ? 'page' : undefined}
+            >
+              {t.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    {!hub && (
+      <nav aria-label="By topic">
+        <ul class="flex flex-wrap items-center gap-2">
+          <li class="mr-1.5 text-[13px] text-muted">By topic:</li>
+          {liveHubs().map((h) => (
+            <li>
+              <a class="chip" href={contentTypePath(type, h)}>
+                {h.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )}
+  </Fragment>
+
+  <div class="flex flex-wrap items-start gap-10 pb-8">
+    <section class="flex min-w-0 flex-[999_1_620px] flex-col gap-5" aria-labelledby="list">
+      <div class="sec-head">
+        <h2 id="list" class="text-2xl">
+          Latest {type.label.toLowerCase()}
+        </h2>
+        {page.total > 1 && (
+          <span class="text-[13px] text-muted">
+            Page {page.current} of {page.total}
+          </span>
+        )}
+      </div>
+      {page.items.length ? (
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-6">
+          {page.items.map((item, i) => (
+            <ArticleCard item={item} eager={i === 0} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState what={type.label.toLowerCase()} />
+      )}
+      <Pagination page={page} base={listing.path} />
+    </section>
+    <div class="flex-[1_1_300px]">
+      <Sidebar scope={hub?.label} latest={latest} trending={trending(latest)} />
+    </div>
+  </div>
+</ListingLayout>
