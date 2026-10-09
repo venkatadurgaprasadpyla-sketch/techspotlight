@@ -2,6 +2,7 @@
 // G5 Lighthouse (mobile), G6 axe (light/dark, 1280/390) and G9 screenshots for the pages in
 // gates.config.json. Expects `dist/` to exist and serves it on a local port.
 import { createServer } from 'node:http';
+import { gzipSync } from 'node:zlib';
 import { readFile } from 'node:fs/promises';
 import { extname, join, resolve, sep } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -68,7 +69,21 @@ const server = createServer(async (req, res) => {
   if (file !== root && !file.startsWith(root + sep)) file = join(root, '404.html');
   try {
     const body = await readFile(file);
-    res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream' });
+    const type = TYPES[extname(file)] ?? 'application/octet-stream';
+    // Compress text like Cloudflare Pages does, so Lighthouse measures what visitors download.
+    if (
+      /^(text|application\/(json|xml|javascript))|svg/.test(type) &&
+      /\bgzip\b/.test(String(req.headers['accept-encoding']))
+    ) {
+      res.writeHead(200, {
+        'Content-Type': type,
+        'Content-Encoding': 'gzip',
+        Vary: 'Accept-Encoding',
+      });
+      res.end(gzipSync(body));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': type });
     res.end(body);
   } catch {
     const notFound = await readFile(join(root, '404.html')).catch(() => 'Not found');

@@ -7,7 +7,9 @@
     "/computing/laptops/",
     "/computing/laptops/gaming-laptops/",
     "/phones/",
-    "/reviews/"
+    "/reviews/",
+    "/ultrabooks/northwind-aero-14-review/",
+    "/android-phones/kestrel-nova-5g-review/"
   ],
   "lighthouse": {
     "performance": 0.95,

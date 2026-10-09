@@ -99,6 +99,7 @@ ratings out of 5, so convert as you paste:
    | Other images                       | `gallery` (`src`, `alt`, `caption`)                                                              |
    | `testedDays`, `testingStatus`      | `testingNotes`, e.g. "Used for 14 days as my main phone"; write "Hands-on testing pending" if so |
    | Frequently asked questions         | `faq` (`q`, `a`)                                                                                 |
+   | Buy it if / Don't buy it if        | `buyIf` / `dontBuyIf` (short lines; shown under "Should you buy …?")                             |
    | `publishedAt`                      | `publishDate`                                                                                    |
    | `reviewType: first look`           | not a review: use `npm run new -- news` instead (reviews need a rating)                          |
 
@@ -110,7 +111,9 @@ ratings out of 5, so convert as you paste:
    Replace `[IMAGE NEEDED: …]` with a real image or remove it.
 5. Fix internal links to the site's URL shapes (table above), e.g. `/reviews/northwind-aero-14`
    becomes `/ultrabooks/northwind-aero-14-review/`.
-6. Use `## The ups` and `## The downs` headings for the closing pros and cons discussion.
+6. Use `## The ups` and `## The downs` headings for the closing pros and cons discussion; the
+   jump bar links to them when they exist. The first four `gallery` images show on the page, the
+   rest open in the lightbox.
 7. Run `npm run dev`, check the page, then set `draft: false`.
 
 ## Sample content

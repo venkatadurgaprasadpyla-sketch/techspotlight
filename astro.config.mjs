@@ -4,6 +4,8 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import { site } from './src/config/site.ts';
+import { satteri } from '@astrojs/markdown-satteri';
+import { adSlotsPlugin } from './src/lib/ad-slots.ts';
 
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -25,6 +27,9 @@ export default defineConfig({
   site: site.url,
   trailingSlash: 'always',
   prefetch: { prefetchAll: false, defaultStrategy: 'hover' },
+  markdown: {
+    processor: satteri({ hastPlugins: [adSlotsPlugin()] }),
+  },
   integrations: [mdx(), sitemap({ filter: isIndexable })],
   // Self-hosted latin subsets from the @fontsource packages: no network needed at build time.
   fonts: [

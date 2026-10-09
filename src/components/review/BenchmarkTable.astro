@@ -1,0 +1,79 @@
+---
+/** Benchmark results as a real table with CSS bars; the reviewed product is highlighted. */
+interface Benchmark {
+  title: string;
+  unit: string;
+  higherIsBetter: boolean;
+  rows: { product: string; value: number }[];
+}
+interface Props {
+  benchmarks: Benchmark[];
+  productName: string;
+}
+const { benchmarks, productName } = Astro.props;
+const fmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 });
+---
+
+<section
+  id="benchmarks"
+  class="flex scroll-mt-20 flex-col gap-6"
+  aria-labelledby="benchmarks-title"
+>
+  <h2 id="benchmarks-title" class="text-[22px]">
+    Benchmarks
+  </h2>
+  {benchmarks.map((bench) => {
+    const max = Math.max(...bench.rows.map((r) => r.value)) || 1;
+    return (
+      <table class="w-full border-collapse rounded-[10px] border border-border">
+        <caption class="px-5 pt-4 pb-2 text-left">
+          <b>{bench.title}</b>{' '}
+          <span class="text-[13px] text-muted">
+            · {bench.unit}, {bench.higherIsBetter ? 'higher' : 'lower'} is better
+          </span>
+        </caption>
+        <thead class="sr-only">
+          <tr>
+            <th scope="col">Product</th>
+            <th scope="col">Result ({bench.unit})</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bench.rows.map((row) => {
+            const mine = row.product === productName;
+            return (
+              <tr class:list={[mine && 'bg-surface']}>
+                <th
+                  scope="row"
+                  class:list={['w-[40%] px-5 py-2 text-left', mine ? 'font-bold' : 'font-normal']}
+                >
+                  {row.product}
+                  {mine && <span class="sr-only"> (this review)</span>}
+                </th>
+                <td class="px-5 py-2">
+                  <span class="flex items-center gap-3">
+                    <span
+                      class="h-2.5 flex-1 overflow-hidden rounded-full bg-surface"
+                      aria-hidden="true"
+                    >
+                      <span
+                        class:list={[
+                          'block h-full rounded-full',
+                          mine ? 'bg-accent' : 'bg-border-strong',
+                        ]}
+                        style={`width:${(row.value / max) * 100}%`}
+                      />
+                    </span>
+                    <span class="w-16 text-right font-mono text-[14px]">
+                      {fmt.format(row.value)}
+                    </span>
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    );
+  })}
+</section>

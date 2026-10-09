@@ -1,0 +1,55 @@
+---
+/**
+ * Lite YouTube embed: a poster and play button that link to the video. The island
+ * (src/scripts/youtube.ts) swaps in a youtube-nocookie iframe on click, so no YouTube code
+ * loads until the reader asks for it.
+ */
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+
+interface Props {
+  id: string;
+  title: string;
+  poster: ImageMetadata;
+}
+const { id, title, poster } = Astro.props;
+const watch = `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
+---
+
+<section id="video" class="flex scroll-mt-20 flex-col gap-3.5" aria-labelledby="video-title">
+  <h2 id="video-title" class="text-[28px]">
+    Video review
+  </h2>
+  <div class="relative aspect-video overflow-hidden rounded-[10px] bg-inverse" data-yt={id}>
+    <a
+      href={watch}
+      class="group absolute inset-0 block"
+      data-yt-play
+      data-yt-title={title}
+      rel="noopener"
+      target="_blank"
+    >
+      <Image
+        src={poster}
+        alt=""
+        widths={[480, 780]}
+        sizes="(min-width: 1024px) 780px, 100vw"
+        class="size-full object-cover opacity-80"
+      />
+      <span
+        class="absolute top-1/2 left-1/2 flex size-[72px] -translate-1/2 items-center justify-center rounded-full bg-inverse/85 text-on-inverse group-hover:bg-accent group-hover:text-on-accent"
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 24 24" class="ml-1 size-8" fill="currentColor">
+          <path d="M8 5v14l11-7z" />
+        </svg>
+      </span>
+      <span class="sr-only">Play video: {title} (opens YouTube)</span>
+    </a>
+  </div>
+</section>
+
+<script>
+  import { initYouTube } from '~/scripts/youtube';
+  initYouTube();
+</script>

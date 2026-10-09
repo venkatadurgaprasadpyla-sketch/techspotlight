@@ -1,0 +1,33 @@
+---
+interface Props {
+  sheet: { whatIsIt: string; whoIsItFor: string; price: string; likes: string; dislikes: string };
+  testingNotes?: string | undefined;
+}
+const { sheet, testingNotes } = Astro.props;
+const rows = [
+  ['What is it?', sheet.whatIsIt],
+  ['Who is it for?', sheet.whoIsItFor],
+  ['What does it cost?', sheet.price],
+  ['What do we like?', sheet.likes],
+  ["What don't we like?", sheet.dislikes],
+  ...(testingNotes ? [['How we tested', testingNotes]] : []),
+];
+---
+
+<section
+  id="cheat-sheet"
+  class="flex scroll-mt-20 flex-col gap-3.5 rounded-[10px] bg-surface p-5 sm:p-6"
+  aria-labelledby="cheat-sheet-title"
+>
+  <h2 id="cheat-sheet-title" class="text-[22px]">
+    Cheat sheet
+  </h2>
+  <dl class="grid gap-3.5 sm:grid-cols-2">
+    {rows.map(([term, detail]) => (
+      <div>
+        <dt class="font-semibold">{term}</dt>
+        <dd class="text-muted">{detail}</dd>
+      </div>
+    ))}
+  </dl>
+</section>

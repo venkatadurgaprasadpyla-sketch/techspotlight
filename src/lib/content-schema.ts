@@ -249,6 +249,9 @@ export function reviewSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
           .array(z.object({ src: image(), alt: nonEmpty, caption: z.string().optional() }))
           .default([]),
         testingNotes: z.string().optional(),
+        /** "Buy it if" / "Don't buy it if" boxes in the final verdict. */
+        buyIf: z.array(nonEmpty).default([]),
+        dontBuyIf: z.array(nonEmpty).default([]),
         faq: z.array(z.object({ q: nonEmpty, a: nonEmpty })).default([]),
       })
       .superRefine(checkArticle),

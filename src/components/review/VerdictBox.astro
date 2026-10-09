@@ -1,0 +1,68 @@
+---
+import BadgeTag from '~/components/cards/BadgeTag.astro';
+import type { Badge } from '~/lib/cards';
+import PriceWidget, { type RetailerOffer } from './PriceWidget.astro';
+
+interface Props {
+  rating: number;
+  badge: Badge | null;
+  verdict: string;
+  pros: string[];
+  cons: string[];
+  offers: RetailerOffer[];
+  productName: string;
+}
+const { rating, badge, verdict, pros, cons, offers, productName } = Astro.props;
+const full = Math.floor(rating);
+const stars = '★'.repeat(full) + (rating - full >= 0.5 ? '½' : '');
+---
+
+<section
+  id="verdict"
+  class="scroll-mt-20 overflow-hidden rounded-xl border-2 border-text"
+  aria-labelledby="verdict-title"
+  data-verdict
+>
+  <div class="flex flex-wrap items-center gap-6 bg-surface p-5 sm:p-6">
+    <div class="flex min-w-[120px] flex-col items-center gap-1">
+      <span class="font-heading text-[52px] leading-none font-bold">{rating}</span>
+      <span class="text-xl tracking-[1px] text-rating" aria-hidden="true">
+        {stars}
+      </span>
+      <span class="text-[13px] text-muted">
+        out of 5 <span aria-hidden="true">·</span>
+        <span class="whitespace-nowrap">{rating * 2}/10</span>
+      </span>
+    </div>
+    <div class="flex flex-[1_1_320px] flex-col gap-2">
+      <div class="flex flex-wrap items-center gap-3">
+        <h2 id="verdict-title" class="text-[22px]">
+          Verdict
+        </h2>
+        {badge && <BadgeTag badge={badge} />}
+      </div>
+      <p class="text-[17px]">{verdict}</p>
+    </div>
+  </div>
+  <div class="grid gap-6 p-5 sm:grid-cols-2 sm:p-6">
+    <div class="flex flex-col gap-2.5">
+      <h3 class="font-sans text-base text-good">Reasons to buy</h3>
+      <ul class="flex list-disc flex-col gap-1 pl-5">
+        {pros.map((pro) => (
+          <li>{pro}</li>
+        ))}
+      </ul>
+    </div>
+    <div class="flex flex-col gap-2.5">
+      <h3 class="font-sans text-base text-bad">Reasons to avoid</h3>
+      <ul class="flex list-disc flex-col gap-1 pl-5">
+        {cons.map((con) => (
+          <li>{con}</li>
+        ))}
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-border">
+    <PriceWidget offers={offers} productName={productName} compact />
+  </div>
+</section>

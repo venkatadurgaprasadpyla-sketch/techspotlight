@@ -14,6 +14,7 @@ import {
   type ContentType,
   type Hub,
   type Subcategory,
+  type TopicLocation,
 } from '~/config/taxonomy';
 import type { CardItem } from './cards';
 
@@ -115,4 +116,17 @@ export function trending(items: readonly CardItem[], limit = 4): CardItem[] {
     .filter((i) => !i.featured && i.rating !== undefined)
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
   return [...featured, ...rated].slice(0, limit);
+}
+
+/** Home › hub › category (› subcategory) for an article filed under `topic`. */
+export function topicCrumbs(topic: TopicLocation): Crumb[] {
+  const { hub, category, subcategory } = topic;
+  return [
+    home,
+    { label: hub.label, href: hubPath(hub) },
+    { label: category.label, href: categoryPath(hub, category) },
+    ...(subcategory
+      ? [{ label: subcategory.label, href: subcategoryPath(hub, category, subcategory) }]
+      : []),
+  ];
 }

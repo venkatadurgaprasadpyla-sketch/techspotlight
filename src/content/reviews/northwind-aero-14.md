@@ -73,7 +73,21 @@ gallery:
   - src: ../../assets/samples/laptop-aero.jpg
     alt: Placeholder illustration of the Aero 14 from the front
     caption: Sample gallery image
-testingNotes: Sample note. We would normally say how long we used the laptop and which tests we ran.
+  - src: ../../assets/samples/computing-desk.jpg
+    alt: Placeholder illustration standing in for a photo of the keyboard
+    caption: Sample keyboard shot
+  - src: ../../assets/samples/laptop-blaze.jpg
+    alt: Placeholder illustration standing in for a photo of the ports
+  - src: ../../assets/samples/phones-desk.jpg
+    alt: Placeholder illustration standing in for a photo of the lid
+youtubeId: SAMPLE00000
+testingNotes: Sample note. Used for three weeks as a main work laptop, with our battery rundown and display tests.
+buyIf:
+  - You carry your laptop all day
+  - You want the longest battery life at this price
+dontBuyIf:
+  - You join a lot of video calls in dim rooms
+  - You need USB-A or HDMI without a dongle
 ---
 
 _This is sample content. The product, brand and results are invented to preview the review layout._

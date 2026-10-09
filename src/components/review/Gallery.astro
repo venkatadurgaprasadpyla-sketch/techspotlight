@@ -1,0 +1,86 @@
+---
+/**
+ * Photo grid. Each thumbnail links to the full-size image, so it works without JS; the
+ * lightbox island (src/scripts/gallery.ts) opens the same images in a <dialog> instead.
+ */
+import type { ImageMetadata } from 'astro';
+import { getImage, Image } from 'astro:assets';
+
+interface Props {
+  images: { src: ImageMetadata; alt: string; caption?: string | undefined }[];
+  productName: string;
+}
+const { images, productName } = Astro.props;
+const shown = 4;
+const full = await Promise.all(
+  images.map((img) => getImage({ src: img.src, width: Math.min(img.src.width, 1600) })),
+);
+---
+
+<section id="gallery" class="flex scroll-mt-20 flex-col gap-3.5" aria-labelledby="gallery-title">
+  <h2 id="gallery-title" class="text-[28px]">
+    Photos
+  </h2>
+  <ul class="grid grid-cols-2 gap-3 sm:grid-cols-4" data-gallery>
+    {images.map((img, i) => (
+      <li class:list={['relative', i >= shown && 'hidden']}>
+        <a
+          href={full[i]?.src}
+          class="block overflow-hidden rounded-md"
+          data-gallery-item
+          data-caption={img.caption ?? ''}
+          data-alt={img.alt}
+        >
+          <Image
+            src={img.src}
+            alt={img.alt}
+            widths={[240, 400]}
+            sizes="(min-width: 640px) 180px, 45vw"
+            class="aspect-[4/3] w-full object-cover transition-transform hover:scale-[1.03]"
+          />
+          {i === shown - 1 && images.length > shown && (
+            <span class="absolute inset-0 flex items-center justify-center rounded-md bg-inverse/70 font-heading text-2xl font-bold text-on-inverse">
+              +{images.length - shown}
+              <span class="sr-only"> more photos</span>
+            </span>
+          )}
+        </a>
+      </li>
+    ))}
+  </ul>
+  <dialog
+    class="m-auto max-h-[92dvh] w-[min(100%-2rem,1100px)] rounded-xl bg-bg p-0 text-text backdrop:bg-inverse/80"
+    aria-label={`${productName} photos`}
+    data-lightbox
+  >
+    <div class="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
+      <p class="text-[13px] text-muted" aria-live="polite" data-lightbox-count></p>
+      <button type="button" class="icon-btn" data-lightbox-close aria-label="Close photos">
+        <span aria-hidden="true" class="text-2xl leading-none">
+          ×
+        </span>
+      </button>
+    </div>
+    <figure class="flex flex-col gap-2 p-4">
+      <img
+        class="mx-auto max-h-[70dvh] w-auto rounded-md object-contain"
+        alt=""
+        data-lightbox-img
+      />
+      <figcaption class="text-center text-[13px] text-muted" data-lightbox-caption></figcaption>
+    </figure>
+    <div class="flex justify-between gap-3 px-4 pb-4">
+      <button type="button" class="btn btn-ghost" data-lightbox-prev>
+        Previous
+      </button>
+      <button type="button" class="btn btn-ghost" data-lightbox-next>
+        Next
+      </button>
+    </div>
+  </dialog>
+</section>
+
+<script>
+  import { initGallery } from '~/scripts/gallery';
+  initGallery();
+</script>

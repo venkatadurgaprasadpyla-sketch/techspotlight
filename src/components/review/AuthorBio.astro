@@ -1,0 +1,39 @@
+---
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+
+interface Props {
+  name: string;
+  role: string;
+  bio: string;
+  avatar?: ImageMetadata | undefined;
+  expertise: string[];
+}
+const { name, role, bio, avatar, expertise } = Astro.props;
+---
+
+<section
+  class="flex flex-wrap items-start gap-5 rounded-[10px] border border-border p-5"
+  aria-labelledby="author-bio-title"
+>
+  {avatar && (
+    <Image
+      src={avatar}
+      alt=""
+      width={72}
+      height={72}
+      class="size-[72px] rounded-full object-cover"
+    />
+  )}
+  <div class="flex min-w-[min(100%,260px)] flex-1 flex-col gap-1.5">
+    <h2 id="author-bio-title" class="text-lg">
+      <span class="sr-only">About the author: </span>
+      {name}
+    </h2>
+    <p class="text-[13px] text-muted">
+      {role}
+      {expertise.length > 0 && <> · {expertise.join(', ')}</>}
+    </p>
+    <p>{bio}</p>
+  </div>
+</section>

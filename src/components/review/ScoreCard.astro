@@ -1,0 +1,36 @@
+---
+interface Props {
+  scores: { label: string; score: number; note?: string | undefined }[];
+}
+const { scores } = Astro.props;
+---
+
+<section
+  id="scores"
+  class="flex scroll-mt-20 flex-col gap-3 rounded-[10px] border border-border p-5 sm:p-6"
+  aria-labelledby="scores-title"
+>
+  <h2 id="scores-title" class="text-[22px]">
+    Scorecard
+  </h2>
+  <ul class="flex flex-col gap-3">
+    {scores.map((row) => (
+      <li class="grid grid-cols-[7.5rem_1fr_2.5rem] items-center gap-3">
+        <span>
+          {row.label}
+          {row.note && <span class="block text-[12px] text-muted">{row.note}</span>}
+        </span>
+        <span class="h-2.5 overflow-hidden rounded-full bg-surface" aria-hidden="true">
+          <span
+            class="block h-full rounded-full bg-accent"
+            style={`width:${(row.score / 5) * 100}%`}
+          />
+        </span>
+        <b class="text-right">
+          {row.score.toFixed(1)}
+          <span class="sr-only"> out of 5</span>
+        </b>
+      </li>
+    ))}
+  </ul>
+</section>

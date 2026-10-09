@@ -1,0 +1,77 @@
+---
+/**
+ * Sticky "Jump to" chips for the sections on the page. Once the verdict box scrolls out of view
+ * the lowest price appears on the right (desktop) and in a bottom bar (mobile); the island
+ * (src/scripts/jumpbar.ts) also marks the section being read. Without JS it is a plain nav.
+ */
+import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import type { Offer } from '~/lib/cards';
+import { formatInr } from '~/lib/format';
+
+interface Props {
+  sections: { id: string; label: string }[];
+  best?: Offer | undefined;
+  productName: string;
+}
+const { sections, best, productName } = Astro.props;
+const store = best ? (getRetailer(best.retailer)?.name ?? best.retailer) : '';
+const deal = best && {
+  href: affiliateHref(best.retailer, best.url),
+  price: formatInr(best.price),
+};
+---
+
+<nav
+  class="sticky top-0 z-30 border-y border-border bg-bg"
+  aria-label="Jump to section"
+  data-jumpbar
+>
+  <div class="wrap flex items-center gap-4">
+    <ul class="flex flex-1 gap-2 overflow-x-auto py-2.5 [scrollbar-width:thin]">
+      {sections.map((s) => (
+        <li class="flex-none">
+          <a class="chip" href={`#${s.id}`} data-jump={s.id}>
+            {s.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+    {deal && (
+      <a
+        class="btn btn-buy hidden flex-none data-[shown]:lg:inline-flex"
+        href={deal.href}
+        rel={AFFILIATE_REL}
+        target="_blank"
+        tabindex="-1"
+        aria-hidden="true"
+        data-jump-price
+      >
+        <span class="font-mono">{deal.price}</span> {store}
+        <span class="sr-only">: {productName}, opens in a new tab</span>
+      </a>
+    )}
+  </div>
+</nav>
+{deal && (
+  <div
+    class="fixed inset-x-0 bottom-0 z-30 hidden items-center justify-between gap-3 border-t border-border bg-bg px-4 py-2.5 data-[shown]:flex lg:data-[shown]:hidden"
+    aria-hidden="true"
+    data-jump-mobile
+  >
+    <span class="text-[13px] text-muted">
+      Lowest price
+      <b class="block font-mono text-base text-text">{deal.price}</b>
+    </span>
+    <a class="btn btn-buy" href={deal.href} rel={AFFILIATE_REL} target="_blank" tabindex="-1">
+      View deal
+      <span class="sr-only">
+        : {productName} at {store}, opens in a new tab
+      </span>
+    </a>
+  </div>
+)}
+
+<script>
+  import { initJumpBar } from '~/scripts/jumpbar';
+  initJumpBar();
+</script>
