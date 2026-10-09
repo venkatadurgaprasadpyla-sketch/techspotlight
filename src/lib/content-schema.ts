@@ -429,7 +429,19 @@ export function dealSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
         dealPrice: orTodo(rupees),
         retailer: z.enum(retailerIds),
         url: z.url({ protocol: /^https$/ }),
-        expiresAt: z.coerce.date().optional(),
+        /** Last day of the deal (a date, e.g. 2026-12-31); it runs to midnight IST. */
+        expiresAt: z.coerce
+          .date()
+          .refine(
+            (d) => d.getTime() % 86_400_000 === 0,
+            'Use a date such as 2026-12-31; for a time of day add expiresTime: "18:00" (IST)',
+          )
+          .optional(),
+        /** Ends at this time (24-hour, IST) on expiresAt instead of at midnight. */
+        expiresTime: z
+          .string()
+          .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use a 24-hour IST time such as "18:00"')
+          .optional(),
         couponCode: z
           .string()
           .regex(/^[A-Z0-9-]{3,30}$/, 'Coupon codes use capital letters, digits and hyphens')
@@ -448,6 +460,13 @@ export function dealSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
           });
         }
         checkRetailerHost(value.retailer, value.url, ctx);
+        if (value.expiresTime && !value.expiresAt) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['expiresTime'],
+            message: 'expiresTime needs expiresAt (the date it applies to)',
+          });
+        }
       }),
     { draftsMayHaveTodos: true },
   );

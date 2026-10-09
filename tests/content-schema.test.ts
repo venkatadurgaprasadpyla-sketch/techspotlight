@@ -228,6 +228,24 @@ describe('deal schema', () => {
     );
     expect(issues(schemas.deals.safeParse({ ...base, badge: 'hot' })).join()).toMatch(/badge/);
   });
+  it('takes a date for expiresAt and an IST time separately', () => {
+    const timed = new Date('2026-12-31T18:00:00Z');
+    expect(issues(schemas.deals.safeParse({ ...base, expiresAt: timed })).join()).toMatch(
+      /expiresTime/,
+    );
+    expect(
+      schemas.deals.parse({ ...base, expiresAt: new Date('2026-12-31'), expiresTime: '18:00' })
+        .expiresTime,
+    ).toBe('18:00');
+    expect(issues(schemas.deals.safeParse({ ...base, expiresTime: '6pm' })).join()).toMatch(
+      /24-hour/,
+    );
+    expect(
+      issues(
+        schemas.deals.safeParse({ ...base, expiresAt: undefined, expiresTime: '18:00' }),
+      ).join(),
+    ).toMatch(/needs expiresAt/);
+  });
 });
 
 describe('news schema', () => {

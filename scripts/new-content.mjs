@@ -172,7 +172,8 @@ originalPrice: TODO # rupees
 dealPrice: TODO # rupees, lower than originalPrice
 retailer: amazon-in # amazon-in or flipkart
 url: https://www.amazon.in/dp/TODO
-# expiresAt: 2026-12-31
+# expiresAt: 2026-12-31 # last day; runs to midnight IST
+# expiresTime: '18:00' # optional: ends at this IST time on that day
 # couponCode: CODE
 # badge: lowest-price # lowest-price, great-value or editors-pick
 # reviewRef: review id`,

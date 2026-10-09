@@ -12,9 +12,9 @@ describe('dealEndsAt', () => {
   it('runs a bare date to midnight at the end of that day in India', () => {
     expect(dealEndsAt(new Date('2026-12-31'))).toEqual(new Date('2026-12-31T18:30:00Z'));
   });
-  it('keeps a full timestamp as written', () => {
-    const at = new Date('2026-12-31T12:30:00Z');
-    expect(dealEndsAt(at)).toEqual(at);
+  it('ends at an IST time of day when one is given', () => {
+    expect(dealEndsAt(new Date('2026-12-31'), '18:00')).toEqual(new Date('2026-12-31T12:30:00Z'));
+    expect(dealEndsAt(new Date('2026-12-31'), '05:30')).toEqual(new Date('2026-12-31T00:00:00Z'));
   });
 });
 
@@ -39,6 +39,17 @@ describe('percentOff', () => {
     expect(percentOff(24999, 22999)).toBe(8);
     expect(percentOff(1000, 501)).toBe(49);
     expect(percentOff(1000, 500)).toBe(50);
+    // Round discounts that floating point would put one below.
+    expect(percentOff(50000, 45000)).toBe(10);
+    expect(percentOff(20000, 18000)).toBe(10);
+    expect(percentOff(30000, 24000)).toBe(20);
+    for (let original = 100; original <= 200000; original += 997) {
+      for (const pct of [5, 10, 15, 20, 25, 30, 40, 50]) {
+        if ((original * pct) % 100 === 0) {
+          expect(percentOff(original, original - (original * pct) / 100)).toBe(pct);
+        }
+      }
+    }
   });
   it('is zero for no discount or bad input', () => {
     expect(percentOff(1000, 1000)).toBe(0);

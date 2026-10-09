@@ -79,13 +79,16 @@ const check = 'flex min-h-8 cursor-pointer items-center gap-2.5 text-[14px]';
 
   <div class="flex flex-wrap items-start gap-10 py-8">
     {deals.length > 0 && (
-      <aside class="flex flex-[1_1_240px] flex-col gap-6" aria-label="Filter deals">
+      <div class="flex flex-[1_1_240px] flex-col gap-6">
         <form
           class="grid grid-cols-2 gap-x-4 gap-y-5 lg:flex lg:flex-col"
+          aria-labelledby="filter-deals"
           data-deal-filters
           data-needs-js
         >
-          <h2 class="col-span-2 text-lg">Filter deals</h2>
+          <h2 id="filter-deals" class="col-span-2 text-lg">
+            Filter deals
+          </h2>
           <fieldset class={fieldset}>
             <legend class={legend}>Store</legend>
             {site.retailers.map((r) => (
@@ -133,7 +136,7 @@ const check = 'flex min-h-8 cursor-pointer items-center gap-2.5 text-[14px]';
         <div class="hidden flex-col gap-3 rounded-[10px] bg-surface p-5 lg:flex">
           <NewsletterForm id="deal-alerts" />
         </div>
-      </aside>
+      </div>
     )}
 
     <section class="flex min-w-0 flex-[999_1_640px] flex-col gap-6" aria-labelledby="deal-list">

@@ -43,11 +43,15 @@ const matches: Record<string, (card: Card, value: string) => boolean> = {
   rated: (card, value) => Number(card.dataset.rating) >= +value,
 };
 
+const ended = (card: Card) => Number(card.hasAttribute('data-ended'));
 const sorters: Record<string, (a: Card, b: Card) => number> = {
   off: (a, b) => Number(b.dataset.off) - Number(a.dataset.off),
   price: (a, b) => Number(a.dataset.price) - Number(b.dataset.price),
   newest: (a, b) => Date.parse(b.dataset.date ?? '') - Date.parse(a.dataset.date ?? ''),
 };
+// Ended deals always sort after live ones, as on the server-rendered page.
+const endedLast = (order?: (a: Card, b: Card) => number) => (a: Card, b: Card) =>
+  ended(a) - ended(b) || (order ? order(a, b) : 0);
 
 function initFilters(root: ParentNode) {
   const form = root.querySelector<HTMLFormElement>('[data-deal-filters]');
@@ -64,9 +68,9 @@ function initFilters(root: ParentNode) {
     for (const input of form.querySelectorAll<HTMLInputElement>('input:checked')) {
       chosen.set(input.name, [...(chosen.get(input.name) ?? []), input.value]);
     }
-    const order = sorters[sort?.value ?? ''];
-    const sorted = order ? [...cards].sort(order) : cards;
+    const sorted = [...cards].sort(endedLast(sorters[sort?.value ?? '']));
     let shown = 0;
+    let shownEnded = 0;
     for (const card of sorted) {
       const visible = [...chosen].every(([name, values]) =>
         values.some((value) => matches[name]?.(card, value) ?? true),
@@ -74,13 +78,16 @@ function initFilters(root: ParentNode) {
       card.hidden = !visible;
       grid.append(card);
       if (visible) shown += 1;
+      if (visible && ended(card)) shownEnded += 1;
       // Keep the ad after the fourth visible deal, as in the server-rendered grid.
       if (ad && visible && shown === 4) grid.append(ad);
     }
     if (ad && shown < 4) grid.append(ad);
-    if (count) count.textContent = `${shown} ${shown === 1 ? 'deal' : 'deals'}`;
+    const endedNote = shownEnded ? ` (${shownEnded} ended)` : '';
+    if (count) count.textContent = `${shown} ${shown === 1 ? 'deal' : 'deals'}${endedNote}`;
     if (empty) empty.hidden = shown > 0;
   };
+  if (cards.some(ended)) apply();
   form.addEventListener('change', apply);
   form.addEventListener('reset', () => setTimeout(apply));
   sort?.addEventListener('change', apply);

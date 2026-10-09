@@ -17,7 +17,7 @@ productA:
   image: ../../assets/samples/phone-nova.jpg
   imageAlt: Placeholder illustration of the Kestrel Nova 5G
   rating: 4
-  price: 24999
+  price: 23999
   retailers:
     - name: flipkart
       url: https://www.flipkart.com/sample-kestrel-nova-5g/p/sample
@@ -36,14 +36,14 @@ productB:
       lastChecked: 2026-10-08
 shortAnswer: Pick the Orbit X2 if night photos matter more to you than battery life.
 specs:
-  - { label: Price (India), a: '₹24,999', b: '₹29,999', better: a }
+  - { label: Price (India), a: '₹23,999', b: '₹29,999', better: a }
   - { label: Display, a: '6.6-inch LCD, 120Hz', b: '6.4-inch OLED, 120Hz', better: b }
   - { label: Processor, a: Sample 7 Gen 1, b: Sample 7 Gen 1, better: tie }
   - { label: Battery (our test), a: '14:10', b: '11:45', better: a }
   - { label: Charging, a: 33W, b: 45W, better: b }
   - { label: Software updates, a: 4 years, b: 3 years, better: a }
 rounds:
-  - { name: Price, winner: a, summary: 'The Nova costs ₹5,000 less.' }
+  - { name: Price, winner: a, summary: 'The Nova costs ₹6,000 less.' }
   - { name: Design, winner: b, summary: The Orbit is smaller and has a metal frame. }
   - { name: Battery, winner: a, summary: The Nova lasts about a day longer. }
   - { name: Camera, winner: b, summary: The Orbit is clearly better at night. }

@@ -7,12 +7,14 @@ const DAY = 24 * 60 * 60 * 1000;
 const IST_OFFSET = 5.5 * 60 * 60 * 1000;
 
 /**
- * When a deal stops. A bare date (`expiresAt: 2026-12-31`, parsed as UTC midnight) runs to the
- * end of that day in India; a full timestamp is used as written.
+ * When a deal stops. `expiresAt` is a calendar date (YAML `2026-12-31` parses to UTC midnight);
+ * the deal runs to the end of that day in India, or to `time` ("18:00", IST) on that day.
  */
-export function dealEndsAt(expiresAt: Date): Date {
-  const isBareDate = expiresAt.getTime() % DAY === 0;
-  return isBareDate ? new Date(expiresAt.getTime() + DAY - IST_OFFSET) : expiresAt;
+export function dealEndsAt(expiresAt: Date, time?: string): Date {
+  const day = Math.floor(expiresAt.getTime() / DAY) * DAY;
+  if (!time) return new Date(day + DAY - IST_OFFSET);
+  const [hours = 0, minutes = 0] = time.split(':').map(Number);
+  return new Date(day + (hours * 60 + minutes) * 60 * 1000 - IST_OFFSET);
 }
 
 export type DealStatus = 'live' | 'ended' | 'gone';
@@ -26,7 +28,8 @@ export function dealStatus(endsAt: Date | undefined, now: Date): DealStatus {
 /** Whole percent off, rounded down so we never overstate a discount. */
 export function percentOff(originalPrice: number, dealPrice: number): number {
   if (originalPrice <= 0 || dealPrice >= originalPrice) return 0;
-  return Math.floor((1 - dealPrice / originalPrice) * 100);
+  // Integer arithmetic: (1 - 45000 / 50000) * 100 is 9.999… in floating point.
+  return Math.floor(((originalPrice - dealPrice) * 100) / originalPrice);
 }
 
 export type DealBadge = 'lowest-price' | 'great-value' | 'editors-pick';

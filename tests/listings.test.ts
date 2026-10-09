@@ -86,8 +86,8 @@ describe('toCardItem', () => {
   it('maps deal details, ending at the end of the expiry day in India', () => {
     expect(find('kestrel-nova-5g-deal').deal).toMatchObject({
       product: 'Kestrel Nova 5G',
-      originalPrice: 24999,
-      dealPrice: 22999,
+      originalPrice: 23999,
+      dealPrice: 21999,
       retailer: 'flipkart',
       couponCode: 'SAMPLE2000',
       badge: 'great-value',

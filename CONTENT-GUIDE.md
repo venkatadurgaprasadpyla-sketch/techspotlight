@@ -108,9 +108,9 @@ same topic.
 
 ## Deals
 
-`originalPrice` is the usual price and `dealPrice` must be lower. `expiresAt: 2026-12-31` runs to
-midnight at the end of that day in India; use a full time (`2026-12-31T18:00:00+05:30`) for a
-deal that ends during the day. Ended deals show "Deal ended" for a week, then leave the deal
+`originalPrice` is the usual price and `dealPrice` must be lower. `expiresAt: 2026-12-31` (a date, no time) runs to
+midnight at the end of that day in India; add `expiresTime: '18:00'` (24-hour, IST) for a deal that
+ends during the day. Ended deals show "Deal ended" for a week, then leave the deal
 lists and their page turns noindex. `couponCode` takes capital letters, digits and hyphens.
 `badge` is `lowest-price`, `great-value` or `editors-pick`; `reviewRef` adds our rating and a
 review link. Update `updatedDate` whenever you re-check the price: cards show it as "Checked".

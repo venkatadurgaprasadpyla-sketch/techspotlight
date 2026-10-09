@@ -57,7 +57,7 @@ const crumbs = [
 assertNoHeadingClash(`Deal ${entry.id}`, headings, ['the-deal', 'more-deals']);
 
 const now = new Date();
-const endsAt = data.expiresAt && dealEndsAt(data.expiresAt);
+const endsAt = data.expiresAt && dealEndsAt(data.expiresAt, data.expiresTime);
 const status = dealStatus(endsAt, now);
 const off = percentOff(data.originalPrice, data.dealPrice);
 const saving = data.originalPrice - data.dealPrice;

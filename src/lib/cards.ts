@@ -151,7 +151,7 @@ export function toCardItem(entry: ArticleEntry, authors: ReadonlyMap<string, str
       dealPrice: deal.dealPrice,
       retailer: deal.retailer,
       url: deal.url,
-      ...(deal.expiresAt && { endsAt: dealEndsAt(deal.expiresAt) }),
+      ...(deal.expiresAt && { endsAt: dealEndsAt(deal.expiresAt, deal.expiresTime) }),
       ...(deal.couponCode && { couponCode: deal.couponCode }),
       ...(deal.badge && { badge: deal.badge }),
       ...(deal.reviewRef && { reviewId: deal.reviewRef.id }),

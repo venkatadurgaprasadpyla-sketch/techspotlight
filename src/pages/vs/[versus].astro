@@ -49,17 +49,20 @@ assertNoHeadingClash(`Face-off ${entry.id}`, headings, [
 
 const author = await getPublishedEntry('authors', data.author.id);
 const articles = await getArticles();
-const reviewUrls = new Map(
-  articles.filter((a) => a.collection === 'reviews').map((a) => [a.id, a.url] as const),
+const reviews = new Map(
+  articles.filter((a) => a.collection === 'reviews').map((a) => [a.id, a] as const),
 );
 const side = (key: 'a' | 'b') => {
   const product = key === 'a' ? data.productA : data.productB;
   const offer = lowestOffer(product.retailers);
+  const review = product.reviewRef ? reviews.get(product.reviewRef.id) : undefined;
   return {
     key,
     ...product,
     offer: offer && { name: offer.name, url: offer.url, price: offer.price },
-    reviewUrl: product.reviewRef ? reviewUrls.get(product.reviewRef.id) : undefined,
+    reviewUrl: review?.url,
+    // A published review's rating wins, so the two pages never disagree.
+    rating: review?.rating ?? product.rating,
   };
 };
 const [sideA, sideB] = [side('a'), side('b')];
