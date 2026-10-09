@@ -81,3 +81,44 @@ describe('homeSections', () => {
     expect(empty.topDeal).toBeUndefined();
   });
 });
+
+describe('homeSections with made-up stories', () => {
+  const story = (n: number, extra: Partial<CardItem> = {}): CardItem =>
+    ({
+      ...items.find((i) => i.collection === 'news'),
+      id: `s${n}`,
+      url: `/news/s${n}/`,
+      title: `Story ${n}`,
+      hub: 'computing',
+      featured: false,
+      rating: undefined,
+      date: new Date(2026, 8, 30 - n),
+      ...extra,
+    }) as CardItem;
+  const many = Array.from({ length: 12 }, (_, n) => story(n));
+
+  it('fills hub rows with stories not shown above before repeating any', () => {
+    const home = homeSections(many);
+    const above = new Set([...home.hero, ...home.reviews, ...home.howtos].map((i) => i.url));
+    const row = home.hubs.find((r) => r.hub.slug === 'computing');
+    expect(row?.items).toHaveLength(4);
+    expect(row?.items.some((i) => above.has(i.url))).toBe(false);
+  });
+
+  it('repeats stories in a hub row only when the hub runs short', () => {
+    const home = homeSections(many.slice(0, 5));
+    expect(home.hubs.find((r) => r.hub.slug === 'computing')?.items.map((i) => i.id)).toEqual([
+      's4',
+      's0',
+      's1',
+      's2',
+    ]);
+  });
+
+  it('trends five stories, none of them in the hero', () => {
+    const home = homeSections(many);
+    const hero = new Set(home.hero.map((i) => i.url));
+    expect(home.trending).toHaveLength(5);
+    expect(home.trending.some((i) => hero.has(i.url))).toBe(false);
+  });
+});

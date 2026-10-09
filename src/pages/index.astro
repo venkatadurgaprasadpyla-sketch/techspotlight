@@ -32,12 +32,14 @@ const label = (item: CardItem) =>
     : typeLabel[item.type.type];
 const deals = home.deals.filter((i): i is CardItem & { deal: DealInfo } => i.deal !== undefined);
 const topDeal = home.topDeal?.deal && { ...home.topDeal, deal: home.topDeal.deal };
+const topOff = topDeal ? percentOff(topDeal.deal.originalPrice, topDeal.deal.dealPrice) : 0;
+const hasAside = home.trending.length > 0 || topDeal !== undefined;
 const titleLink =
   'text-text no-underline after:absolute after:inset-0 hover:text-text hover:underline';
 const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
 ---
 
-<BaseLayout description={site.description}>
+<BaseLayout description={site.description} noindex={articles.length === 0}>
   <h1 class="sr-only">
     {site.name}: {site.tagline}
   </h1>
@@ -47,7 +49,12 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
       <h2 id="top-stories" class="sr-only">
         Top stories
       </h2>
-      <div class="grid gap-7 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div
+        class:list={[
+          'grid gap-7',
+          secondary.length > 0 && 'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]',
+        ]}
+      >
         <article class="relative flex flex-col gap-3">
           <Image
             src={lead.image}
@@ -108,7 +115,27 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
     <AdSlot size="leaderboard" />
   </div>
 
-  <div class="wrap flex flex-col gap-12 pb-12 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
+  {home.guideChips.length > 0 && (
+    <nav class="wrap pb-8" aria-label="Popular buying guides">
+      <ul class="flex flex-wrap items-center gap-2">
+        <li class="mr-1.5 text-[13px] text-muted">Shop by budget:</li>
+        {home.guideChips.map((item) => (
+          <li>
+            <a class="chip" href={item.url}>
+              {item.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )}
+
+  <div
+    class:list={[
+      'wrap flex flex-col gap-12 pb-12',
+      hasAside && 'lg:grid lg:grid-cols-[minmax(0,1fr)_300px]',
+    ]}
+  >
     <div class="flex min-w-0 flex-col gap-12">
       {home.reviews.length > 0 && (
         <HomeRow
@@ -149,73 +176,83 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
       )}
     </div>
 
-    <aside class="flex flex-col gap-6" aria-label="Trending and top deal">
-      {home.trending.length > 0 && (
-        <section
-          class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
-          aria-labelledby="trending"
-        >
-          <h2 id="trending" class="text-lg">
-            Trending
-          </h2>
-          <ol class="flex flex-col gap-3">
-            {home.trending.map((item, i) => (
-              <li class="flex items-start gap-3">
-                <span
-                  class="min-w-7 font-heading text-[26px] leading-none font-bold text-muted"
-                  aria-hidden="true"
-                >
-                  {i + 1}
-                </span>
-                <a href={item.url} class={linkClass}>
-                  {item.title}
-                </a>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-      <AdSlot size="sidebar" class="hidden self-center lg:flex" />
-      {topDeal && (
-        <section
-          class="relative flex flex-col gap-3 rounded-[10px] bg-surface p-5"
-          aria-labelledby="top-deal"
-        >
-          <h2 id="top-deal" class="text-lg">
-            Today's top deal
-          </h2>
-          <Image
-            src={topDeal.image}
-            alt={topDeal.imageAlt}
-            widths={[320, 560]}
-            sizes="(min-width: 1024px) 260px, 100vw"
-            class="aspect-video w-full rounded-md object-cover"
-          />
-          <b>{topDeal.deal.product}</b>
-          <p class="flex flex-wrap items-baseline gap-2.5">
-            <span class="font-mono text-lg">
-              <span class="sr-only">Deal price </span>
-              {formatInr(topDeal.deal.dealPrice)}
-            </span>
-            <s class="text-[13px] text-muted">
-              <span class="sr-only">usual price </span>
-              {formatInr(topDeal.deal.originalPrice)}
-            </s>
-            <span class="text-[13px] text-muted">
-              {percentOff(topDeal.deal.originalPrice, topDeal.deal.dealPrice)}% off
-            </span>
-          </p>
-          <a class="btn btn-buy" href={topDeal.url}>
-            See the deal<span class="sr-only">: {topDeal.title}</span>
-          </a>
-        </section>
-      )}
-    </aside>
+    {hasAside && (
+      <aside class="hidden flex-col gap-6 lg:flex" aria-label="Trending and top deal">
+        {home.trending.length > 0 && (
+          <section
+            class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
+            aria-labelledby="trending"
+          >
+            <h2 id="trending" class="text-lg">
+              Trending
+            </h2>
+            <ol class="flex flex-col gap-3">
+              {home.trending.map((item, i) => (
+                <li class="flex items-start gap-3">
+                  <span
+                    class="min-w-7 font-heading text-[26px] leading-none font-bold text-muted"
+                    aria-hidden="true"
+                  >
+                    {i + 1}
+                  </span>
+                  <a href={item.url} class={linkClass}>
+                    {item.title}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+        <AdSlot size="sidebar" class="hidden self-center lg:flex" />
+        {topDeal && (
+          <section
+            class="group relative flex flex-col gap-3 rounded-[10px] bg-surface p-5"
+            aria-labelledby="top-deal"
+            data-ends={topDeal.deal.endsAt?.toISOString()}
+          >
+            <h2 id="top-deal" class="text-lg">
+              Today's top deal
+            </h2>
+            <Image
+              src={topDeal.image}
+              alt={topDeal.imageAlt}
+              widths={[320, 560]}
+              sizes="(min-width: 1024px) 260px, 100vw"
+              class="aspect-video w-full rounded-md object-cover"
+            />
+            <b>{topDeal.deal.product}</b>
+            <p class="flex flex-wrap items-baseline gap-2.5">
+              <span class="font-mono text-lg">
+                <span class="sr-only">Deal price </span>
+                {formatInr(topDeal.deal.dealPrice)}
+              </span>
+              <s class="text-[13px] text-muted">
+                <span class="sr-only">usual price </span>
+                {formatInr(topDeal.deal.originalPrice)}
+              </s>
+              {topOff > 0 && <span class="text-[13px] text-muted">{topOff}% off</span>}
+            </p>
+            <a class="btn btn-buy group-data-[ended]:hidden" href={topDeal.url}>
+              See the deal<span class="sr-only">: {topDeal.title}</span>
+            </a>
+            <span class="btn btn-ended hidden group-data-[ended]:inline-flex">Deal ended</span>
+          </section>
+        )}
+      </aside>
+    )}
   </div>
 
-  <section class="bg-inverse py-10" aria-label="Newsletter">
+  <section class="bg-inverse py-10" aria-labelledby="home-newsletter-title">
     <div class="wrap max-w-[760px]">
-      <NewsletterForm id="home-newsletter" tone="inverse" />
+      <NewsletterForm
+        id="home-newsletter"
+        tone="inverse"
+        headingLevel={2}
+        title="The Spotlight, every Friday"
+        blurb="The week's best reviews, real deals and one thing worth buying. No spam."
+        button="Subscribe"
+        buttonClass="btn btn-buy"
+      />
     </div>
   </section>
 
