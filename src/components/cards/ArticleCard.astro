@@ -46,6 +46,7 @@ const retailerName = (id: string) => getRetailer(id)?.name ?? id;
     />
     <div class="flex flex-wrap items-center gap-2">
       <span class="lbl">{label}</span>
+      {item.badge && <BadgeTag badge={item.badge} />}
       {item.rating !== undefined && (
         <Rating value={item.rating} showNumber={false} class="text-[13px]" />
       )}
@@ -74,6 +75,9 @@ const retailerName = (id: string) => getRetailer(id)?.name ?? id;
       <div class="flex flex-wrap items-center gap-2">
         <span class="lbl">{label}</span>
         {item.badge && <BadgeTag badge={item.badge} />}
+        {item.rating !== undefined && (
+          <Rating value={item.rating} showNumber={false} class="text-[13px]" />
+        )}
       </div>
       <Heading class="text-xl">
         <a href={item.url} class={titleLink}>

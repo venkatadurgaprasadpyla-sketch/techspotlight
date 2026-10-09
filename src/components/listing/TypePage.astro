@@ -50,9 +50,9 @@ const latest = hub ? all.filter((i) => i.hub === hub.slug) : all;
         {contentTypes.map((t) => (
           <li>
             <a
-              class="chip"
+              class:list={['chip', t.slug === type.slug && page.current > 1 && 'is-on']}
               href={contentTypePath(t, hub)}
-              aria-current={t.slug === type.slug ? 'page' : undefined}
+              aria-current={t.slug === type.slug && page.current === 1 ? 'page' : undefined}
             >
               {t.label}
             </a>

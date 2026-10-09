@@ -2,7 +2,10 @@
 import type { CardItem } from '~/lib/cards';
 import { formatDate, formatMonthYear, isoDate } from '~/lib/format';
 
-/** "Author · 9 Oct 2026", or "Updated October 2026" for buying guides. */
+/**
+ * "Author · 9 Oct 2026" ("Author · Updated 1 Oct 2026" once revised), or "Updated October 2026"
+ * for buying guides. Always the date listings sort on.
+ */
 interface Props {
   item: CardItem;
   class?: string;
@@ -19,7 +22,8 @@ const isGuide = item.collection === 'guides';
   ) : (
     <>
       {item.authorName && <>{item.authorName} · </>}
-      <time datetime={isoDate(item.publishDate)}>{formatDate(item.publishDate)}</time>
+      {item.updatedDate && 'Updated '}
+      <time datetime={isoDate(item.date)}>{formatDate(item.date)}</time>
     </>
   )}
 </p>

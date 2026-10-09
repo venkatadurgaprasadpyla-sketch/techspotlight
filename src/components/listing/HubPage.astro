@@ -34,7 +34,11 @@ const pick = guides.find((i) => i.featured) ?? guides[0];
     <nav aria-label={`${hub.label} sections`}>
       <ul class="flex flex-wrap gap-2">
         <li>
-          <a class="chip" href={hubPath(hub)} aria-current="page">
+          <a
+            class:list={['chip', !first && 'is-on']}
+            href={hubPath(hub)}
+            aria-current={first ? 'page' : undefined}
+          >
             Latest
           </a>
         </li>
@@ -66,7 +70,7 @@ const pick = guides.find((i) => i.featured) ?? guides[0];
       </section>
       {pick && (
         <section class="pb-8" aria-label="Editor's pick">
-          <ArticleCard item={pick} variant="hero" headingLevel={2} />
+          <ArticleCard item={pick} variant="hero" headingLevel={2} eager />
         </section>
       )}
       {hub.topBrands.length > 0 && (

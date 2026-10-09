@@ -7,7 +7,7 @@ import Placeholder from '~/layouts/Placeholder.astro';
 export const getStaticPaths = (() =>
   placeholderStaticPaths(['brand'], '/brands/')) satisfies GetStaticPaths;
 
-const { title, intro } = Astro.props;
+const page = Astro.props;
 ---
 
-<Placeholder title={title} intro={intro} />
+<Placeholder {...page} />

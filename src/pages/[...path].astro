@@ -32,7 +32,11 @@ export const getStaticPaths = (async () => {
       routes.push({ path: page.href, props: { kind: 'listing', listing, page, all: articles } });
     }
   }
-  for (const item of articles) {
+  // Article pages until their templates ship. When a task adds a real route for a collection
+  // (T4 reviews, T5 guides and versus, T6 how-tos and news, T7 deals), drop it from this list,
+  // or both routes will build the same URLs.
+  const awaitingTemplate = new Set(['reviews', 'guides', 'versus', 'howtos', 'news', 'deals']);
+  for (const item of articles.filter((a) => awaitingTemplate.has(a.collection))) {
     const page = { path: item.url, title: item.title, intro: item.description };
     routes.push({ path: item.url, props: { kind: 'placeholder', page } });
   }
@@ -51,7 +55,7 @@ const props = Astro.props as Props;
 ---
 
 {props.kind === 'placeholder' ? (
-  <Placeholder title={props.page.title} intro={props.page.intro} />
+  <Placeholder {...props.page} />
 ) : props.listing.kind === 'hub' ? (
   <HubPage listing={props.listing} page={props.page} all={props.all} />
 ) : props.listing.kind === 'category' ? (

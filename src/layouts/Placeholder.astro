@@ -1,15 +1,28 @@
 ---
-import { placeholderPages } from '~/config/routes';
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import { placeholderPages, type PlaceholderPage } from '~/config/routes';
 import BaseLayout from './BaseLayout.astro';
 
-type Props = { title: string; intro?: string } | { path: string };
+type Props = PlaceholderPage | { path: string };
 
-// Static placeholder files pass their path; dynamic routes pass the registry entry directly.
+// Static placeholder files pass only their path (looked up in the registry); the catch-all
+// route passes the whole page, including article pages that are not in the registry.
 const props = Astro.props;
-const page =
-  'path' in props ? placeholderPages.find((p) => p.path === props.path) : (props as typeof props);
-if (!page) throw new Error(`No placeholder registered for ${'path' in props ? props.path : ''}`);
-const { title, intro } = page;
+const page = 'title' in props ? props : placeholderPages.find((p) => p.path === props.path);
+if (!page) throw new Error(`No placeholder registered for ${props.path}`);
+const { title, intro, path } = page;
+
+// Home › each parent that is itself a known page › this page.
+const parents = path
+  .split('/')
+  .filter(Boolean)
+  .slice(0, -1)
+  .map((_, i, segments) => `/${segments.slice(0, i + 1).join('/')}/`)
+  .flatMap((href) => {
+    const parent = placeholderPages.find((p) => p.path === href);
+    return parent ? [{ label: parent.title, href }] : [];
+  });
+const crumbs = [{ label: 'Home', href: '/' }, ...parents, { label: title, href: path }];
 ---
 
 <BaseLayout
@@ -17,8 +30,9 @@ const { title, intro } = page;
   description={intro ?? `${title} on TechSpotlight is coming soon.`}
   noindex
 >
-  <div class="wrap flex flex-col gap-4 py-16">
-    <p class="lbl">Coming soon</p>
+  <div class="wrap flex flex-col gap-4 py-10 sm:py-14">
+    <Breadcrumbs crumbs={crumbs} />
+    <p class="lbl mt-4">Coming soon</p>
     <h1 class="text-4xl">{title}</h1>
     {intro && <p class="max-w-[70ch] text-lg text-muted">{intro}</p>}
     <p class="max-w-[70ch] text-muted">
