@@ -3,7 +3,7 @@
 // gates.config.json. Expects `dist/` to exist and serves it on a local port.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { extname, join, resolve } from 'node:path';
+import { extname, join, resolve, sep } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import * as chromeLauncher from 'chrome-launcher';
@@ -12,7 +12,7 @@ import { chromium } from 'playwright';
 
 const config = JSON.parse(readFileSync('gates.config.json', 'utf8'));
 const PORT = 4329;
-const BASE = `http://localhost:${PORT}`;
+const BASE = `http://127.0.0.1:${PORT}`;
 // CHROME_PATH wins; otherwise Playwright's own Chromium, falling back to a preinstalled one.
 const chromePath =
   process.env.CHROME_PATH ||
@@ -59,7 +59,7 @@ const root = resolve('dist');
 const server = createServer(async (req, res) => {
   const pathname = decodeURIComponent(new URL(req.url ?? '/', BASE).pathname);
   let file = resolve(join(root, pathname.endsWith('/') ? pathname + 'index.html' : pathname));
-  if (!file.startsWith(root)) file = join(root, '404.html');
+  if (file !== root && !file.startsWith(root + sep)) file = join(root, '404.html');
   try {
     const body = await readFile(file);
     res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream' });
@@ -70,7 +70,7 @@ const server = createServer(async (req, res) => {
     res.end(notFound);
   }
 });
-await new Promise((ok) => server.listen(PORT, ok));
+await new Promise((ok) => server.listen(PORT, '127.0.0.1', ok));
 const stopServer = () => server.close();
 
 const failures = [];
