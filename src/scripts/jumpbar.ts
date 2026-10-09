@@ -53,7 +53,22 @@ export function initJumpBar(root: Document = document) {
       }
     }
   };
-  new IntersectionObserver(([entry]) => {
-    if (entry) show(!entry.isIntersecting && entry.boundingClientRect.top < 0);
-  }).observe(verdict);
+  // A scroll check rather than an IntersectionObserver: jumping straight from the top to a
+  // section below the verdict never makes the verdict intersect, so no observer callback fires.
+  let shown = false;
+  let queued = false;
+  const update = () => {
+    queued = false;
+    const past = verdict.getBoundingClientRect().bottom < 0;
+    if (past !== shown) show((shown = past));
+  };
+  addEventListener(
+    'scroll',
+    () => {
+      if (!queued) requestAnimationFrame(update);
+      queued = true;
+    },
+    { passive: true },
+  );
+  update();
 }
