@@ -7,7 +7,7 @@ import { site } from './src/config/site.ts';
 
 // Internal, error and placeholder pages are noindex and must never reach the sitemap.
 import { placeholderPaths } from './src/config/routes.ts';
-const NOINDEX_PATHS = new Set(['/styleguide/', '/404/', ...placeholderPaths()]);
+const NOINDEX_PATHS = new Set(['/styleguide/', '/404/', ...placeholderPaths]);
 
 // https://docs.astro.build/en/reference/configuration-reference/
 export default defineConfig({

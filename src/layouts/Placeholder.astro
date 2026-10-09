@@ -1,17 +1,15 @@
 ---
-import { placeholderPaths } from '~/config/routes';
+import { placeholderPages } from '~/config/routes';
 import BaseLayout from './BaseLayout.astro';
 
-interface Props {
-  title: string;
-  intro?: string;
-}
+type Props = { title: string; intro?: string } | { path: string };
 
-const { title, intro } = Astro.props;
-// Keeps the sitemap honest: every placeholder must be registered in src/config/routes.ts.
-if (!placeholderPaths().includes(Astro.url.pathname)) {
-  throw new Error(`${Astro.url.pathname} uses the Placeholder layout but is not in routes.ts`);
-}
+// Static placeholder files pass their path; dynamic routes pass the registry entry directly.
+const props = Astro.props;
+const page =
+  'path' in props ? placeholderPages.find((p) => p.path === props.path) : (props as typeof props);
+if (!page) throw new Error(`No placeholder registered for ${'path' in props ? props.path : ''}`);
+const { title, intro } = page;
 ---
 
 <BaseLayout

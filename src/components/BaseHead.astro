@@ -23,8 +23,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 {noindex && <meta name="robots" content="noindex, follow" />}
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <meta name="color-scheme" content="light dark" />
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f1115" />
+{/* Filled from the resolved page background by src/scripts/theme.ts. */}
+<meta name="theme-color" content="" />
 {/* Resolve the theme before first paint so there is no flash; see src/scripts/theme.ts. */}
 <script is:inline>
   (function () {

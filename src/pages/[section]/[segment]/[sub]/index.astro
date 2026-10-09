@@ -1,20 +1,17 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import { hubs } from '~/config/taxonomy';
+import { isOutsideSections, placeholderStaticPaths } from '~/config/routes';
 import Placeholder from '~/layouts/Placeholder.astro';
 
 // Placeholder subcategory pages; real templates arrive in T3.
 export const getStaticPaths = (() =>
-  hubs.flatMap((hub) =>
-    hub.categories.flatMap((category) =>
-      category.subcategories.map((sub) => ({
-        params: { section: hub.slug, segment: category.slug, sub: sub.slug },
-        props: { title: sub.label },
-      })),
-    ),
+  placeholderStaticPaths(
+    ['section', 'segment', 'sub'],
+    '/',
+    isOutsideSections,
   )) satisfies GetStaticPaths;
 
-const { title } = Astro.props;
+const { title, intro } = Astro.props;
 ---
 
-<Placeholder title={title} />
+<Placeholder title={title} intro={intro} />

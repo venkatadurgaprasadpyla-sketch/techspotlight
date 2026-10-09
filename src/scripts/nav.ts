@@ -13,6 +13,8 @@ interface MenuItem {
   item: HTMLElement;
   trigger: HTMLButtonElement;
   panel: HTMLElement;
+  /** Opened by hovering: the next click confirms it instead of toggling it shut. */
+  hoverOpened: boolean;
 }
 
 export function initMegaMenu(root: ParentNode = document) {
@@ -22,13 +24,14 @@ export function initMegaMenu(root: ParentNode = document) {
   for (const item of menu.querySelectorAll<HTMLElement>('[data-mm-item]')) {
     const trigger = item.querySelector<HTMLButtonElement>('[data-mm-trigger]');
     const panel = item.querySelector<HTMLElement>('[data-mm-panel]');
-    if (trigger && panel) items.push({ item, trigger, panel });
+    if (trigger && panel) items.push({ item, trigger, panel, hoverOpened: false });
   }
   let timer: number | undefined;
 
-  const close = ({ trigger, panel }: MenuItem) => {
-    trigger.setAttribute('aria-expanded', 'false');
-    panel.hidden = true;
+  const close = (entry: MenuItem) => {
+    entry.hoverOpened = false;
+    entry.trigger.setAttribute('aria-expanded', 'false');
+    entry.panel.hidden = true;
   };
   const closeAll = (except?: MenuItem) => items.filter((m) => m !== except).forEach(close);
   const open = (entry: MenuItem) => {
@@ -44,7 +47,8 @@ export function initMegaMenu(root: ParentNode = document) {
     trigger.addEventListener('click', () => {
       // A click wins over a pending hover timer, or a quick click-to-close would reopen.
       window.clearTimeout(timer);
-      if (isOpen(entry)) close(entry);
+      if (entry.hoverOpened) entry.hoverOpened = false;
+      else if (isOpen(entry)) close(entry);
       else open(entry);
     });
 
@@ -78,7 +82,11 @@ export function initMegaMenu(root: ParentNode = document) {
     item.addEventListener('pointerenter', (event) => {
       if (event.pointerType !== 'mouse') return;
       window.clearTimeout(timer);
-      timer = window.setTimeout(() => open(entry), HOVER_OPEN_MS);
+      timer = window.setTimeout(() => {
+        if (isOpen(entry)) return;
+        open(entry);
+        entry.hoverOpened = true;
+      }, HOVER_OPEN_MS);
     });
     item.addEventListener('pointerleave', (event) => {
       if (event.pointerType !== 'mouse') return;
@@ -104,7 +112,8 @@ export function initDrawer(root: ParentNode = document) {
   });
   drawer.addEventListener('close', () => {
     opener.setAttribute('aria-expanded', 'false');
-    opener.focus();
+    // preventScroll keeps in-page jumps (e.g. "Get the newsletter" → #newsletter) where they land.
+    opener.focus({ preventScroll: true });
   });
   for (const el of drawer.querySelectorAll('[data-drawer-close]')) {
     el.addEventListener('click', () => drawer.close());

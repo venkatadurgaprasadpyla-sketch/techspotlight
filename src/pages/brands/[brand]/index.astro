@@ -1,15 +1,13 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import { hubs } from '~/config/taxonomy';
+import { placeholderStaticPaths } from '~/config/routes';
 import Placeholder from '~/layouts/Placeholder.astro';
 
-// Placeholder brand pages for brands linked from the menus; the brands collection arrives in T2/T8.
-export const getStaticPaths = (() => {
-  const brands = new Map(hubs.flatMap((hub) => hub.topBrands).map((b) => [b.slug, b.label]));
-  return [...brands].map(([brand, label]) => ({ params: { brand }, props: { title: label } }));
-}) satisfies GetStaticPaths;
+// Placeholder brand pages for brands linked from the menus; brand pages arrive in T8.
+export const getStaticPaths = (() =>
+  placeholderStaticPaths(['brand'], '/brands/')) satisfies GetStaticPaths;
 
-const { title } = Astro.props;
+const { title, intro } = Astro.props;
 ---
 
-<Placeholder title={title} />
+<Placeholder title={title} intro={intro} />

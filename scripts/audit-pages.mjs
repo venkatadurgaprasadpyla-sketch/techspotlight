@@ -57,7 +57,13 @@ const TYPES = {
 };
 const root = resolve('dist');
 const server = createServer(async (req, res) => {
-  const pathname = decodeURIComponent(new URL(req.url ?? '/', BASE).pathname);
+  let pathname;
+  try {
+    pathname = decodeURIComponent(new URL(req.url ?? '/', BASE).pathname);
+  } catch {
+    res.writeHead(400).end('Bad request');
+    return;
+  }
   let file = resolve(join(root, pathname.endsWith('/') ? pathname + 'index.html' : pathname));
   if (file !== root && !file.startsWith(root + sep)) file = join(root, '404.html');
   try {
