@@ -1,0 +1,10 @@
+# SAMPLE: a made-up author used to preview templates.
+name: Rohan Placeholder
+role: Sample phones writer
+bio: >-
+  Rohan is a placeholder writer. Every review under this name is invented sample content that
+  shows how phone reviews, guides and deals will look.
+avatar: ../../assets/samples/author-rohan.jpg
+expertise: [Android phones, Battery testing, Cameras]
+social: []
+sample: true
