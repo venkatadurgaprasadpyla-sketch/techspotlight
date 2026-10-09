@@ -1,25 +1,48 @@
 ---
-import '~/styles/global.css';
-import { site } from '~/config/site';
+import { categoryPath, hubPath, hubs } from '~/config/taxonomy';
+import BaseLayout from '~/layouts/BaseLayout.astro';
 
-const title = site.name;
-const description = 'Independent tech reviews and buying advice for India. Coming soon.';
+// Interim homepage: the full Home board (hero, rows, sidebar) is task T7.
+const mvpHubs = hubs.filter((hub) => hub.mvp);
 ---
 
-<!doctype html>
-<html lang={site.locale}>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <link rel="canonical" href={new URL('/', Astro.site)} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  </head>
-  <body class="bg-white text-slate-900">
-    <main class="mx-auto max-w-3xl px-4 py-24">
-      <h1 class="text-4xl font-bold">{title}</h1>
-      <p class="mt-4 text-lg text-slate-700">{description}</p>
-    </main>
-  </body>
-</html>
+<BaseLayout>
+  <div class="wrap flex flex-col gap-10 py-14">
+    <section class="flex max-w-[820px] flex-col gap-4">
+      <p class="lbl">Launching soon</p>
+      <h1 class="text-[40px] sm:text-5xl">Independent tech reviews and buying advice for India</h1>
+      <p class="text-lg text-muted">
+        Hands-on reviews, buying guides and face-offs for laptops, phones and more, with prices in
+        rupees from the stores you already use.
+      </p>
+    </section>
+    <section aria-labelledby="start-here" class="flex flex-col gap-5">
+      <div class="sec-head">
+        <h2 id="start-here" class="text-2xl">
+          Start here
+        </h2>
+      </div>
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,420px),1fr))] gap-6">
+        {mvpHubs.map((hub) => (
+          <div class="flex flex-col gap-3 rounded-[10px] border border-border p-5">
+            <h3 class="text-xl">
+              <a href={hubPath(hub)} class="text-text no-underline hover:text-accent">
+                {hub.label}
+              </a>
+            </h3>
+            <p class="text-muted">{hub.intro}</p>
+            <ul class="flex flex-wrap gap-2">
+              {hub.categories.slice(0, 6).map((category) => (
+                <li>
+                  <a class="chip" href={categoryPath(hub, category)}>
+                    {category.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  </div>
+</BaseLayout>

@@ -1,0 +1,13 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { isOutsideSections, placeholderStaticPaths } from '~/config/routes';
+import Placeholder from '~/layouts/Placeholder.astro';
+
+// Placeholder hub and site-wide content-type pages; real templates arrive in T3.
+export const getStaticPaths = (() =>
+  placeholderStaticPaths(['section'], '/', isOutsideSections)) satisfies GetStaticPaths;
+
+const { title, intro } = Astro.props;
+---
+
+<Placeholder title={title} intro={intro} />

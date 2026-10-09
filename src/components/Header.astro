@@ -1,0 +1,117 @@
+---
+import { site } from '~/config/site';
+import { hubs } from '~/config/taxonomy';
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+import MegaMenu from './MegaMenu.astro';
+import MobileDrawer from './MobileDrawer.astro';
+import ThemeToggle from './ThemeToggle.astro';
+---
+
+<header class="relative z-40 border-b border-border bg-bg" data-site-header>
+  <div class="bg-inverse text-xs text-on-inverse-muted">
+    <div class="wrap flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-1 py-1">
+      <span>{site.tagline} · Prices in ₹</span>
+      <span class="hidden gap-4 sm:flex">
+        <a
+          href="/how-we-test/"
+          class="text-on-inverse-muted no-underline hover:text-on-inverse hover:underline"
+        >
+          How we test
+        </a>
+        <a
+          href="/affiliate-disclosure/"
+          class="text-on-inverse-muted no-underline hover:text-on-inverse hover:underline"
+        >
+          Affiliate disclosure
+        </a>
+      </span>
+    </div>
+  </div>
+  <div class="wrap flex min-h-[68px] items-center gap-3 sm:gap-5">
+    <button
+      type="button"
+      class="icon-btn"
+      aria-label="Open menu"
+      aria-haspopup="dialog"
+      aria-controls="site-drawer"
+      data-drawer-open
+    >
+      <Icon name="menu" />
+    </button>
+    <Logo />
+    <nav aria-label="Main" class="hidden flex-1 lg:block">
+      <ul class="flex items-center gap-1" data-mm-root>
+        {hubs.map((hub) => (
+          <MegaMenu hub={hub} />
+        ))}
+        <li>
+          <a href="/deals/" class="mm-trigger text-rating no-underline hover:text-rating">
+            Deals
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <div class="ml-auto flex items-center gap-2 lg:ml-0">
+      <a class="icon-btn" href="/search/" aria-label="Search">
+        <Icon name="search" />
+      </a>
+      <ThemeToggle class="hidden sm:inline-flex" />
+      <a class="btn hidden sm:inline-flex" href="#newsletter">
+        Newsletter
+      </a>
+    </div>
+  </div>
+  <MobileDrawer />
+</header>
+
+<style is:global>
+  .mm-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ts-text);
+    text-decoration: none;
+    background: none;
+    cursor: pointer;
+  }
+  .mm-trigger:hover,
+  .mm-trigger[aria-expanded='true'] {
+    color: var(--ts-accent);
+  }
+  .mm-trigger[aria-expanded='true'] svg {
+    transform: rotate(180deg);
+  }
+  .mm-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    border-top: 1px solid var(--ts-border);
+    border-bottom: 1px solid var(--ts-border);
+    background: var(--ts-bg);
+    box-shadow: 0 16px 32px -16px rgb(8 9 12 / 0.25);
+  }
+  .mm-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    color: var(--ts-text);
+    text-decoration: none;
+  }
+  .mm-link:hover {
+    color: var(--ts-accent);
+    text-decoration: underline;
+  }
+</style>
+
+<script>
+  import { initDrawer, initMegaMenu } from '~/scripts/nav';
+  initMegaMenu();
+  initDrawer();
+</script>

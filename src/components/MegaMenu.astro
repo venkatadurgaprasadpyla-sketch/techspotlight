@@ -1,0 +1,93 @@
+---
+import {
+  categoryPath,
+  contentTypePath,
+  contentTypes,
+  hubPath,
+  subcategoryPath,
+  type Hub,
+} from '~/config/taxonomy';
+import Icon from './Icon.astro';
+
+interface Props {
+  hub: Hub;
+}
+const { hub } = Astro.props;
+const panelId = `mm-${hub.slug}`;
+---
+
+<li class="mm-item" data-mm-item>
+  <button
+    type="button"
+    class="mm-trigger"
+    aria-expanded="false"
+    aria-controls={panelId}
+    data-mm-trigger
+  >
+    {hub.label}
+    <Icon name="chevron-down" size={16} />
+  </button>
+  <div id={panelId} class="mm-panel" hidden data-mm-panel>
+    <div class="wrap grid gap-8 py-6 lg:grid-cols-[180px_1fr_220px]">
+      <div>
+        <p class="lbl mb-2 text-muted">{hub.label} content</p>
+        <ul class="flex flex-col gap-0.5">
+          {contentTypes.map((type) => (
+            <li>
+              <a class="mm-link" href={contentTypePath(type, hub)}>
+                {type.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <p class="lbl mb-2 text-muted">Categories</p>
+        <ul class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-x-6 gap-y-3">
+          {hub.categories.map((category) => (
+            <li>
+              <a class="mm-link font-semibold" href={categoryPath(hub, category)}>
+                {category.label}
+              </a>
+              {category.subcategories.length > 0 && (
+                <ul class="mt-0.5 flex flex-col">
+                  {category.subcategories.map((sub) => (
+                    <li>
+                      <a
+                        class="mm-link text-[14px] text-muted"
+                        href={subcategoryPath(hub, category, sub)}
+                      >
+                        {sub.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <p class="lbl mb-2 text-muted">Top brands</p>
+        <ul class="flex flex-col gap-0.5">
+          {hub.topBrands.map((brand) => (
+            <li>
+              <a class="mm-link" href={`/brands/${brand.slug}/`}>
+                {brand.label}
+              </a>
+            </li>
+          ))}
+          <li>
+            <a class="mm-link" href="/brands/">
+              All brands
+            </a>
+          </li>
+        </ul>
+        <a class="btn btn-ghost mt-5 w-full" href={hubPath(hub)}>
+          All {hub.label}
+          <Icon name="chevron-right" size={16} />
+        </a>
+      </div>
+    </div>
+  </div>
+</li>

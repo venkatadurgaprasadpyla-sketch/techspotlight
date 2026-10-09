@@ -1,0 +1,13 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { placeholderStaticPaths } from '~/config/routes';
+import Placeholder from '~/layouts/Placeholder.astro';
+
+// Placeholder brand pages for brands linked from the menus; brand pages arrive in T8.
+export const getStaticPaths = (() =>
+  placeholderStaticPaths(['brand'], '/brands/')) satisfies GetStaticPaths;
+
+const { title, intro } = Astro.props;
+---
+
+<Placeholder title={title} intro={intro} />

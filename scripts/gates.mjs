@@ -22,11 +22,15 @@ const selected = (...ids) => !only.length || ids.some((id) => only.includes(id))
 
 function run(id, name, cmd, args, { failOn } = {}) {
   process.stdout.write(`\n▶ ${id} ${name}: ${cmd} ${args.join(' ')}\n`);
-  const res = spawnSync(cmd, args, { encoding: 'utf8', env: process.env });
+  const res = spawnSync(cmd, args, {
+    encoding: 'utf8',
+    env: process.env,
+    maxBuffer: 256 * 1024 * 1024,
+  });
   const output = `${res.stdout ?? ''}${res.stderr ?? ''}`;
   process.stdout.write(output);
   let ok = res.status === 0;
-  let detail = ok ? 'exit 0' : `exit ${res.status}`;
+  let detail = ok ? 'exit 0' : res.error ? `${res.error.message}` : `exit ${res.status}`;
   if (ok && failOn) {
     const hit = output.split('\n').find((line) => failOn.test(line));
     if (hit) {
@@ -55,15 +59,36 @@ function assetKey(url, page) {
   return path.startsWith('/') ? path : posix.join(posix.dirname(page), path);
 }
 
+/** All JS files a module pulls in through static imports (Astro splits shared code into chunks). */
+function moduleGraph(entry, sources) {
+  const seen = new Set();
+  const visit = (key) => {
+    if (seen.has(key) || !sources.has(key)) return;
+    seen.add(key);
+    const code = sources.get(key);
+    for (const [, spec] of code.matchAll(
+      /(?:\bimport|\bexport)\s*(?:[^'"`;]*?\sfrom\s*)?["'`]([^"'`]+\.js)["'`]/g,
+    )) {
+      visit(posix.join(posix.dirname(key), spec));
+    }
+  };
+  visit(entry);
+  return seen;
+}
+
 function budgets() {
   process.stdout.write('\n▶ G8 Budgets\n');
   const { islandKbGzip, pageJsKbGzip, cssKbGzip } = config.budgets;
   const files = walk('dist');
   const problems = [];
   const sizes = new Map();
+  const sources = new Map();
   for (const file of files) {
     if (file.endsWith('.js') || file.endsWith('.css')) {
-      sizes.set('/' + relative('dist', file).split('\\').join('/'), gzKb(readFileSync(file)));
+      const key = '/' + relative('dist', file).split('\\').join('/');
+      const buf = readFileSync(file);
+      sizes.set(key, gzKb(buf));
+      if (file.endsWith('.js')) sources.set(key, buf.toString('utf8'));
     }
   }
   for (const [path, kb] of sizes) {
@@ -75,17 +100,26 @@ function budgets() {
     const page = '/' + relative('dist', file).split('\\').join('/');
     let js = 0;
     let css = 0;
-    for (const [tag, body] of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
-      if (/type=["']?application\/(ld\+)?json/i.test(tag)) continue;
-      const src = attr(tag, 'src');
+    const modules = new Set();
+    for (const [, attrs, body] of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+      if (/type=["']?application\/(ld\+)?json/i.test(attrs)) continue;
+      const src = attr(attrs, 'src');
       if (src) {
         const key = assetKey(src, page);
         if (key && !sizes.has(key)) problems.push(`${page} references missing script ${src}`);
-        js += (key && sizes.get(key)) || 0;
+        if (key) moduleGraph(key, sources).forEach((m) => modules.add(m));
       } else {
         js += gzKb(Buffer.from(body));
+        // Inline modules can import chunks too.
+        for (const [, spec] of body.matchAll(
+          /\bimport\s*(?:[^'"`;]*?\sfrom\s*)?["'`]([^"'`]+\.js)["'`]/g,
+        )) {
+          const key = assetKey(spec, page);
+          if (key) moduleGraph(key, sources).forEach((m) => modules.add(m));
+        }
       }
     }
+    for (const key of modules) js += sizes.get(key) ?? 0;
     for (const [tag] of html.matchAll(/<link\b[^>]*>/gi)) {
       if (!/\srel=["']?stylesheet/i.test(tag)) continue;
       const href = attr(tag, 'href');

@@ -1,0 +1,36 @@
+---
+import Icon from './Icon.astro';
+
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+{/* Label and icon are corrected on load by src/scripts/theme.ts. */}
+<button
+  type="button"
+  class:list={['icon-btn', className]}
+  data-theme-toggle
+  aria-label="Switch to dark theme"
+>
+  <Icon name="moon" class="theme-icon-moon" />
+  <Icon name="sun" class="theme-icon-sun" />
+</button>
+
+<style>
+  [data-theme-toggle] :global(.theme-icon-sun) {
+    display: none;
+  }
+  :global([data-theme='dark']) [data-theme-toggle] :global(.theme-icon-sun) {
+    display: block;
+  }
+  :global([data-theme='dark']) [data-theme-toggle] :global(.theme-icon-moon) {
+    display: none;
+  }
+</style>
+
+<script>
+  import { initThemeToggles } from '~/scripts/theme';
+  initThemeToggles();
+</script>

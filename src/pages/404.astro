@@ -1,0 +1,21 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page not found" description="We couldn't find that page." noindex>
+  <div class="wrap flex flex-col items-start gap-4 py-20">
+    <p class="lbl">Error 404</p>
+    <h1 class="text-4xl">We couldn't find that page</h1>
+    <p class="max-w-[60ch] text-lg text-muted">
+      It may have moved, or the link may be wrong. Try searching, or head back to the homepage.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <a class="btn" href="/">
+        Go to the homepage
+      </a>
+      <a class="btn btn-ghost" href="/search/">
+        Search TechSpotlight
+      </a>
+    </div>
+  </div>
+</BaseLayout>

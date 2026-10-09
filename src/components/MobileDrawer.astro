@@ -1,0 +1,155 @@
+---
+import { contentTypePath, contentTypes, categoryPath, hubPath, hubs } from '~/config/taxonomy';
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+import ThemeToggle from './ThemeToggle.astro';
+---
+
+<dialog id="site-drawer" class="drawer" aria-label="Site menu" data-drawer>
+  <div class="flex h-full flex-col">
+    <div class="flex items-center justify-between border-b border-border px-4 py-2.5">
+      <Logo size="sm" />
+      <button type="button" class="icon-btn" aria-label="Close menu" data-drawer-close>
+        <Icon name="close" />
+      </button>
+    </div>
+    <form action="/search/" method="get" role="search" class="px-4 py-3">
+      <label for="drawer-search" class="sr-only">
+        Search
+      </label>
+      <div class="flex min-h-12 items-center gap-2 rounded-[10px] border border-border-strong px-3 focus-within:outline-3 focus-within:outline-accent">
+        <Icon name="search" size={18} class="text-muted" />
+        <input
+          id="drawer-search"
+          name="q"
+          type="search"
+          placeholder="Search reviews, guides, deals"
+          class="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted"
+        />
+      </div>
+    </form>
+    <nav aria-label="Site menu" class="flex-1 overflow-y-auto">
+      {hubs.map((hub, i) => (
+        <details class="border-b border-border" open={i === 0}>
+          <summary class="drawer-summary">
+            {hub.label}
+            <Icon name="chevron-down" size={18} class="drawer-chevron" />
+          </summary>
+          <div class="flex flex-col gap-0.5 px-4 pt-1 pb-3.5">
+            <p class="drawer-group">Content</p>
+            <ul class="flex flex-wrap gap-1.5">
+              {contentTypes
+                .filter((t) => t.slug !== 'deals')
+                .map((type) => (
+                  <li>
+                    <a class="chip min-h-9" href={contentTypePath(type, hub)}>
+                      {type.label}
+                    </a>
+                  </li>
+                ))}
+            </ul>
+            <p class="drawer-group">Categories</p>
+            <ul>
+              <li>
+                <a class="drawer-link" href={hubPath(hub)}>
+                  All {hub.label}
+                </a>
+              </li>
+              {hub.categories.map((category) => (
+                <li>
+                  <a class="drawer-link" href={categoryPath(hub, category)}>
+                    {category.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <p class="drawer-group">Top brands</p>
+            <p class="flex flex-wrap gap-x-3 gap-y-1 text-[14px]">
+              {hub.topBrands.slice(0, 4).map((brand) => (
+                <a href={`/brands/${brand.slug}/`}>{brand.label}</a>
+              ))}
+              <a href="/brands/">All</a>
+            </p>
+          </div>
+        </details>
+      ))}
+      <a href="/deals/" class="drawer-summary border-b border-border text-rating no-underline">
+        Deals
+      </a>
+      <p class="flex flex-wrap gap-4 px-4 py-3 text-[14px]">
+        <a href="/about/">About</a>
+        <a href="/how-we-test/">How we test</a>
+        <a href="/contact/">Contact</a>
+      </p>
+    </nav>
+    <div class="flex items-center gap-2.5 border-t border-border px-4 py-3">
+      <a href="#newsletter" class="btn min-h-12 flex-1 rounded-[10px]" data-drawer-close>
+        Get the newsletter
+      </a>
+      <ThemeToggle class="size-12" />
+    </div>
+  </div>
+</dialog>
+
+<style>
+  .drawer {
+    margin: 0;
+    width: min(390px, 100vw);
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 0;
+    border: 0;
+    border-right: 1px solid var(--ts-border);
+    background: var(--ts-bg);
+    color: var(--ts-text);
+  }
+  .drawer::backdrop {
+    background: rgb(8 9 12 / 0.55);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .drawer[open] {
+      animation: drawer-in 0.18s ease-out;
+    }
+  }
+  @keyframes drawer-in {
+    from {
+      transform: translateX(-100%);
+    }
+  }
+  .drawer-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 52px;
+    padding: 0 16px;
+    cursor: pointer;
+    list-style: none;
+    font: 600 17px var(--font-heading);
+  }
+  .drawer-summary::-webkit-details-marker {
+    display: none;
+  }
+  details[open] > .drawer-summary :global(.drawer-chevron) {
+    transform: rotate(180deg);
+  }
+  .drawer-group {
+    padding: 8px 0 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ts-muted);
+  }
+  .drawer-link {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    font-size: 15px;
+    color: var(--ts-text);
+    text-decoration: none;
+  }
+  .drawer-link:hover {
+    color: var(--ts-accent);
+  }
+</style>

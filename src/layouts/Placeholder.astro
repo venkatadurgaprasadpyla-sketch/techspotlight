@@ -1,0 +1,28 @@
+---
+import { placeholderPages } from '~/config/routes';
+import BaseLayout from './BaseLayout.astro';
+
+type Props = { title: string; intro?: string } | { path: string };
+
+// Static placeholder files pass their path; dynamic routes pass the registry entry directly.
+const props = Astro.props;
+const page =
+  'path' in props ? placeholderPages.find((p) => p.path === props.path) : (props as typeof props);
+if (!page) throw new Error(`No placeholder registered for ${'path' in props ? props.path : ''}`);
+const { title, intro } = page;
+---
+
+<BaseLayout
+  title={title}
+  description={intro ?? `${title} on TechSpotlight is coming soon.`}
+  noindex
+>
+  <div class="wrap flex flex-col gap-4 py-16">
+    <p class="lbl">Coming soon</p>
+    <h1 class="text-4xl">{title}</h1>
+    {intro && <p class="max-w-[70ch] text-lg text-muted">{intro}</p>}
+    <p class="max-w-[70ch] text-muted">
+      We are still building this page. In the meantime, start from the <a href="/">homepage</a>.
+    </p>
+  </div>
+</BaseLayout>

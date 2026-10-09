@@ -1,0 +1,29 @@
+---
+import { site } from '~/config/site';
+
+interface Props {
+  size?: 'md' | 'sm';
+}
+const { size = 'md' } = Astro.props;
+const mark = size === 'md' ? 28 : 26;
+---
+
+<a
+  href="/"
+  class="inline-flex items-center gap-2 text-text no-underline hover:text-text"
+  aria-label={`${site.name} home`}
+>
+  <svg width={mark} height={mark} viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+    <circle cx="14" cy="14" r="14" fill="var(--ts-accent)"></circle>
+    <path d="M14 5 L21 22 H7 Z" fill="var(--ts-bg)" opacity=".92"></path>
+    <circle cx="14" cy="6" r="2.2" fill="var(--ts-buy)"></circle>
+  </svg>
+  <span
+    class:list={[
+      'font-heading font-bold tracking-[-0.02em]',
+      size === 'md' ? 'text-[22px]' : 'text-[19px]',
+    ]}
+  >
+    {site.name}
+  </span>
+</a>
