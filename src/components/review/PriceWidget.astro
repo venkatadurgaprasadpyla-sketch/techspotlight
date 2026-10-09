@@ -18,10 +18,10 @@ interface Props {
   compact?: boolean;
 }
 const { offers, productName, compact = false } = Astro.props;
-const sorted = [...offers].sort(
-  (a, b) => (a.price ?? Number.POSITIVE_INFINITY) - (b.price ?? Number.POSITIVE_INFINITY),
-);
-const checked = new Date(Math.max(...offers.map((o) => o.lastChecked.getTime())));
+const priceOf = (o: RetailerOffer) => (o.price ? o.price : Number.POSITIVE_INFINITY);
+const sorted = [...offers].sort((a, b) => priceOf(a) - priceOf(b));
+// The oldest check, so a stale price is never presented as freshly checked.
+const checked = new Date(Math.min(...offers.map((o) => o.lastChecked.getTime())));
 ---
 
 <div class:list={[!compact && 'flex flex-col gap-3']}>

@@ -14,6 +14,7 @@ import Rating from '~/components/cards/Rating.astro';
 import AuthorBio from '~/components/review/AuthorBio.astro';
 import BenchmarkTable from '~/components/review/BenchmarkTable.astro';
 import BuyIf from '~/components/review/BuyIf.astro';
+import Faq from '~/components/review/Faq.astro';
 import CheatSheet from '~/components/review/CheatSheet.astro';
 import Gallery from '~/components/review/Gallery.astro';
 import JumpBar from '~/components/review/JumpBar.astro';
@@ -24,7 +25,7 @@ import VerdictBox from '~/components/review/VerdictBox.astro';
 import YouTubeFacade from '~/components/review/YouTubeFacade.astro';
 import { findTopic } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
-import { AFFILIATE_REL, affiliateHref } from '~/lib/affiliate';
+import { AFFILIATE_REL, affiliateHref, lowestOffer } from '~/lib/affiliate';
 import { getArticles } from '~/lib/articles';
 import { leafSlug } from '~/lib/content-schema';
 import { getPublished, getPublishedEntry } from '~/lib/content';
@@ -57,11 +58,8 @@ const crumbs = [...topicCrumbs(topic), { label: `${productName} review`, href: u
 
 const author = await getPublishedEntry('authors', data.author.id);
 const offers = data.retailers;
-const priced = offers.filter((o) => o.price !== undefined);
-const lowest = [...priced].sort((a, b) => (a.price ?? 0) - (b.price ?? 0))[0];
-const best = lowest?.price
-  ? { retailer: lowest.name, url: lowest.url, price: lowest.price }
-  : undefined;
+const lowest = lowestOffer(offers);
+const best = lowest && { retailer: lowest.name, url: lowest.url, price: lowest.price };
 
 // Related content: guides that pick this product, face-offs that include it, more reviews.
 const articles = await getArticles();
@@ -79,22 +77,36 @@ const moreReviews = others.filter((a) => a.collection === 'reviews' && a.leaf ==
 const latestInCategory = others.filter((a) => a.category === data.category).slice(0, 5);
 
 const bodyIds = new Set(headings.map((h) => h.slug));
+// Ids the template adds. A body heading with the same slug (e.g. a pasted "## Final verdict")
+// would duplicate an id and send the jump bar to the wrong place, so stop the build instead.
+const sectionIds = ['verdict', 'cheat-sheet', 'specs', 'scores', 'benchmarks', 'gallery', 'video'];
+const templateIds = [...sectionIds, 'final-verdict', 'prices', 'faq'].flatMap((id) => [
+  id,
+  `${id}-title`,
+]);
+const clash = templateIds.filter((id) => bodyIds.has(id));
+if (clash.length) {
+  throw new Error(
+    `Review ${entry.id}: body headings ${clash.map((id) => `"${id}"`).join(', ')} clash with sections the template adds. Remove or rename them (see CONTENT-GUIDE.md).`,
+  );
+}
 const sections = [
   { id: 'verdict', label: 'Verdict' },
   { id: 'cheat-sheet', label: 'Cheat sheet' },
   { id: 'specs', label: 'Specs' },
   ...(bodyIds.has('the-ups') ? [{ id: 'the-ups', label: 'The ups' }] : []),
   ...(bodyIds.has('the-downs') ? [{ id: 'the-downs', label: 'The downs' }] : []),
-  ...(data.scores.length ? [{ id: 'scores', label: 'Scores' }] : []),
+  ...(data.scores.length ? [{ id: 'scores', label: 'Scorecard' }] : []),
   ...(data.benchmarks.length ? [{ id: 'benchmarks', label: 'Benchmarks' }] : []),
   { id: 'final-verdict', label: 'Final verdict' },
   { id: 'prices', label: 'Prices' },
+  ...(data.faq.length ? [{ id: 'faq', label: 'FAQ' }] : []),
 ];
 const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
 ---
 
 <BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
-  <article class="pb-20 lg:pb-0">
+  <article>
     <header class="wrap flex flex-col gap-3.5 pt-5 pb-6">
       <Breadcrumbs crumbs={crumbs} />
       <div class="flex flex-wrap items-center gap-2.5">
@@ -201,6 +213,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
           </h2>
           <PriceWidget offers={offers} productName={productName} />
         </section>
+        {data.faq.length > 0 && <Faq items={data.faq} />}
         {author && (
           <AuthorBio
             name={author.data.name}

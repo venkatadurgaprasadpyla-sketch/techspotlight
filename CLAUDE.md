@@ -47,7 +47,7 @@ When a task adds a page type, add a representative URL to `gates.config.json` â†
 - Tokens live in `src/styles/global.css` as `light-dark()` pairs on `:root` (`--ts-*`), exposed to Tailwind as `bg-surface`, `text-muted`, `border-border`, `bg-accent`, `bg-buy`, `text-rating`, etc. Never hard-code hex values in components.
 - Theme: `<html data-theme>` is set before first paint (inline script in `BaseHead.astro`) from `localStorage['ts-theme']` or the OS; `src/scripts/theme.ts` handles toggles.
 - Fonts: IBM Plex Sans (body), Space Grotesk (headings, `font-heading`), IBM Plex Mono (`font-mono`, specs and prices), self-hosted via Astro's Fonts API from `@fontsource/*` latin files (`astro.config.mjs`).
-- Shared component classes: `.wrap`, `.lbl`, `.btn` (+ `.btn-ghost`, `.btn-buy`), `.chip`, `.badge` (+ `.badge-ec`, `.badge-bv`), `.icon-btn`, `.sec-head`, `.placeholder`, `.ad-slot`.
+- Shared component classes: `.wrap`, `.lbl`, `.btn` (+ `.btn-ghost`, `.btn-buy`), `.chip`, `.badge` (+ `.badge-ec`, `.badge-bv`), `.icon-btn`, `.sec-head`, `.placeholder`, `.ad-slot` (+ `.ad-in-article`), `prose` (article bodies, mapped to the tokens).
 - `/styleguide/` (noindex) shows every token and component for visual checks against the DesignSystem board.
 
 ## Taxonomy and routes

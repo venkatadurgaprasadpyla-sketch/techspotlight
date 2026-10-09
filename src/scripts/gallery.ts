@@ -10,6 +10,8 @@ export function initGallery(root: Document = document) {
   const caption = dialog.querySelector<HTMLElement>('[data-lightbox-caption]');
   const count = dialog.querySelector<HTMLElement>('[data-lightbox-count]');
   if (!img || !caption || !count) return;
+  // Collapse photos after the fourth into the "+n" tile; they stay reachable in the lightbox.
+  root.querySelector<HTMLElement>('[data-gallery]')?.setAttribute('data-js', '');
   let index = 0;
   let opener: HTMLElement | undefined;
 

@@ -105,8 +105,11 @@ ratings out of 5, so convert as you paste:
 
 3. Paste the body from the first design or setup section onwards. Delete the parts the page
    template already renders from frontmatter: the H1, hero image, verdict, rating line, Best
-   for/Skip if, disclosure, Where to buy, Pros, Cons, Rating breakdown, Specifications, FAQ and
-   the final "Check the latest price" link.
+   for/Skip if, disclosure, Where to buy, Pros, Cons, Rating breakdown, Specifications, FAQ,
+   Final verdict (its who-should-buy lines go in `buyIf` / `dontBuyIf`) and the final "Check the
+   latest price" link. The build stops if a body heading would clash with a section the template
+   adds (Verdict, Cheat sheet, Specs, Scores, Benchmarks, Photos, Video, Final verdict, Prices,
+   FAQ).
 4. Delete every `[INJECT_ADSENSE_SLOT]` line; the review template places ad slots itself.
    Replace `[IMAGE NEEDED: …]` with a real image or remove it.
 5. Fix internal links to the site's URL shapes (table above), e.g. `/reviews/northwind-aero-14`

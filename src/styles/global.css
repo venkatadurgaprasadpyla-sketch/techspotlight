@@ -182,7 +182,7 @@
   .ad-slot {
     @apply flex items-center justify-center rounded-md border border-dashed border-ad-border bg-ad text-center font-mono text-[11px] tracking-[0.06em] text-ad-text uppercase;
   }
-  /* Reserved in-article ad space, inserted by src/lib/rehype-ad-slots.ts. */
+  /* Reserved in-article ad space, inserted by src/lib/ad-slots.ts. */
   .ad-in-article {
     @apply my-8 h-[250px] w-full;
   }
