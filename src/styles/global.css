@@ -1,0 +1,4 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+/* Design tokens land in T1. */

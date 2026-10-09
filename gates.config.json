@@ -1,0 +1,16 @@
+{
+  "$comment": "Pages audited by Lighthouse (G5), axe (G6) and screenshots (G9). Each task adds the pages it touches.",
+  "pages": ["/"],
+  "lighthouse": {
+    "performance": 0.95,
+    "accessibility": 1,
+    "best-practices": 0.95,
+    "seo": 1,
+    "runs": 3
+  },
+  "budgets": {
+    "islandKbGzip": 5,
+    "pageJsKbGzip": 20,
+    "cssKbGzip": 30
+  }
+}

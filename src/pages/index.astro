@@ -1,0 +1,25 @@
+---
+import '~/styles/global.css';
+import { site } from '~/config/site';
+
+const title = site.name;
+const description = 'Independent tech reviews and buying advice for India. Coming soon.';
+---
+
+<!doctype html>
+<html lang={site.locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={new URL('/', Astro.site)} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body class="bg-white text-slate-900">
+    <main class="mx-auto max-w-3xl px-4 py-24">
+      <h1 class="text-4xl font-bold">{title}</h1>
+      <p class="mt-4 text-lg text-slate-700">{description}</p>
+    </main>
+  </body>
+</html>
