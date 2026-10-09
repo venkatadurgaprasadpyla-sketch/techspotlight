@@ -1,0 +1,338 @@
+---
+/**
+ * Review page: /<leaf>/<id>-review/, where leaf is the subcategory (or category without
+ * subcategories). Section order follows the Review and MobileReview boards.
+ */
+import type { GetStaticPaths } from 'astro';
+import { Image } from 'astro:assets';
+import { render, type CollectionEntry } from 'astro:content';
+import AdSlot from '~/components/AdSlot.astro';
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import ArticleCard from '~/components/cards/ArticleCard.astro';
+import BadgeTag from '~/components/cards/BadgeTag.astro';
+import Rating from '~/components/cards/Rating.astro';
+import AuthorBio from '~/components/review/AuthorBio.astro';
+import BenchmarkTable from '~/components/review/BenchmarkTable.astro';
+import BuyIf from '~/components/review/BuyIf.astro';
+import Faq from '~/components/review/Faq.astro';
+import CheatSheet from '~/components/review/CheatSheet.astro';
+import Gallery from '~/components/review/Gallery.astro';
+import JumpBar from '~/components/review/JumpBar.astro';
+import PriceWidget from '~/components/review/PriceWidget.astro';
+import ScoreCard from '~/components/review/ScoreCard.astro';
+import SpecsTable from '~/components/review/SpecsTable.astro';
+import VerdictBox from '~/components/review/VerdictBox.astro';
+import YouTubeFacade from '~/components/review/YouTubeFacade.astro';
+import { findTopic } from '~/config/taxonomy';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { AFFILIATE_REL, affiliateHref, lowestOffer } from '~/lib/affiliate';
+import { getArticles } from '~/lib/articles';
+import { leafSlug } from '~/lib/content-schema';
+import { getPublished, getPublishedEntry } from '~/lib/content';
+import { formatDate, formatInr, isoDate } from '~/lib/format';
+import { topicCrumbs } from '~/lib/listings';
+import { articlePath } from '~/lib/urls';
+
+interface Props {
+  entry: CollectionEntry<'reviews'>;
+}
+
+export const getStaticPaths = (async () => {
+  const reviews = await getPublished('reviews');
+  return reviews.map((entry) => ({
+    params: { leaf: leafSlug(entry.data), review: `${entry.id}-review` },
+    props: { entry },
+  }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props as Props;
+const { data } = entry;
+const { Content, headings } = await render(entry);
+const leaf = leafSlug(data);
+const topic = findTopic(leaf);
+if (!topic) throw new Error(`Review ${entry.id}: unknown topic ${leaf}`);
+const leafLabel = topic.subcategory?.label ?? topic.category.label;
+const url = articlePath('reviews', entry.id, leaf);
+const productName = data.product.name;
+const crumbs = [...topicCrumbs(topic), { label: `${productName} review`, href: url }];
+
+const author = await getPublishedEntry('authors', data.author.id);
+const offers = data.retailers;
+const lowest = lowestOffer(offers);
+const best = lowest && { retailer: lowest.name, url: lowest.url, price: lowest.price };
+
+// Related content: guides that pick this product, face-offs that include it, more reviews.
+const articles = await getArticles();
+const guides = (await getPublished('guides')).flatMap((g) => {
+  const pick = g.data.picks.find((p) => p.reviewRef?.id === entry.id);
+  return pick
+    ? [{ title: g.data.title, url: articlePath('guides', g.id, leafSlug(g.data)), pick }]
+    : [];
+});
+const faceOffs = (await getPublished('versus'))
+  .filter((v) => [v.data.productA, v.data.productB].some((p) => p.reviewRef?.id === entry.id))
+  .map((v) => ({ title: v.data.title, url: articlePath('versus', v.id, leafSlug(v.data)) }));
+const others = articles.filter((a) => a.url !== url);
+const moreReviews = others.filter((a) => a.collection === 'reviews' && a.leaf === leaf).slice(0, 4);
+const latestInCategory = others.filter((a) => a.category === data.category).slice(0, 5);
+
+const bodyIds = new Set(headings.map((h) => h.slug));
+// Ids the template adds. A body heading with the same slug (e.g. a pasted "## Final verdict")
+// would duplicate an id and send the jump bar to the wrong place, so stop the build instead.
+const sectionIds = ['verdict', 'cheat-sheet', 'specs', 'scores', 'benchmarks', 'gallery', 'video'];
+const templateIds = [...sectionIds, 'final-verdict', 'prices', 'faq'].flatMap((id) => [
+  id,
+  `${id}-title`,
+]);
+const clash = templateIds.filter((id) => bodyIds.has(id));
+if (clash.length) {
+  throw new Error(
+    `Review ${entry.id}: body headings ${clash.map((id) => `"${id}"`).join(', ')} clash with sections the template adds. Remove or rename them (see CONTENT-GUIDE.md).`,
+  );
+}
+const sections = [
+  { id: 'verdict', label: 'Verdict' },
+  { id: 'cheat-sheet', label: 'Cheat sheet' },
+  { id: 'specs', label: 'Specs' },
+  ...(bodyIds.has('the-ups') ? [{ id: 'the-ups', label: 'The ups' }] : []),
+  ...(bodyIds.has('the-downs') ? [{ id: 'the-downs', label: 'The downs' }] : []),
+  ...(data.scores.length ? [{ id: 'scores', label: 'Scorecard' }] : []),
+  ...(data.benchmarks.length ? [{ id: 'benchmarks', label: 'Benchmarks' }] : []),
+  { id: 'final-verdict', label: 'Final verdict' },
+  { id: 'prices', label: 'Prices' },
+  ...(data.faq.length ? [{ id: 'faq', label: 'FAQ' }] : []),
+];
+const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
+---
+
+<BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
+  <article>
+    <header class="wrap flex flex-col gap-3.5 pt-5 pb-6">
+      <Breadcrumbs crumbs={crumbs} />
+      <div class="flex flex-wrap items-center gap-2.5">
+        {data.badge && <BadgeTag badge={data.badge} />}
+        <span class="lbl">Review</span>
+      </div>
+      <h1 class="max-w-[900px] text-[30px] sm:text-[42px]">{data.title}</h1>
+      <p class="hidden max-w-[780px] text-lg text-muted sm:block">{data.description}</p>
+      <div class="flex items-center gap-3 text-[14px]">
+        {author?.data.avatar && (
+          <Image
+            src={author.data.avatar}
+            alt=""
+            width={40}
+            height={40}
+            class="size-10 flex-none rounded-full object-cover"
+          />
+        )}
+        <p>
+          {author && (
+            <>
+              <b>{author.data.name}</b>
+              <span class="hidden text-muted sm:inline">, {author.data.role}</span>
+              <span class="text-muted" aria-hidden="true">
+                {' '}
+                ·{' '}
+              </span>
+            </>
+          )}
+          <span class="text-muted">
+            Published{' '}
+            <time datetime={isoDate(data.publishDate)}>{formatDate(data.publishDate)}</time>
+            {data.updatedDate && (
+              <>
+                <span aria-hidden="true"> · </span>Updated{' '}
+                <time datetime={isoDate(data.updatedDate)}>{formatDate(data.updatedDate)}</time>
+              </>
+            )}
+          </span>
+        </p>
+      </div>
+      <p class="max-w-[780px] text-[13px] text-muted">
+        {data.testingNotes && <span class="hidden sm:inline">{data.testingNotes} </span>}We may earn
+        a commission from links on this page.{' '}
+        <a href="/how-we-test/">Why you can trust TechSpotlight</a>
+      </p>
+    </header>
+
+    <div class="wrap pb-6">
+      <Image
+        src={data.heroImage}
+        alt={data.heroAlt}
+        widths={[480, 800, 1200, 1600]}
+        sizes="(min-width: 1200px) 1152px, 100vw"
+        class="aspect-[21/9] w-full rounded-[10px] object-cover"
+        loading="eager"
+        fetchpriority="high"
+      />
+    </div>
+
+    <JumpBar sections={sections} best={best} productName={productName} />
+
+    <div class="wrap flex flex-wrap items-start gap-12 py-8">
+      <div class="flex max-w-[780px] min-w-0 flex-[999_1_640px] flex-col gap-9">
+        <VerdictBox
+          rating={data.rating}
+          badge={data.badge}
+          verdict={data.verdict}
+          pros={data.pros}
+          cons={data.cons}
+          offers={offers}
+          productName={productName}
+        />
+        <CheatSheet sheet={data.cheatSheet} testingNotes={data.testingNotes} />
+        <SpecsTable specs={data.specs} msrp={data.product.msrp || undefined} />
+        <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
+          <Content />
+        </div>
+        {data.scores.length > 0 && <ScoreCard scores={data.scores} />}
+        {data.benchmarks.length > 0 && (
+          <BenchmarkTable benchmarks={data.benchmarks} productName={productName} />
+        )}
+        {data.gallery.length > 0 && <Gallery images={data.gallery} productName={productName} />}
+        {data.youtubeId && (
+          <YouTubeFacade
+            id={data.youtubeId}
+            title={`${productName} review`}
+            poster={data.heroImage}
+          />
+        )}
+        <BuyIf
+          productName={productName}
+          verdict={data.verdict}
+          buyIf={data.buyIf}
+          dontBuyIf={data.dontBuyIf}
+        />
+        <section
+          id="prices"
+          class="flex scroll-mt-20 flex-col gap-3.5"
+          aria-labelledby="prices-title"
+        >
+          <h2 id="prices-title" class="text-[28px]">
+            Best prices today
+          </h2>
+          <PriceWidget offers={offers} productName={productName} />
+        </section>
+        {data.faq.length > 0 && <Faq items={data.faq} />}
+        {author && (
+          <AuthorBio
+            name={author.data.name}
+            role={author.data.role}
+            bio={author.data.bio}
+            avatar={author.data.avatar}
+            expertise={author.data.expertise}
+          />
+        )}
+        {guides.length > 0 && (
+          <section
+            class="flex flex-col gap-3 rounded-[10px] bg-surface p-5"
+            aria-labelledby="featured-in"
+          >
+            <h2 id="featured-in" class="text-lg">
+              Featured in
+            </h2>
+            <ul class="flex flex-col gap-2">
+              {guides.map((g) => (
+                <li>
+                  <span class="lbl">
+                    #{g.pick.rank} · {g.pick.label}
+                  </span>{' '}
+                  in{' '}
+                  <a href={g.url} class={linkClass}>
+                    {g.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+
+      <aside
+        class="flex flex-[1_1_300px] flex-col gap-6 self-stretch"
+        aria-label="About this product"
+      >
+        <section
+          class="flex flex-col gap-3 rounded-[10px] border border-border p-5 bg-bg lg:sticky lg:top-[72px] lg:z-10"
+          aria-labelledby="at-a-glance"
+        >
+          <h2 id="at-a-glance" class="text-lg">
+            At a glance
+          </h2>
+          <p class="font-semibold">{productName}</p>
+          <Rating value={data.rating} />
+          {best && (
+            <>
+              <p class="font-mono text-xl">{formatInr(best.price)}</p>
+              <a
+                class="btn btn-buy"
+                href={affiliateHref(best.retailer, best.url)}
+                rel={AFFILIATE_REL}
+                target="_blank"
+              >
+                Check price<span class="sr-only">: {productName}, opens in a new tab</span>
+              </a>
+            </>
+          )}
+        </section>
+        <AdSlot size="skyscraper" class="hidden self-center lg:flex" />
+        {faceOffs.length > 0 && (
+          <section
+            class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
+            aria-labelledby="compare-it"
+          >
+            <h2 id="compare-it" class="text-lg">
+              Compare it
+            </h2>
+            <ul class="flex flex-col gap-2">
+              {faceOffs.map((v) => (
+                <li>
+                  <a href={v.url} class={linkClass}>
+                    {v.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {latestInCategory.length > 0 && (
+          <section
+            class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
+            aria-labelledby="latest-in"
+          >
+            <h2 id="latest-in" class="text-lg">
+              Latest in {topic.category.label}
+            </h2>
+            <ul class="flex flex-col gap-2.5">
+              {latestInCategory.map((item) => (
+                <li>
+                  <a href={item.url} class={linkClass}>
+                    {item.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </aside>
+    </div>
+
+    {moreReviews.length > 0 && (
+      <section class="wrap flex flex-col gap-5 pb-12" aria-labelledby="more-reviews">
+        <div class="sec-head">
+          <h2 id="more-reviews" class="text-2xl">
+            More {leafLabel.toLowerCase()} reviews
+          </h2>
+          <a href={crumbs.at(-2)?.href} class="text-[14px] font-semibold">
+            See all<span class="sr-only"> {leafLabel.toLowerCase()} reviews</span>
+          </a>
+        </div>
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-5">
+          {moreReviews.map((item) => (
+            <ArticleCard item={item} />
+          ))}
+        </div>
+      </section>
+    )}
+  </article>
+</BaseLayout>

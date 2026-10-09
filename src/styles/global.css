@@ -182,7 +182,38 @@
   .ad-slot {
     @apply flex items-center justify-center rounded-md border border-dashed border-ad-border bg-ad text-center font-mono text-[11px] tracking-[0.06em] text-ad-text uppercase;
   }
+  /* Reserved in-article ad space, inserted by src/lib/ad-slots.ts. */
+  .ad-in-article {
+    @apply my-8 h-[250px] w-full;
+  }
   .sr-only-focusable:not(:focus) {
     @apply sr-only;
+  }
+}
+
+/* Article bodies (`prose`) use the design tokens, so they follow the theme without `dark:`. */
+@utility prose {
+  --tw-prose-body: var(--ts-text);
+  --tw-prose-headings: var(--ts-text);
+  --tw-prose-lead: var(--ts-muted);
+  --tw-prose-links: var(--ts-accent);
+  --tw-prose-bold: var(--ts-text);
+  --tw-prose-counters: var(--ts-muted);
+  --tw-prose-bullets: var(--ts-border-strong);
+  --tw-prose-hr: var(--ts-border);
+  --tw-prose-quotes: var(--ts-text);
+  --tw-prose-quote-borders: var(--ts-border-strong);
+  --tw-prose-captions: var(--ts-muted);
+  --tw-prose-code: var(--ts-text);
+  --tw-prose-pre-code: var(--ts-text);
+  --tw-prose-pre-bg: var(--ts-surface);
+  --tw-prose-th-borders: var(--ts-border-strong);
+  --tw-prose-td-borders: var(--ts-border);
+  line-height: 1.7;
+  & :where(h2, h3) {
+    font-family: var(--font-heading);
+  }
+  & :where(a):hover {
+    color: var(--ts-accent-hover);
   }
 }

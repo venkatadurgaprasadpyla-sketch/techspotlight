@@ -1,0 +1,26 @@
+---
+/** Frequently asked questions as native disclosures (no JS). */
+interface Props {
+  items: { q: string; a: string }[];
+}
+const { items } = Astro.props;
+---
+
+<section id="faq" class="flex scroll-mt-20 flex-col gap-3.5" aria-labelledby="faq-title">
+  <h2 id="faq-title" class="text-[28px]">
+    Frequently asked questions
+  </h2>
+  <div class="divide-y divide-border rounded-[10px] border border-border">
+    {items.map((item) => (
+      <details class="group px-5 py-4">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold [&::-webkit-details-marker]:hidden">
+          <h3 class="font-sans text-base">{item.q}</h3>
+          <span class="text-xl text-muted group-open:rotate-45" aria-hidden="true">
+            +
+          </span>
+        </summary>
+        <p class="pt-2.5 text-muted">{item.a}</p>
+      </details>
+    ))}
+  </div>
+</section>

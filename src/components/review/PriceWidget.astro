@@ -1,0 +1,60 @@
+---
+/**
+ * Retailer prices with affiliate links. `compact` sits inside the verdict box; the full widget
+ * closes the review. Offers without a price still link through ("Check price").
+ */
+import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import { formatDate, formatInr, isoDate } from '~/lib/format';
+
+export interface RetailerOffer {
+  name: string;
+  url: string;
+  price?: number | undefined;
+  lastChecked: Date;
+}
+interface Props {
+  offers: RetailerOffer[];
+  productName: string;
+  compact?: boolean;
+}
+const { offers, productName, compact = false } = Astro.props;
+const priceOf = (o: RetailerOffer) => (o.price ? o.price : Number.POSITIVE_INFINITY);
+const sorted = [...offers].sort((a, b) => priceOf(a) - priceOf(b));
+// The oldest check, so a stale price is never presented as freshly checked.
+const checked = new Date(Math.min(...offers.map((o) => o.lastChecked.getTime())));
+---
+
+<div class:list={[!compact && 'flex flex-col gap-3']}>
+  <ul class:list={['divide-y divide-border', !compact && 'rounded-[10px] border border-border']}>
+    {sorted.map((offer) => {
+      const store = getRetailer(offer.name)?.name ?? offer.name;
+      return (
+        <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <b>{store}</b>
+          <span class="flex flex-wrap items-center gap-3">
+            {offer.price ? (
+              <b class="font-mono text-[17px] font-medium">{formatInr(offer.price)}</b>
+            ) : (
+              <span class="text-[13px] text-muted">Price varies</span>
+            )}
+            <a
+              class="btn btn-buy"
+              href={affiliateHref(offer.name, offer.url)}
+              rel={AFFILIATE_REL}
+              target="_blank"
+            >
+              {offer.price ? 'View deal' : 'Check price'}
+              <span class="sr-only">
+                : {productName} at {store}, opens in a new tab
+              </span>
+            </a>
+          </span>
+        </li>
+      );
+    })}
+  </ul>
+  <p class:list={['text-[13px] text-muted', compact && 'px-4 pb-4 sm:px-6']}>
+    Prices checked <time datetime={isoDate(checked)}>{formatDate(checked)}</time>. We may earn a
+    commission when you buy through these links. <a href="/affiliate-disclosure/">How this works</a>
+  </p>
+</div>

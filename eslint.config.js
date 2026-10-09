@@ -16,4 +16,12 @@ export default defineConfig(
       globals: { ...globals.browser, ...globals.node },
     },
   },
+  {
+    files: ['**/*.astro'],
+    rules: {
+      // A labelled scroll region (role="region") must be focusable so keyboard users can scroll
+      // it (axe: scrollable-region-focusable), e.g. the review specs table.
+      'astro/jsx-a11y/no-noninteractive-tabindex': ['error', { roles: ['tabpanel', 'region'] }],
+    },
+  },
 );

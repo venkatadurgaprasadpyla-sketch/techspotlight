@@ -125,6 +125,22 @@ describe('review schema', () => {
     );
   });
 
+  it('needs a benchmark row named exactly like the product, except in drafts', () => {
+    const benchmarks = [
+      {
+        title: 'Battery',
+        unit: 'hours',
+        higherIsBetter: true,
+        rows: [
+          { product: 'Aero 14', value: 13 },
+          { product: 'Rival', value: 10 },
+        ],
+      },
+    ];
+    expect(parse({ benchmarks }).join()).toMatch(/exactly "Northwind Aero 14"/);
+    expect(parse({ benchmarks, draft: true })).toEqual([]);
+  });
+
   it('validates the YouTube id', () => {
     expect(parse({ youtubeId: 'dQw4w9WgXcQ' })).toEqual([]);
     expect(parse({ youtubeId: 'https://youtu.be/x' }).join()).toMatch(/YouTube/);

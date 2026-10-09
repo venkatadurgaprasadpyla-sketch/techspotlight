@@ -47,19 +47,21 @@ When a task adds a page type, add a representative URL to `gates.config.json` �
 - Tokens live in `src/styles/global.css` as `light-dark()` pairs on `:root` (`--ts-*`), exposed to Tailwind as `bg-surface`, `text-muted`, `border-border`, `bg-accent`, `bg-buy`, `text-rating`, etc. Never hard-code hex values in components.
 - Theme: `<html data-theme>` is set before first paint (inline script in `BaseHead.astro`) from `localStorage['ts-theme']` or the OS; `src/scripts/theme.ts` handles toggles.
 - Fonts: IBM Plex Sans (body), Space Grotesk (headings, `font-heading`), IBM Plex Mono (`font-mono`, specs and prices), self-hosted via Astro's Fonts API from `@fontsource/*` latin files (`astro.config.mjs`).
-- Shared component classes: `.wrap`, `.lbl`, `.btn` (+ `.btn-ghost`, `.btn-buy`), `.chip`, `.badge` (+ `.badge-ec`, `.badge-bv`), `.icon-btn`, `.sec-head`, `.placeholder`, `.ad-slot`.
+- Shared component classes: `.wrap`, `.lbl`, `.btn` (+ `.btn-ghost`, `.btn-buy`), `.chip`, `.badge` (+ `.badge-ec`, `.badge-bv`), `.icon-btn`, `.sec-head`, `.placeholder`, `.ad-slot` (+ `.ad-in-article`), `prose` (article bodies, mapped to the tokens).
 - `/styleguide/` (noindex) shows every token and component for visual checks against the DesignSystem board.
 
 ## Taxonomy and routes
 
 - `src/config/taxonomy.ts` is the single source of truth for hubs → categories → subcategories and content types. Leaf slugs (subcategories, or categories without subcategories) are unique site-wide.
-- `src/pages/[...path].astro` builds every section page: listings from `src/lib/listings.ts` (live hubs, categories, subcategories, per-hub and site-wide content types; 12 per page, page n at `<base>page/<n>/`), placeholders for hubs with `mvp: false` (`src/config/routes.ts`), and placeholders for article URLs until T4 to T7 ship their templates (remove them there). It throws if two pages want the same URL.
+- `src/pages/[...path].astro` builds every section page: listings from `src/lib/listings.ts` (live hubs, categories, subcategories, per-hub and site-wide content types; 12 per page, page n at `<base>page/<n>/`), placeholders for hubs with `mvp: false` (`src/config/routes.ts`), and placeholders for article URLs whose templates have not shipped (`awaitingTemplate`; remove a collection there when its route ships). It throws if two pages want the same URL.
+- Reviews: `src/pages/[leaf]/[review].astro` (`/<leaf>/<id>-review/`), built from `src/components/review/*` (VerdictBox, CheatSheet, SpecsTable, ScoreCard, BenchmarkTable, Gallery, YouTubeFacade, BuyIf, PriceWidget, AuthorBio, JumpBar). Islands: `src/scripts/jumpbar.ts`, `gallery.ts` (native `<dialog>` lightbox), `youtube.ts` (youtube-nocookie facade); each works as plain links without JS.
 - Article URLs come from `articlePath()` in `src/lib/urls.ts`; listings render `CardItem`s (`src/lib/cards.ts`) loaded once by `getArticles()` (`src/lib/articles.ts`).
 - Placeholders and empty listings are noindex. The sitemap leaves out any page whose built HTML is noindex (`astro.config.mjs`), so there is no second list to keep in sync.
 - Components: `cards/ArticleCard` (standard, compact, hero, review), `Rating`, `BadgeTag`, `Breadcrumbs` (with BreadcrumbList JSON-LD), `Pagination`, `AdSlot`, `listing/*` (page templates, `ExploreGrid`, `Sidebar`). Outbound retailer links go through `affiliateHref()` with `rel={AFFILIATE_REL}`.
 
 ## Content
 
+- Markdown runs through Astro 7's default Sätteri processor. Plugins are Sätteri hast/mdast plugins passed to `satteri({ hastPlugins })` in `astro.config.mjs`, not `markdown.rehypePlugins`. `src/lib/ad-slots.ts` reserves in-article ad slots (after paragraph 3, then every ~600 words) in files under `src/content/`.
 - Collections (`src/content.config.ts`): reviews, guides, versus, howtos, news, deals (Markdown/MDX) and authors, brands (YAML) under `src/content/<name>/`. Schemas are factories in `src/lib/content-schema.ts`, unit tested with stand-in `image()`/`reference()` helpers (`tests/helpers/content.ts`).
 - Schemas validate topics against `taxonomy.ts`, retailer links against `site.retailers` hosts, and refuse `TODO` in anything that is not a draft.
 - Read content only through `getPublished()` / `getPublishedEntry()` in `src/lib/content.ts`: drafts are dropped in production and `sample: true` entries when `PUBLIC_HIDE_SAMPLES=true`.
@@ -72,10 +74,10 @@ When a task adds a page type, add a representative URL to `gates.config.json` �
 src/config/     site.ts (public config), taxonomy.ts, routes.ts (placeholder registry)
 src/layouts/    BaseLayout (head, header, footer), Placeholder
 src/components/ Header, MegaMenu, MobileDrawer, Footer, NewsletterForm, ThemeToggle, Logo, Icon
-src/scripts/    nav.ts (mega-menu + drawer), theme.ts
+src/scripts/    nav.ts (mega-menu + drawer), theme.ts, review islands (jumpbar, gallery, youtube)
 src/pages/      routes
 src/styles/     global.css (Tailwind + design tokens)
-src/lib/        pure helpers (unit tested): format, content-schema, visibility; content.ts reads collections
+src/lib/        pure helpers (unit tested): format, content-schema, visibility, listing(s), cards, urls, affiliate, ad-slots; content.ts reads collections
 src/content/    articles and data (see CONTENT-GUIDE.md); src/assets/ images
 scripts/        gates.mjs, audit-pages.mjs, new-content.mjs (scaffolder), make-sample-images.mjs
 tests/          Vitest specs

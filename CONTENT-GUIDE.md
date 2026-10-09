@@ -99,18 +99,24 @@ ratings out of 5, so convert as you paste:
    | Other images                       | `gallery` (`src`, `alt`, `caption`)                                                              |
    | `testedDays`, `testingStatus`      | `testingNotes`, e.g. "Used for 14 days as my main phone"; write "Hands-on testing pending" if so |
    | Frequently asked questions         | `faq` (`q`, `a`)                                                                                 |
+   | Buy it if / Don't buy it if        | `buyIf` / `dontBuyIf` (short lines; shown under "Should you buy …?")                             |
    | `publishedAt`                      | `publishDate`                                                                                    |
    | `reviewType: first look`           | not a review: use `npm run new -- news` instead (reviews need a rating)                          |
 
 3. Paste the body from the first design or setup section onwards. Delete the parts the page
    template already renders from frontmatter: the H1, hero image, verdict, rating line, Best
-   for/Skip if, disclosure, Where to buy, Pros, Cons, Rating breakdown, Specifications, FAQ and
-   the final "Check the latest price" link.
+   for/Skip if, disclosure, Where to buy, Pros, Cons, Rating breakdown, Specifications, FAQ,
+   Final verdict (its who-should-buy lines go in `buyIf` / `dontBuyIf`) and the final "Check the
+   latest price" link. The build stops if a body heading would clash with a section the template
+   adds (Verdict, Cheat sheet, Specs, Scores, Benchmarks, Photos, Video, Final verdict, Prices,
+   FAQ).
 4. Delete every `[INJECT_ADSENSE_SLOT]` line; the review template places ad slots itself.
    Replace `[IMAGE NEEDED: …]` with a real image or remove it.
 5. Fix internal links to the site's URL shapes (table above), e.g. `/reviews/northwind-aero-14`
    becomes `/ultrabooks/northwind-aero-14-review/`.
-6. Use `## The ups` and `## The downs` headings for the closing pros and cons discussion.
+6. Use `## The ups` and `## The downs` headings for the closing pros and cons discussion; the
+   jump bar links to them when they exist. The first four `gallery` images show on the page, the
+   rest open in the lightbox.
 7. Run `npm run dev`, check the page, then set `draft: false`.
 
 ## Sample content

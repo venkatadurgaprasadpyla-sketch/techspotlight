@@ -54,6 +54,16 @@ retailers:
   - name: amazon-in
     url: https://www.amazon.in/dp/SAMPLE00003
     lastChecked: 2026-10-08
+buyIf:
+  - You want a phone that lasts two days
+  - You prefer clean software without ads
+dontBuyIf:
+  - You take a lot of photos at night
+faq:
+  - q: Does the Kestrel Nova 5G support wireless charging?
+    a: No. It charges at up to 45 W over USB-C, and the charger is in the box in this sample.
+  - q: How many software updates will it get?
+    a: The sample brand promises three Android updates and four years of security patches.
 ---
 
 _This is sample content. The product, brand and results are invented to preview the review layout._

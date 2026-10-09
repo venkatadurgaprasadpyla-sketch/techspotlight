@@ -10,7 +10,8 @@ import {
   reviewSchema,
   versusSchema,
 } from '~/lib/content-schema';
-import { buildListings, trending } from '~/lib/listings';
+import { findTopic } from '~/config/taxonomy';
+import { buildListings, topicCrumbs, trending } from '~/lib/listings';
 import type { ArticleCollection } from '~/lib/urls';
 import { helpers, readData } from './helpers/content';
 
@@ -128,5 +129,23 @@ describe('trending', () => {
     expect(list.slice(0, 3).every((i) => i.featured)).toBe(true);
     expect(list).toHaveLength(4);
     expect(list[3]?.id).toBe('northwind-blaze-16');
+  });
+});
+
+describe('topicCrumbs', () => {
+  it('ends at the subcategory, or the category when it has none', () => {
+    const sub = findTopic('ultrabooks');
+    const cat = findTopic('android-phones');
+    if (!sub || !cat) throw new Error('taxonomy changed');
+    expect(topicCrumbs(sub).map((c) => c.href)).toEqual([
+      '/',
+      '/computing/',
+      '/computing/laptops/',
+      '/computing/laptops/ultrabooks/',
+    ]);
+    expect(topicCrumbs(cat).at(-1)).toEqual({
+      label: cat.category.label,
+      href: '/phones/android-phones/',
+    });
   });
 });

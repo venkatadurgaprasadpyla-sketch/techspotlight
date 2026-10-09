@@ -106,6 +106,8 @@ ${retailer(today)}
 # youtubeId: 11-character id
 gallery: [] # - { src: ../../assets/..., alt: ..., caption: optional }
 testingNotes: ${q('TODO: how long and how it was tested')}
+buyIf: [] # e.g. - You carry your laptop all day
+dontBuyIf: [] # e.g. - You need lots of ports
 faq: [] # - { q: ..., a: ... }`,
   best: ({ name }) => `picks:
   - rank: 1

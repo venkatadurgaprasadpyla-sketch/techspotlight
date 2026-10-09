@@ -249,9 +249,24 @@ export function reviewSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
           .array(z.object({ src: image(), alt: nonEmpty, caption: z.string().optional() }))
           .default([]),
         testingNotes: z.string().optional(),
+        /** "Buy it if" / "Don't buy it if" boxes in the final verdict. */
+        buyIf: z.array(nonEmpty).default([]),
+        dontBuyIf: z.array(nonEmpty).default([]),
         faq: z.array(z.object({ q: nonEmpty, a: nonEmpty })).default([]),
       })
-      .superRefine(checkArticle),
+      .superRefine((value, ctx) => {
+        checkArticle(value, ctx);
+        // The page highlights the reviewed product's row by name.
+        value.benchmarks.forEach((bench, i) => {
+          if (!value.draft && !bench.rows.some((r) => r.product === value.product.name)) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['benchmarks', i, 'rows'],
+              message: `One row's product must be exactly "${value.product.name}" (product.name)`,
+            });
+          }
+        });
+      }),
     { draftsMayHaveTodos: true },
   );
 }

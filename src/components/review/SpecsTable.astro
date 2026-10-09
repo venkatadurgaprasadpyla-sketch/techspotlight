@@ -1,0 +1,39 @@
+---
+/** Specs that scroll sideways on small screens with the label column pinned. */
+import { formatInr } from '~/lib/format';
+
+interface Props {
+  specs: { label: string; value: string }[];
+  msrp?: number;
+}
+const { specs, msrp } = Astro.props;
+const rows = msrp ? [{ label: 'Launch price', value: formatInr(msrp) }, ...specs] : specs;
+---
+
+<section id="specs" class="flex scroll-mt-20 flex-col gap-3.5" aria-labelledby="specs-title">
+  <h2 id="specs-title" class="text-[28px]">
+    Specs
+  </h2>
+  <div
+    class="overflow-x-auto rounded-[10px] border border-border"
+    tabindex="0"
+    role="region"
+    aria-labelledby="specs-title"
+  >
+    <table class="w-full min-w-[480px] border-collapse text-left">
+      <tbody>
+        {rows.map((row) => (
+          <tr class="border-b border-border last:border-0">
+            <th
+              scope="row"
+              class="sticky left-0 w-[38%] bg-surface px-4 py-3 align-top font-semibold"
+            >
+              {row.label}
+            </th>
+            <td class="px-4 py-3 font-mono text-[14px]">{row.value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>

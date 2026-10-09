@@ -1,0 +1,45 @@
+---
+/** "Should you buy it?" closing section: the verdict again with buy / don't-buy lists. */
+interface Props {
+  productName: string;
+  verdict: string;
+  buyIf: string[];
+  dontBuyIf: string[];
+}
+const { productName, verdict, buyIf, dontBuyIf } = Astro.props;
+---
+
+<section
+  id="final-verdict"
+  class="flex scroll-mt-20 flex-col gap-4"
+  aria-labelledby="final-verdict-title"
+>
+  <h2 id="final-verdict-title" class="text-[28px]">
+    Should you buy the {productName}?
+  </h2>
+  <p class="text-lg">{verdict}</p>
+  {(buyIf.length > 0 || dontBuyIf.length > 0) && (
+    <div class="grid gap-4 sm:grid-cols-2">
+      {buyIf.length > 0 && (
+        <div class="flex flex-col gap-2.5 rounded-[10px] border-t-4 border-good bg-surface p-5">
+          <h3 class="font-sans text-base text-good">Buy it if</h3>
+          <ul class="flex list-disc flex-col gap-1 pl-5">
+            {buyIf.map((reason) => (
+              <li>{reason}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {dontBuyIf.length > 0 && (
+        <div class="flex flex-col gap-2.5 rounded-[10px] border-t-4 border-bad bg-surface p-5">
+          <h3 class="font-sans text-base text-bad">Don't buy it if</h3>
+          <ul class="flex list-disc flex-col gap-1 pl-5">
+            {dontBuyIf.map((reason) => (
+              <li>{reason}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )}
+</section>
