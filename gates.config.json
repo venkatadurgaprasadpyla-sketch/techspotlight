@@ -9,7 +9,8 @@
     "/phones/",
     "/reviews/",
     "/ultrabooks/northwind-aero-14-review/",
-    "/android-phones/kestrel-nova-5g-review/"
+    "/android-phones/kestrel-nova-5g-review/",
+    "/best/best-ultrabooks/"
   ],
   "lighthouse": {
     "performance": 0.95,

@@ -22,6 +22,13 @@ picks:
     image: ../../assets/samples/laptop-aero.jpg
     imageAlt: Placeholder illustration of the Northwind Aero 14
     tagline: The lightest laptop in this sample set, with the longest battery life.
+    summary: Sample write-up. The Aero 14 lasted over 13 hours in our sample battery test and stayed silent through office work, which is why it leads this list.
+    bestFor: Students and commuters
+    scores:
+      - { label: Design, score: 4.5 }
+      - { label: Display, score: 4.5 }
+      - { label: Battery, score: 5 }
+      - { label: Value, score: 4 }
     rating: 4.5
     price: 74990
     specs:
@@ -43,6 +50,11 @@ picks:
     image: ../../assets/samples/laptop-blaze.jpg
     imageAlt: Placeholder illustration of the Northwind Blaze 16
     tagline: Not an ultrabook, but the sample pick for people who want 16 inches.
+    summary: Sample write-up. It is heavy and loud under load, but nothing else in this sample set gives you a 16-inch screen and this much speed.
+    bestFor: Creators who work at a desk
+    specs:
+      - { label: Display, value: '16-inch QHD+, 240 Hz' }
+      - { label: Weight, value: '2.4 kg' }
     rating: 3.5
     price: 139990
     pros: [Fast, Great keyboard]
@@ -59,10 +71,6 @@ faq:
 ---
 
 _This is sample content. Every product here is invented to preview the buying-guide layout._
-
-## How we test
-
-Sample text. Each laptop would go through the same battery, display and performance tests.
 
 ## How to choose
 

@@ -55,6 +55,7 @@ When a task adds a page type, add a representative URL to `gates.config.json` �
 - `src/config/taxonomy.ts` is the single source of truth for hubs → categories → subcategories and content types. Leaf slugs (subcategories, or categories without subcategories) are unique site-wide.
 - `src/pages/[...path].astro` builds every section page: listings from `src/lib/listings.ts` (live hubs, categories, subcategories, per-hub and site-wide content types; 12 per page, page n at `<base>page/<n>/`), placeholders for hubs with `mvp: false` (`src/config/routes.ts`), and placeholders for article URLs whose templates have not shipped (`awaitingTemplate`; remove a collection there when its route ships). It throws if two pages want the same URL.
 - Reviews: `src/pages/[leaf]/[review].astro` (`/<leaf>/<id>-review/`), built from `src/components/review/*` (VerdictBox, CheatSheet, SpecsTable, ScoreCard, BenchmarkTable, Gallery, YouTubeFacade, BuyIf, PriceWidget, AuthorBio, JumpBar). Islands: `src/scripts/jumpbar.ts`, `gallery.ts` (native `<dialog>` lightbox), `youtube.ts` (youtube-nocookie facade); each works as plain links without JS.
+- Guides: `src/pages/best/[guide].astro` (`/best/<id>/`), built from `src/components/guide/*` (QuickList, PickEntry, CompareTable, AlsoTested), the shared `HowWeTest` block and the review `ScoreCard`/`Faq`. Both article templates call `assertNoHeadingClash()` (`src/lib/headings.ts`) so a body heading can't reuse a section id.
 - Article URLs come from `articlePath()` in `src/lib/urls.ts`; listings render `CardItem`s (`src/lib/cards.ts`) loaded once by `getArticles()` (`src/lib/articles.ts`).
 - Placeholders and empty listings are noindex. The sitemap leaves out any page whose built HTML is noindex (`astro.config.mjs`), so there is no second list to keep in sync.
 - Components: `cards/ArticleCard` (standard, compact, hero, review), `Rating`, `BadgeTag`, `Breadcrumbs` (with BreadcrumbList JSON-LD), `Pagination`, `AdSlot`, `listing/*` (page templates, `ExploreGrid`, `Sidebar`). Outbound retailer links go through `affiliateHref()` with `rel={AFFILIATE_REL}`.
@@ -77,7 +78,7 @@ src/components/ Header, MegaMenu, MobileDrawer, Footer, NewsletterForm, ThemeTog
 src/scripts/    nav.ts (mega-menu + drawer), theme.ts, review islands (jumpbar, gallery, youtube)
 src/pages/      routes
 src/styles/     global.css (Tailwind + design tokens)
-src/lib/        pure helpers (unit tested): format, content-schema, visibility, listing(s), cards, urls, affiliate, ad-slots; content.ts reads collections
+src/lib/        pure helpers (unit tested): format, content-schema, visibility, listing(s), cards, urls, affiliate, ad-slots, headings; content.ts reads collections
 src/content/    articles and data (see CONTENT-GUIDE.md); src/assets/ images
 scripts/        gates.mjs, audit-pages.mjs, new-content.mjs (scaffolder), make-sample-images.mjs
 tests/          Vitest specs

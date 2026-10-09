@@ -299,6 +299,8 @@ export function guideSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
               dontBuyIf: z.array(nonEmpty).default([]),
               scores: z.array(score).default([]),
               bestFor: z.string().optional(),
+              /** Short write-up: why it is on the list and how it did in testing. */
+              summary: z.string().optional(),
             }),
           )
           .min(1),

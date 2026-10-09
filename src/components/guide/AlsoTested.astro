@@ -1,0 +1,30 @@
+---
+/** Products that were tested but missed the list, each with a one-line reason. */
+import Rating from '~/components/cards/Rating.astro';
+
+interface Props {
+  items: { productName: string; rating: number; summary: string; url?: string | undefined }[];
+}
+const { items } = Astro.props;
+---
+
+<section
+  id="also-tested"
+  class="flex scroll-mt-20 flex-col gap-3.5"
+  aria-labelledby="also-tested-title"
+>
+  <h2 id="also-tested-title" class="text-[28px]">
+    Also tested
+  </h2>
+  <ul class="flex flex-col divide-y divide-border rounded-[10px] border border-border">
+    {items.map((item) => (
+      <li class="flex flex-col gap-1 p-4">
+        <span class="flex flex-wrap items-center gap-3">
+          <b>{item.url ? <a href={item.url}>{item.productName}</a> : item.productName}</b>
+          <Rating value={item.rating} class="text-[13px]" />
+        </span>
+        <span class="text-muted">{item.summary}</span>
+      </li>
+    ))}
+  </ul>
+</section>
