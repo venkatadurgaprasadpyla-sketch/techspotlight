@@ -1,0 +1,74 @@
+---
+import { site } from '~/config/site';
+
+interface Props {
+  id?: string;
+  tone?: 'inverse' | 'default';
+}
+const { id = 'newsletter', tone = 'default' } = Astro.props;
+const endpoint = site.newsletterEndpoint;
+const inputId = `${id}-email`;
+const consentId = `${id}-consent`;
+// TODO(T10): point site.newsletterEndpoint at the email provider.
+---
+
+<form
+  id={id}
+  class="flex flex-col gap-3"
+  action={endpoint || undefined}
+  method="post"
+  data-newsletter
+  data-endpoint={endpoint ? 'set' : 'missing'}
+>
+  <p
+    class:list={[
+      'font-heading text-lg font-bold',
+      tone === 'inverse' ? 'text-on-inverse' : 'text-text',
+    ]}
+  >
+    Get the TechSpotlight newsletter
+  </p>
+  <p class:list={['text-sm', tone === 'inverse' ? 'text-on-inverse-muted' : 'text-muted']}>
+    The week's best reviews and deals in India, once a week.
+  </p>
+  <div class="flex flex-wrap gap-2">
+    <label for={inputId} class="sr-only">
+      Email address
+    </label>
+    <input
+      id={inputId}
+      name="email"
+      type="email"
+      required
+      autocomplete="email"
+      placeholder="you@example.com"
+      class="min-h-11 min-w-0 flex-1 rounded-lg border border-border-strong bg-bg px-3 text-text placeholder:text-muted"
+    />
+    <button type="submit" class="btn">
+      Sign up
+    </button>
+  </div>
+  <label
+    for={consentId}
+    class:list={[
+      'flex items-start gap-2 text-[13px]',
+      tone === 'inverse' ? 'text-on-inverse-muted' : 'text-muted',
+    ]}
+  >
+    <input id={consentId} name="consent" type="checkbox" required class="mt-0.5 size-4" />
+    <span>I agree to receive emails and can unsubscribe at any time.</span>
+  </label>
+  <p class="text-[13px]" role="status" aria-live="polite" data-newsletter-status></p>
+</form>
+
+<script>
+  // Until an endpoint is configured, keep visitors on the page instead of posting nowhere.
+  for (const form of document.querySelectorAll<HTMLFormElement>('[data-newsletter]')) {
+    if (form.dataset.endpoint === 'set') continue;
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const status = form.querySelector('[data-newsletter-status]');
+      if (status) status.textContent = 'Sign-ups open soon. Thanks for your interest!';
+    });
+  }
+</script>

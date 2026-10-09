@@ -1,0 +1,30 @@
+---
+import { placeholderPaths } from '~/config/routes';
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  intro?: string;
+}
+
+const { title, intro } = Astro.props;
+// Keeps the sitemap honest: every placeholder must be registered in src/config/routes.ts.
+if (!placeholderPaths().includes(Astro.url.pathname)) {
+  throw new Error(`${Astro.url.pathname} uses the Placeholder layout but is not in routes.ts`);
+}
+---
+
+<BaseLayout
+  title={title}
+  description={intro ?? `${title} on TechSpotlight is coming soon.`}
+  noindex
+>
+  <div class="wrap flex flex-col gap-4 py-16">
+    <p class="lbl">Coming soon</p>
+    <h1 class="text-4xl">{title}</h1>
+    {intro && <p class="max-w-[70ch] text-lg text-muted">{intro}</p>}
+    <p class="max-w-[70ch] text-muted">
+      We are still building this page. In the meantime, start from the <a href="/">homepage</a>.
+    </p>
+  </div>
+</BaseLayout>

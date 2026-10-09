@@ -1,0 +1,173 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+// Internal reference for the DesignSystem board (G9). noindex and excluded from the sitemap.
+const swatches = [
+  ['bg', 'Background'],
+  ['surface', 'Surface'],
+  ['text', 'Text'],
+  ['muted', 'Muted'],
+  ['border', 'Border'],
+  ['border-strong', 'Border strong'],
+  ['accent', 'Accent (Cobalt)'],
+  ['buy', 'Buy'],
+  ['rating', 'Rating'],
+  ['good', 'Good'],
+  ['bad', 'Bad'],
+  ['ad', 'Ad slot'],
+] as const;
+---
+
+<BaseLayout title="Style guide" description="TechSpotlight design tokens and components." noindex>
+  <div class="wrap flex flex-col gap-12 py-14">
+    <header class="flex flex-col gap-3">
+      <p class="lbl">Design system v1</p>
+      <h1 class="text-[44px]">Editorial, calm and quick to scan</h1>
+      <p class="max-w-[820px] text-lg text-muted">
+        Near-black text on white, one accent for links and actions, amber only where money or
+        ratings appear. Light and dark themes share the same tokens.
+      </p>
+    </header>
+
+    <section aria-labelledby="sg-colours" class="flex flex-col gap-5">
+      <div class="sec-head">
+        <h2 id="sg-colours" class="text-[28px]">
+          Colour tokens
+        </h2>
+        <span class="lbl">Switch theme in the header to compare</span>
+      </div>
+      <ul class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-6">
+        {swatches.map(([token, label]) => (
+          <li class="flex flex-col gap-1.5 text-[13px]">
+            <div
+              class="h-[72px] rounded-lg border border-border"
+              style={`background: var(--ts-${token})`}
+            />
+            <b>{label}</b>
+            <code class="font-mono text-muted">--ts-{token}</code>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section aria-labelledby="sg-type" class="flex flex-col gap-5">
+      <div class="sec-head">
+        <h2 id="sg-type" class="text-[28px]">
+          Type
+        </h2>
+        <span class="lbl">Space Grotesk · IBM Plex Sans · IBM Plex Mono</span>
+      </div>
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,420px),1fr))] gap-6">
+        <div class="flex flex-col gap-3 rounded-[10px] border border-border p-5">
+          <p class="font-heading text-5xl font-bold tracking-[-0.02em]">Display 48</p>
+          <p class="font-heading text-[34px] font-bold">H1 article 34–40</p>
+          <p class="font-heading text-[26px] font-bold">H2 section 26</p>
+          <p class="font-heading text-xl font-bold">H3 card and subsection 18–20</p>
+        </div>
+        <div class="flex flex-col gap-3 rounded-[10px] border border-border p-5">
+          <p class="max-w-[640px] text-lg leading-[1.7]">
+            Body 18 / 1.7, measure about 70 characters. Article text is set larger than UI text so
+            long reviews stay comfortable on a phone.
+          </p>
+          <p>UI 15 · cards, nav, tables</p>
+          <p class="lbl">Label 12 caps · category tags</p>
+          <p class="font-mono text-[13px] font-medium">MONO 13 · SPECS, BENCHMARKS, PRICES</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="sg-controls" class="flex flex-col gap-5">
+      <div class="sec-head">
+        <h2 id="sg-controls" class="text-[28px]">
+          Buttons, chips, badges, rating
+        </h2>
+        <span class="lbl">44px minimum touch height</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-4">
+        <a class="btn" href="#sg-controls">
+          Read the review
+        </a>
+        <a class="btn btn-ghost" href="#sg-controls">
+          See all laptops
+        </a>
+        <a class="btn btn-buy" href="#sg-controls">
+          ₹74,990 at Amazon.in
+        </a>
+        <a class="chip is-on" href="#sg-controls">
+          All
+        </a>
+        <a class="chip" href="#sg-controls">
+          Reviews
+        </a>
+        <a class="chip" href="#sg-controls">
+          Under ₹50,000
+        </a>
+        <span class="badge badge-ec">Editor's choice</span>
+        <span class="badge">Recommended</span>
+        <span class="badge badge-bv">Best value</span>
+        <span class="inline-flex items-baseline gap-1">
+          <span class="tracking-[1px] text-rating" aria-hidden="true">
+            ★★★★½
+          </span>
+          <span>
+            <b>4.5</b>
+            <span class="text-muted">/5</span>
+          </span>
+          <span class="sr-only"> stars</span>
+        </span>
+      </div>
+    </section>
+
+    <section aria-labelledby="sg-money" class="flex flex-col gap-5">
+      <div class="sec-head">
+        <h2 id="sg-money" class="text-[28px]">
+          Money and ad components
+        </h2>
+        <span class="lbl">Retailer links are rel="sponsored nofollow"</span>
+      </div>
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,420px),1fr))] gap-6">
+        <div class="flex flex-col gap-3 rounded-[10px] border border-border p-5">
+          <p class="lbl">Price widget (built in T4)</p>
+          <div class="overflow-hidden rounded-[10px] border border-border">
+            {['Amazon.in', 'Flipkart'].map((store, i) => (
+              <div
+                class:list={[
+                  'flex flex-wrap items-center justify-between gap-3 px-4 py-3',
+                  i > 0 && 'border-t border-border',
+                ]}
+              >
+                <b>{store}</b>
+                <span class="flex items-center gap-3">
+                  <b class="font-mono font-medium">₹74,990</b>
+                  <a class="btn btn-buy" href="#sg-money">
+                    View deal<span class="sr-only"> at {store}</span>
+                  </a>
+                </span>
+              </div>
+            ))}
+          </div>
+          <p class="text-[13px] text-muted">Prices checked 9 Oct 2026. We may earn a commission.</p>
+        </div>
+        <div class="flex flex-col gap-3 rounded-[10px] border border-border p-5">
+          <p class="lbl">Ad slots (reserved height, built in T10)</p>
+          <div class="ad-slot h-[90px]">Leaderboard 728×90</div>
+          <div class="flex flex-wrap gap-3">
+            <div class="ad-slot h-[250px] w-[300px] max-w-full">Sidebar 300×250</div>
+            <div class="ad-slot h-[250px] min-w-40 flex-1">In-article fluid</div>
+          </div>
+          <div class="ad-slot h-[50px]">Sticky mobile 320×50</div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="sg-cards" class="flex flex-col gap-5">
+      <div class="sec-head">
+        <h2 id="sg-cards" class="text-[28px]">
+          Image placeholder
+        </h2>
+        <span class="lbl">16:9 · cards arrive in T3</span>
+      </div>
+      <div class="placeholder aspect-video max-w-[420px]">Image 16:9</div>
+    </section>
+  </div>
+</BaseLayout>

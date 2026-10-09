@@ -1,0 +1,45 @@
+---
+import { Font } from 'astro:assets';
+import { site } from '~/config/site';
+import '~/styles/global.css';
+
+export interface Props {
+  /** Page title without the site name; omit on the homepage. */
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+}
+
+const { title, description = site.description, noindex = false } = Astro.props;
+const fullTitle = title ? `${title} | ${site.name}` : `${site.name}: ${site.tagline}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex, follow" />}
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f1115" />
+{/* Resolve the theme before first paint so there is no flash; see src/scripts/theme.ts. */}
+<script is:inline>
+  (function () {
+    let t = null;
+    try {
+      t = localStorage.getItem('ts-theme');
+    } catch {
+      // Storage blocked: fall back to the OS preference.
+    }
+    if (t !== 'light' && t !== 'dark') {
+      t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.dataset.theme = t;
+  })();
+</script>
+<Font cssVariable="--font-plex-sans" preload={[{ weight: '400', style: 'normal' }]} />
+<Font cssVariable="--font-space-grotesk" preload={[{ weight: '700' }]} />
+<Font cssVariable="--font-plex-mono" />

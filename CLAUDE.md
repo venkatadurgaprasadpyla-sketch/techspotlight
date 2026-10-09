@@ -41,12 +41,28 @@ When a task adds a page type, add a representative URL to `gates.config.json` �
 - Look up current Astro/Tailwind APIs before using them (Context7 or the official docs).
 - Never commit secrets. Config that is public (site URL, AdSense publisher ID, affiliate tags) goes in `src/config/site.ts`.
 
+## Design system
+
+- Tokens live in `src/styles/global.css` as `light-dark()` pairs on `:root` (`--ts-*`), exposed to Tailwind as `bg-surface`, `text-muted`, `border-border`, `bg-accent`, `bg-buy`, `text-rating`, etc. Never hard-code hex values in components.
+- Theme: `<html data-theme>` is set before first paint (inline script in `BaseHead.astro`) from `localStorage['ts-theme']` or the OS; `src/scripts/theme.ts` handles toggles.
+- Fonts: IBM Plex Sans (body), Space Grotesk (headings, `font-heading`), IBM Plex Mono (`font-mono`, specs and prices), self-hosted via Astro's Fonts API from `@fontsource/*` latin files (`astro.config.mjs`).
+- Shared component classes: `.wrap`, `.lbl`, `.btn` (+ `.btn-ghost`, `.btn-buy`), `.chip`, `.badge` (+ `.badge-ec`, `.badge-bv`), `.icon-btn`, `.sec-head`, `.placeholder`, `.ad-slot`.
+- `/styleguide/` (noindex) shows every token and component for visual checks against the DesignSystem board.
+
+## Taxonomy and routes
+
+- `src/config/taxonomy.ts` is the single source of truth for hubs → categories → subcategories and content types. Leaf slugs (subcategories, or categories without subcategories) are unique site-wide.
+- Pages not built yet render the `Placeholder` layout (noindex). Every placeholder path must be listed by `placeholderPaths()` in `src/config/routes.ts` (the layout throws otherwise), which also keeps them out of the sitemap. When a task ships a real page, remove its path there.
+
 ## Layout
 
 ```
+src/config/     site.ts (public config), taxonomy.ts, routes.ts (placeholder registry)
+src/layouts/    BaseLayout (head, header, footer), Placeholder
+src/components/ Header, MegaMenu, MobileDrawer, Footer, NewsletterForm, ThemeToggle, Logo, Icon
+src/scripts/    nav.ts (mega-menu + drawer), theme.ts
 src/pages/      routes
 src/styles/     global.css (Tailwind + design tokens)
-src/config/     site.ts (public config)
 src/lib/        pure helpers (unit tested), e.g. formatInr
 scripts/        gates.mjs, audit-pages.mjs
 tests/          Vitest specs

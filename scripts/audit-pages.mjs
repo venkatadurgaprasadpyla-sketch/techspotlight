@@ -86,13 +86,23 @@ try {
   try {
     for (const page of config.pages) {
       const scores = {};
+      // A page that is deliberately noindex (placeholders, style guide) would always lose the
+      // "is-crawlable" SEO audit. Skip only that audit, and only when the page says noindex.
+      const html = await (await fetch(BASE + page)).text();
+      const noindex = /<meta[^>]+name="robots"[^>]+content="[^"]*noindex/i.test(html);
       for (let i = 0; i < config.lighthouse.runs; i++) {
-        const result = await lighthouse(BASE + page, {
-          port: chrome.port,
-          output: 'json',
-          logLevel: 'error',
-          onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'],
-        });
+        const result = await lighthouse(
+          BASE + page,
+          {
+            port: chrome.port,
+            output: 'json',
+            logLevel: 'error',
+            onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'],
+          },
+          noindex
+            ? { extends: 'lighthouse:default', settings: { skipAudits: ['is-crawlable'] } }
+            : undefined,
+        );
         for (const [key, cat] of Object.entries(result.lhr.categories)) {
           (scores[key] ??= []).push(cat.score ?? 0);
         }
@@ -104,7 +114,9 @@ try {
           failures.push(`G5 ${page} ${key} ${Math.round(score * 100)} < ${min * 100}`);
         return `${key} ${Math.round(score * 100)}`;
       });
-      lines.push(`G5 ${page}: ${summary.join(', ')}`);
+      lines.push(
+        `G5 ${page}: ${summary.join(', ')}${noindex ? ' (noindex: is-crawlable skipped)' : ''}`,
+      );
     }
   } finally {
     chrome.kill();

@@ -1,4 +1,188 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
-/* Design tokens land in T1. */
+/* `dark:` follows the resolved theme on <html data-theme>, set before first paint in BaseHead. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+ * Design tokens (DesignSystem board) as light-dark() pairs: light value, dark value.
+ * Components use the Tailwind names below (bg-surface, text-muted, …), never raw hex values.
+ */
+:root {
+  /* Follows the OS until the visitor picks a theme (data-theme set before first paint). */
+  color-scheme: light dark;
+  --ts-bg: light-dark(#ffffff, #0f1115);
+  --ts-surface: light-dark(#f3f5f9, #181b21);
+  --ts-text: light-dark(#16181d, #e8eaee);
+  --ts-muted: light-dark(#566070, #a2aab8);
+  --ts-border: light-dark(#e1e4ea, #2a2f37);
+  --ts-border-strong: light-dark(#c9ced6, #3d4450);
+  --ts-accent: light-dark(#1f4fd8, #7c9bff);
+  --ts-accent-hover: light-dark(#1639a0, #a5bbff);
+  --ts-on-accent: light-dark(#ffffff, #0f1115);
+  --ts-buy: light-dark(#f5b700, #f5b700);
+  --ts-buy-hover: light-dark(#dca400, #ffc933);
+  --ts-on-buy: light-dark(#16181d, #16181d);
+  --ts-rating: light-dark(
+    #966000,
+    #f2c14e
+  ); /* board #A86B00 is 4.4:1 on white; darkened to pass AA */
+  --ts-good: light-dark(#0e7a55, #4cc38a);
+  --ts-bad: light-dark(#b42318, #ff8a80);
+  --ts-on-status: light-dark(#ffffff, #0f1115);
+  --ts-ad: light-dark(#fff8e1, #262012);
+  --ts-ad-border: light-dark(#b88a00, #8a6a12);
+  --ts-ad-text: light-dark(#6b5000, #e9cf84);
+  --ts-inverse: light-dark(#16181d, #08090c);
+  --ts-on-inverse: light-dark(#ffffff, #ffffff);
+  --ts-on-inverse-muted: light-dark(#c9ced6, #b4bbc7);
+  --ts-inverse-border: light-dark(#2c3038, #22262e);
+  --ts-placeholder-a: light-dark(#e9ebef, #1d2027);
+  --ts-placeholder-b: light-dark(#f1f2f5, #23272f);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--ts-bg);
+  --color-surface: var(--ts-surface);
+  --color-text: var(--ts-text);
+  --color-muted: var(--ts-muted);
+  --color-border: var(--ts-border);
+  --color-border-strong: var(--ts-border-strong);
+  --color-accent: var(--ts-accent);
+  --color-accent-hover: var(--ts-accent-hover);
+  --color-on-accent: var(--ts-on-accent);
+  --color-buy: var(--ts-buy);
+  --color-buy-hover: var(--ts-buy-hover);
+  --color-on-buy: var(--ts-on-buy);
+  --color-rating: var(--ts-rating);
+  --color-good: var(--ts-good);
+  --color-bad: var(--ts-bad);
+  --color-on-status: var(--ts-on-status);
+  --color-ad: var(--ts-ad);
+  --color-ad-border: var(--ts-ad-border);
+  --color-ad-text: var(--ts-ad-text);
+  --color-inverse: var(--ts-inverse);
+  --color-on-inverse: var(--ts-on-inverse);
+  --color-on-inverse-muted: var(--ts-on-inverse-muted);
+  --color-inverse-border: var(--ts-inverse-border);
+
+  --font-sans: var(--font-plex-sans), system-ui, sans-serif;
+  --font-heading: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    background: var(--ts-bg);
+    color: var(--ts-text);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-bg font-sans text-[15px] leading-normal text-text antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading font-bold tracking-[-0.01em] text-balance;
+    line-height: 1.15;
+  }
+  /* Links are underlined so they stand out from body text without relying on colour. */
+  a {
+    @apply text-accent underline decoration-1 underline-offset-[3px] hover:text-accent-hover;
+  }
+  :focus-visible {
+    outline: 3px solid var(--ts-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .wrap {
+    @apply mx-auto w-full max-w-[1200px] px-4 sm:px-6;
+  }
+  .lbl {
+    @apply text-xs font-semibold tracking-[0.08em] text-accent uppercase no-underline;
+  }
+  .btn {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-accent bg-accent px-[18px] text-sm font-semibold whitespace-nowrap text-on-accent no-underline;
+    &:hover {
+      @apply border-accent-hover bg-accent-hover text-on-accent;
+    }
+  }
+  .btn-ghost {
+    @apply border-border-strong bg-bg text-text;
+    &:hover {
+      @apply border-text bg-bg text-text;
+    }
+  }
+  .btn-buy {
+    @apply border-buy bg-buy text-on-buy;
+    &:hover {
+      @apply border-buy-hover bg-buy-hover text-on-buy;
+    }
+  }
+  .chip {
+    @apply inline-flex min-h-8 items-center rounded-full border border-border-strong bg-bg px-3 text-[13px] text-text no-underline;
+    &:hover {
+      @apply border-text text-text;
+    }
+    &[aria-current='page'],
+    &.is-on {
+      @apply border-text bg-text text-bg;
+    }
+  }
+  .badge {
+    @apply inline-flex items-center rounded px-2.5 py-1 text-[11px] font-bold tracking-[0.06em] uppercase;
+    background: var(--ts-text);
+    color: var(--ts-bg);
+  }
+  .badge-ec {
+    @apply bg-accent text-on-accent;
+  }
+  .badge-bv {
+    @apply bg-good text-on-status;
+  }
+  .icon-btn {
+    @apply inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border-strong bg-bg text-text;
+    &:hover {
+      @apply border-text text-text;
+    }
+  }
+  .sec-head {
+    @apply flex flex-wrap items-baseline justify-between gap-3 border-b-2 border-text pb-2.5;
+  }
+  .placeholder {
+    @apply flex items-center justify-center rounded-md border border-border p-2 text-center font-mono text-[11px] leading-snug tracking-[0.06em] text-muted uppercase;
+    background: repeating-linear-gradient(
+      135deg,
+      var(--ts-placeholder-a) 0 12px,
+      var(--ts-placeholder-b) 12px 24px
+    );
+  }
+  .ad-slot {
+    @apply flex items-center justify-center rounded-md border border-dashed border-ad-border bg-ad text-center font-mono text-[11px] tracking-[0.06em] text-ad-text uppercase;
+  }
+  .sr-only-focusable:not(:focus) {
+    @apply sr-only;
+  }
+}

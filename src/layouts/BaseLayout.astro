@@ -1,0 +1,30 @@
+---
+import BaseHead, { type Props as HeadProps } from '~/components/BaseHead.astro';
+import Footer from '~/components/Footer.astro';
+import Header from '~/components/Header.astro';
+import { site } from '~/config/site';
+
+type Props = HeadProps;
+const props = Astro.props;
+---
+
+<!doctype html>
+<html lang={site.locale}>
+  <head>
+    <BaseHead {...props} />
+    <slot name="head" />
+  </head>
+  <body class="flex min-h-dvh flex-col">
+    <a
+      href="#main"
+      class="sr-only-focusable fixed top-2 left-2 z-[100] rounded-lg bg-accent px-4 py-3 font-semibold text-on-accent"
+    >
+      Skip to content
+    </a>
+    <Header />
+    <main id="main" tabindex="-1" class="flex-1 focus:outline-none">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

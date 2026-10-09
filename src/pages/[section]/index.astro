@@ -1,0 +1,21 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { contentTypes, hubs } from '~/config/taxonomy';
+import Placeholder from '~/layouts/Placeholder.astro';
+
+// Placeholder hub and site-wide content-type pages; real templates arrive in T3.
+export const getStaticPaths = (() => [
+  ...hubs.map((hub) => ({
+    params: { section: hub.slug },
+    props: { title: hub.label, intro: hub.intro },
+  })),
+  ...contentTypes.map((type) => ({
+    params: { section: type.slug },
+    props: { title: type.label, intro: undefined },
+  })),
+]) satisfies GetStaticPaths;
+
+const { title, intro } = Astro.props;
+---
+
+<Placeholder title={title} intro={intro} />

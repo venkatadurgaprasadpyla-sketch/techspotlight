@@ -1,0 +1,83 @@
+---
+import { site } from '~/config/site';
+import { contentTypePath, contentTypes, hubPath, hubs } from '~/config/taxonomy';
+import NewsletterForm from './NewsletterForm.astro';
+
+const company = [
+  { href: '/about/', label: 'About' },
+  { href: '/how-we-test/', label: 'How we test' },
+  { href: '/affiliate-disclosure/', label: 'Affiliate disclosure' },
+  { href: '/privacy/', label: 'Privacy' },
+  { href: '/contact/', label: 'Contact' },
+];
+const year = new Date().getFullYear();
+---
+
+<footer class="foot mt-12 bg-inverse text-on-inverse-muted">
+  <div class="wrap grid grid-cols-[repeat(auto-fill,minmax(min(100%,200px),1fr))] gap-8 py-12">
+    <div class="flex flex-col gap-2.5">
+      <p class="font-heading text-xl font-bold text-on-inverse">{site.name}</p>
+      <p class="text-[13px]">{site.description}</p>
+    </div>
+    <nav aria-labelledby="foot-topics" class="flex flex-col gap-2">
+      <h2 id="foot-topics" class="text-sm text-on-inverse">
+        Topics
+      </h2>
+      <ul class="flex flex-col gap-2">
+        {hubs.map((hub) => (
+          <li>
+            <a href={hubPath(hub)}>{hub.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <nav aria-labelledby="foot-content" class="flex flex-col gap-2">
+      <h2 id="foot-content" class="text-sm text-on-inverse">
+        Content
+      </h2>
+      <ul class="flex flex-col gap-2">
+        {contentTypes.map((type) => (
+          <li>
+            <a href={contentTypePath(type)}>{type.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <nav aria-labelledby="foot-company" class="flex flex-col gap-2">
+      <h2 id="foot-company" class="text-sm text-on-inverse">
+        Company
+      </h2>
+      <ul class="flex flex-col gap-2">
+        {company.map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <div class="sm:col-span-2 lg:col-span-1">
+      <NewsletterForm tone="inverse" />
+    </div>
+  </div>
+  <div class="border-t border-inverse-border">
+    <p class="wrap py-4 text-[13px]">
+      {`© ${year} ${site.name}.`} When you buy through links on our site we may earn an affiliate
+      commission. It never changes our ratings.
+    </p>
+  </div>
+</footer>
+
+<style>
+  .foot a {
+    color: var(--ts-on-inverse-muted);
+    text-decoration: none;
+    font-size: 14px;
+  }
+  .foot a:hover {
+    color: var(--ts-on-inverse);
+    text-decoration: underline;
+  }
+  .foot :focus-visible {
+    outline-color: var(--ts-on-inverse);
+  }
+</style>
