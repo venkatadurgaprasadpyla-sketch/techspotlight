@@ -8,3 +8,9 @@ avatar: ../../assets/samples/author-rohan.jpg
 expertise: [Android phones, Battery testing, Cameras]
 social: []
 sample: true
+since: 2018
+location: Pune
+kit:
+  - Battery rundown at 200 nits, video and web loops
+  - Lux meter for peak screen brightness
+  - Fixed camera scenes shot in daylight and low light

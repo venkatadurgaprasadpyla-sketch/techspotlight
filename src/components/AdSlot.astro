@@ -14,6 +14,11 @@ interface Props {
 const { size, class: className } = Astro.props;
 ---
 
-<div class:list={['ad-slot', sizes[size], className]} data-ad-slot={size} aria-hidden="true">
+<div
+  class:list={['ad-slot', sizes[size], className]}
+  data-ad-slot={size}
+  data-pagefind-ignore="all"
+  aria-hidden="true"
+>
   Advertisement
 </div>

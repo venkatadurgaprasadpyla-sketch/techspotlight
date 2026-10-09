@@ -5,6 +5,7 @@ import { Image } from 'astro:assets';
 import { render, type CollectionEntry } from 'astro:content';
 import AdSlot from '~/components/AdSlot.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import SearchData from '~/components/SearchData.astro';
 import AlsoTested from '~/components/guide/AlsoTested.astro';
 import CompareTable from '~/components/guide/CompareTable.astro';
 import PickEntry from '~/components/guide/PickEntry.astro';
@@ -15,6 +16,7 @@ import { findTopic } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import { getRetailer, lowestOffer } from '~/lib/affiliate';
 import { getArticles } from '~/lib/articles';
+import { searchData } from '~/lib/search-index';
 import { getPublished, getPublishedEntry } from '~/lib/content';
 import { leafSlug } from '~/lib/content-schema';
 import { formatDate, isoDate } from '~/lib/format';
@@ -38,6 +40,7 @@ const leaf = leafSlug(data);
 const topic = findTopic(leaf);
 if (!topic) throw new Error(`Guide ${entry.id}: unknown topic ${leaf}`);
 const url = articlePath('guides', entry.id, leaf);
+const search = await searchData(url);
 const crumbs = [...topicCrumbs(topic), { label: data.title, href: url }];
 const updated = data.updatedDate ?? data.publishDate;
 
@@ -95,7 +98,8 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
 ---
 
 <BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
-  <article>
+  <article data-pagefind-body={search && ''}>
+    <SearchData data={search} />
     <header class="wrap flex flex-col gap-3.5 pt-5 pb-6">
       <Breadcrumbs crumbs={crumbs} />
       <p class="lbl">

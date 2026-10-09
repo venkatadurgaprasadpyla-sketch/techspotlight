@@ -1,0 +1,50 @@
+---
+/** "Latest" grid on brand, author, tag and month pages: a heading, cards, then pagination. */
+import ArticleCard from '~/components/cards/ArticleCard.astro';
+import EmptyState from '~/components/listing/EmptyState.astro';
+import Pagination from '~/components/Pagination.astro';
+import type { CardItem } from '~/lib/cards';
+import type { Page } from '~/lib/listing';
+
+interface Props {
+  id: string;
+  title: string;
+  page: Page<CardItem>;
+  base: string;
+  /** Lower-case noun for the empty state, e.g. "articles from this brand". */
+  what: string;
+  /** Narrowest card width; 240 for a full-width grid, 220 beside a sidebar. */
+  min?: 220 | 240;
+  /** Load the first card's image eagerly; off when the grid starts below the fold. */
+  eager?: boolean;
+}
+const { id, title, page, base, what, min = 240, eager = true } = Astro.props;
+const grid = {
+  220: 'grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))]',
+  240: 'grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))]',
+};
+---
+
+<section class="flex min-w-0 flex-col gap-5" aria-labelledby={id}>
+  <div class="sec-head">
+    <h2 id={id} class="text-2xl">
+      {title}
+    </h2>
+    {page.total > 1 && (
+      <span class="text-[13px] text-muted">
+        Page {page.current} of {page.total}
+      </span>
+    )}
+  </div>
+  <slot />
+  {page.items.length ? (
+    <div class:list={['grid gap-6', grid[min]]}>
+      {page.items.map((item, i) => (
+        <ArticleCard item={item} eager={eager && i === 0} />
+      ))}
+    </div>
+  ) : (
+    <EmptyState what={what} />
+  )}
+  <Pagination page={page} base={base} />
+</section>

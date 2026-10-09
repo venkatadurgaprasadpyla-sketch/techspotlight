@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { site } from './src/config/site.ts';
 import { satteri } from '@astrojs/markdown-satteri';
 import { adSlotsPlugin } from './src/lib/ad-slots.ts';
+import { pagefindIndex } from './src/integrations/pagefind.ts';
 
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -30,7 +31,7 @@ export default defineConfig({
   markdown: {
     processor: satteri({ hastPlugins: [adSlotsPlugin()] }),
   },
-  integrations: [mdx(), sitemap({ filter: isIndexable })],
+  integrations: [mdx(), sitemap({ filter: isIndexable }), pagefindIndex()],
   // Self-hosted latin subsets from the @fontsource packages: no network needed at build time.
   fonts: [
     {

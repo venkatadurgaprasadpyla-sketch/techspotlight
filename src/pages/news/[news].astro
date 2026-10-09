@@ -6,11 +6,13 @@ import { render, type CollectionEntry } from 'astro:content';
 import AdSlot from '~/components/AdSlot.astro';
 import ArticleByline from '~/components/ArticleByline.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import SearchData from '~/components/SearchData.astro';
 import ArticleCard from '~/components/cards/ArticleCard.astro';
 import Rating from '~/components/cards/Rating.astro';
 import { categoryPath, contentTypePath, contentTypes, findTopic, hubPath } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import { getArticles } from '~/lib/articles';
+import { searchData } from '~/lib/search-index';
 import type { CardItem } from '~/lib/cards';
 import { getPublished, getPublishedEntry } from '~/lib/content';
 import { leafSlug } from '~/lib/content-schema';
@@ -36,6 +38,7 @@ const leaf = leafSlug(data);
 const topic = findTopic(leaf);
 if (!topic) throw new Error(`News ${entry.id}: unknown topic ${leaf}`);
 const url = articlePath('news', entry.id, leaf);
+const search = await searchData(url);
 const crumbs = [...topicCrumbs(topic), { label: data.title, href: url }];
 assertNoHeadingClash(`News ${entry.id}`, headings, [
   'key-facts',
@@ -85,7 +88,8 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
 
 <BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
   <div class="wrap flex flex-col gap-12 pt-5 pb-12 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
-    <article class="flex max-w-[780px] min-w-0 flex-col gap-8">
+    <article data-pagefind-body={search && ''} class="flex max-w-[780px] min-w-0 flex-col gap-8">
+      <SearchData data={search} />
       <header class="flex flex-col gap-3.5">
         <Breadcrumbs crumbs={crumbs} />
         <span class="lbl">News</span>

@@ -49,6 +49,7 @@ export interface CardItem {
   leaf: string;
   leafLabel: string;
   brands: string[];
+  tags: string[];
   author: string;
   authorName?: string;
   publishDate: Date;
@@ -115,6 +116,7 @@ export function toCardItem(entry: ArticleEntry, authors: ReadonlyMap<string, str
     leaf,
     leafLabel: topic?.subcategory?.label ?? topic?.category.label ?? leaf,
     brands: data.brands.map((b) => b.id),
+    tags: data.tags,
     author: data.author.id,
     ...(authors.has(data.author.id) && { authorName: authors.get(data.author.id) }),
     publishDate: data.publishDate,

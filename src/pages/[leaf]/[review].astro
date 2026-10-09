@@ -8,6 +8,7 @@ import { Image } from 'astro:assets';
 import { render, type CollectionEntry } from 'astro:content';
 import AdSlot from '~/components/AdSlot.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import SearchData from '~/components/SearchData.astro';
 import ArticleCard from '~/components/cards/ArticleCard.astro';
 import BadgeTag from '~/components/cards/BadgeTag.astro';
 import Rating from '~/components/cards/Rating.astro';
@@ -26,7 +27,9 @@ import YouTubeFacade from '~/components/review/YouTubeFacade.astro';
 import { findTopic } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import { AFFILIATE_REL, affiliateHref, lowestOffer } from '~/lib/affiliate';
+import { authorPath } from '~/lib/archives';
 import { getArticles } from '~/lib/articles';
+import { searchData } from '~/lib/search-index';
 import { leafSlug } from '~/lib/content-schema';
 import { assertNoHeadingClash } from '~/lib/headings';
 import { getPublished, getPublishedEntry } from '~/lib/content';
@@ -54,6 +57,7 @@ const topic = findTopic(leaf);
 if (!topic) throw new Error(`Review ${entry.id}: unknown topic ${leaf}`);
 const leafLabel = topic.subcategory?.label ?? topic.category.label;
 const url = articlePath('reviews', entry.id, leaf);
+const search = await searchData(url);
 const productName = data.product.name;
 const crumbs = [...topicCrumbs(topic), { label: `${productName} review`, href: url }];
 
@@ -107,7 +111,8 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
 ---
 
 <BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
-  <article>
+  <article data-pagefind-body={search && ''}>
+    <SearchData data={search} />
     <header class="wrap flex flex-col gap-3.5 pt-5 pb-6">
       <Breadcrumbs crumbs={crumbs} />
       <div class="flex flex-wrap items-center gap-2.5">
@@ -222,6 +227,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
             bio={author.data.bio}
             avatar={author.data.avatar}
             expertise={author.data.expertise}
+            href={authorPath(author.id)}
           />
         )}
         {guides.length > 0 && (

@@ -1,0 +1,52 @@
+---
+/** /archive/: every month with articles, grouped by year, newest first. */
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { monthListings, type MonthListing } from '~/lib/archives';
+import { getArticles } from '~/lib/articles';
+
+const months = monthListings(await getArticles());
+const years = new Map<number, MonthListing[]>();
+for (const m of months) years.set(m.year, [...(years.get(m.year) ?? []), m]);
+const crumbs = [
+  { label: 'Home', href: '/' },
+  { label: 'Archive', href: '/archive/' },
+];
+---
+
+<BaseLayout
+  title="Archive"
+  description="Every TechSpotlight review, guide, how-to, news story and deal, month by month."
+  noindex={months.length === 0}
+>
+  <div class="wrap flex flex-col gap-8 pt-6 pb-12 sm:pt-8">
+    <header class="flex flex-col gap-3.5">
+      <Breadcrumbs crumbs={crumbs} />
+      <h1 class="text-[36px] sm:text-[44px]">Archive</h1>
+      <p class="max-w-[760px] text-[17px] text-muted">Everything we have published, by month.</p>
+    </header>
+    {[...years].map(([year, list]) => (
+      <section class="flex flex-col gap-4" aria-labelledby={`y${year}`}>
+        <h2 id={`y${year}`} class="sec-head text-2xl">
+          {year}
+        </h2>
+        <ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,200px),1fr))] gap-3">
+          {list.map((m) => (
+            <li>
+              <a
+                href={m.path}
+                class="flex items-baseline justify-between gap-3 rounded-[10px] border border-border px-4 py-3 font-semibold text-text no-underline hover:border-text"
+              >
+                {m.label.replace(` ${year}`, '')}
+                <span class="text-[13px] font-normal text-muted">
+                  {m.items.length}
+                  <span class="sr-only">{m.items.length === 1 ? ' article' : ' articles'}</span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
+</BaseLayout>

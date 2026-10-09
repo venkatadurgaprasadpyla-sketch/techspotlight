@@ -10,6 +10,11 @@ const company = [
   { href: '/privacy/', label: 'Privacy' },
   { href: '/contact/', label: 'Contact' },
 ];
+const browse = [
+  { href: '/brands/', label: 'Brands' },
+  { href: '/tags/', label: 'Tags' },
+  { href: '/archive/', label: 'Archive' },
+];
 const year = new Date().getFullYear();
 ---
 
@@ -39,6 +44,11 @@ const year = new Date().getFullYear();
         {contentTypes.map((type) => (
           <li>
             <a href={contentTypePath(type)}>{type.label}</a>
+          </li>
+        ))}
+        {browse.map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
           </li>
         ))}
       </ul>

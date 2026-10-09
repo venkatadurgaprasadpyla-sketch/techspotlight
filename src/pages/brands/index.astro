@@ -1,5 +1,78 @@
 ---
-import Placeholder from '~/layouts/Placeholder.astro';
+/** /brands/: every brand we cover, A to Z, then the menu brands we have not covered yet. */
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import { hubs } from '~/config/taxonomy';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { brandPath, itemsByBrand } from '~/lib/archives';
+import { getArticles } from '~/lib/articles';
+import { getPublished } from '~/lib/content';
+
+const articles = await getArticles();
+const brands = (await getPublished('brands'))
+  .map((b) => ({ id: b.id, name: b.data.name, count: itemsByBrand(articles, b.id).length }))
+  .sort((a, b) => a.name.localeCompare(b.name));
+const covered = new Set(brands.map((b) => b.id));
+const upcoming = [
+  ...new Map(hubs.flatMap((h) => h.topBrands).map((b) => [b.slug, b.label])).entries(),
+]
+  .filter(([slug]) => !covered.has(slug))
+  .sort(([, a], [, b]) => a.localeCompare(b));
+const crumbs = [
+  { label: 'Home', href: '/' },
+  { label: 'Brands', href: '/brands/' },
+];
 ---
 
-<Placeholder path="/brands/" />
+<BaseLayout
+  title="Brands"
+  description="Reviews, buying advice and deals by brand, with our verdict on every product we have tested."
+  noindex={brands.length === 0}
+>
+  <div class="wrap flex flex-col gap-10 pt-6 pb-12 sm:pt-8">
+    <header class="flex flex-col gap-3.5">
+      <Breadcrumbs crumbs={crumbs} />
+      <h1 class="text-[36px] sm:text-[44px]">Brands</h1>
+      <p class="max-w-[760px] text-[17px] text-muted">
+        Every brand we have tested, with our verdicts, buying advice and current deals.
+      </p>
+    </header>
+    {brands.length > 0 && (
+      <section class="flex flex-col gap-5" aria-labelledby="covered">
+        <h2 id="covered" class="sec-head text-2xl">
+          Brands we cover
+        </h2>
+        <ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-4">
+          {brands.map((b) => (
+            <li class="relative flex flex-col gap-1 rounded-[10px] border border-border p-4 hover:border-text">
+              <a
+                href={brandPath(b.id)}
+                class="font-heading text-lg font-bold text-text no-underline after:absolute after:inset-0"
+              >
+                {b.name}
+              </a>
+              <span class="text-[13px] text-muted">
+                {b.count} {b.count === 1 ? 'article' : 'articles'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+    {upcoming.length > 0 && (
+      <section class="flex flex-col gap-4" aria-labelledby="upcoming">
+        <h2 id="upcoming" class="text-xl">
+          Coming soon
+        </h2>
+        <ul class="flex flex-wrap gap-2">
+          {upcoming.map(([slug, label]) => (
+            <li>
+              <a class="chip" href={brandPath(slug)}>
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </div>
+</BaseLayout>

@@ -483,6 +483,11 @@ export function authorSchema<I extends z.ZodType>({ image }: Pick<SchemaHelpers<
       social: z
         .array(z.object({ label: nonEmpty, href: z.url({ protocol: /^https$/ }) }))
         .default([]),
+      /** Year they started writing about tech, for the author page. */
+      since: z.number().int().min(1980).max(2100).optional(),
+      location: nonEmpty.optional(),
+      /** Test kit they use, one item per line on the author page. */
+      kit: z.array(nonEmpty).default([]),
       sample: z.boolean().default(false),
     }),
   );
@@ -495,6 +500,8 @@ export function brandSchema<I extends z.ZodType>({ image }: Pick<SchemaHelpers<I
       description: nonEmpty,
       logo: image().optional(),
       website: z.url({ protocol: /^https$/ }).optional(),
+      /** Support and warranty in India: a short factual paragraph for the brand page. */
+      support: nonEmpty.optional(),
       sample: z.boolean().default(false),
     }),
   );

@@ -1,0 +1,296 @@
+---
+/**
+ * Brand page: /brands/<id>/ (page n at /brands/<id>/page/<n>/). Section order follows the Brand
+ * board: our take, verdicts table, best-picks guide, latest articles, then deals, support and
+ * similar brands. Later pages keep the header and the latest grid.
+ */
+import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import AdSlot from '~/components/AdSlot.astro';
+import BadgeTag from '~/components/cards/BadgeTag.astro';
+import Rating from '~/components/cards/Rating.astro';
+import ListingLayout from '~/components/listing/ListingLayout.astro';
+import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import { brandPath, brandSummary, verdictLabel } from '~/lib/archives';
+import type { CardItem } from '~/lib/cards';
+import { dealStatus } from '~/lib/deals';
+import { formatInr } from '~/lib/format';
+import type { Page } from '~/lib/listing';
+import { closestTo } from '~/lib/related';
+import ArchiveGrid from './ArchiveGrid.astro';
+
+interface Props {
+  brand: CollectionEntry<'brands'>;
+  items: CardItem[];
+  page: Page<CardItem>;
+  all: CardItem[];
+  similar: { name: string; href: string }[];
+}
+const { brand, items, page, all, similar } = Astro.props;
+const { name, description, logo, support } = brand.data;
+const path = brandPath(brand.id);
+const listing = {
+  title: `${name} reviews, buying advice and deals`,
+  crumbs: [
+    { label: 'Home', href: '/' },
+    { label: 'Brands', href: '/brands/' },
+    { label: name, href: path },
+  ],
+  items,
+};
+const first = page.current === 1;
+const { reviews, averageRating, categories } = brandSummary(items);
+const guides = all.filter((i) => i.collection === 'guides');
+const [anchor] = items;
+const [guide] = [
+  ...guides.filter((g) => g.brands.includes(brand.id)),
+  ...(anchor ? closestTo(anchor, guides, 1) : []),
+];
+const now = new Date();
+const deals = items.filter((i) => i.deal && dealStatus(i.deal.endsAt, now) === 'live').slice(0, 3);
+const retailerName = (id: string) => getRetailer(id)?.name ?? id;
+const cell = 'border-b border-border px-3.5 py-3 text-left align-middle';
+---
+
+<ListingLayout listing={listing} page={page} description={description} band>
+  <Fragment slot="header">
+    <div class="flex flex-wrap items-start gap-7">
+      {logo ? (
+        <Image
+          src={logo}
+          alt=""
+          width={120}
+          height={120}
+          class="size-[120px] flex-none rounded-[10px] border border-border bg-bg object-contain p-2"
+          loading="eager"
+        />
+      ) : (
+        <span
+          class="flex size-[120px] flex-none items-center justify-center rounded-[10px] border border-border bg-bg font-heading text-5xl font-bold text-muted"
+          aria-hidden="true"
+        >
+          {name.charAt(0)}
+        </span>
+      )}
+      <div class="flex min-w-[min(100%,320px)] flex-1 flex-col gap-2.5">
+        <span class="lbl">Brand</span>
+        <h1 class="text-[32px] sm:text-[42px]">
+          {listing.title}
+          {!first && <span class="text-muted">, page {page.current}</span>}
+        </h1>
+        <p class="max-w-[760px] text-[17px]">
+          <b>Our take:</b>
+          {description}
+        </p>
+        <ul class="flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-muted">
+          <li>
+            <b class="text-text">{reviews.length}</b>
+            {reviews.length === 1 ? 'product' : 'products'} tested
+          </li>
+          {averageRating !== undefined && (
+            <li>
+              <b class="text-text">{averageRating}</b> average rating
+            </li>
+          )}
+          {categories.length > 0 && <li>Covered in {categories.join(', ')}</li>}
+        </ul>
+      </div>
+    </div>
+  </Fragment>
+
+  <div class="flex flex-col gap-10 py-8">
+    {first && reviews.length > 0 && (
+      <section class="flex flex-col gap-4" aria-labelledby="verdicts">
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="verdicts" class="text-2xl">
+            Our verdicts on {name} products
+          </h2>
+          <span class="text-[13px] text-muted">Sorted by rating</span>
+        </div>
+        <div
+          class="relative overflow-x-auto rounded-[10px] border border-border"
+          role="region"
+          aria-labelledby="verdicts"
+          tabindex="0"
+        >
+          <table class="w-full min-w-[640px] border-collapse text-[14px]">
+            <thead class="bg-surface">
+              <tr>
+                <th scope="col" class={cell}>
+                  Product
+                </th>
+                <th scope="col" class={cell}>
+                  Category
+                </th>
+                <th scope="col" class={cell}>
+                  Rating
+                </th>
+                <th scope="col" class={cell}>
+                  Verdict
+                </th>
+                <th scope="col" class={cell}>
+                  Best price
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {reviews.map((review) => (
+                <tr>
+                  <th scope="row" class:list={[cell, 'font-normal']}>
+                    <span class="flex items-center gap-3">
+                      <Image
+                        src={review.image}
+                        alt=""
+                        width={64}
+                        height={44}
+                        class="h-11 w-16 flex-none rounded-md object-cover"
+                      />
+                      <a href={review.url} class="font-semibold">
+                        {review.productName ?? review.title}
+                      </a>
+                    </span>
+                  </th>
+                  <td class={cell}>{review.leafLabel}</td>
+                  <td class={cell}>
+                    {review.rating !== undefined && <Rating value={review.rating} />}
+                  </td>
+                  <td class={cell}>
+                    {review.badge ? (
+                      <BadgeTag badge={review.badge} />
+                    ) : (
+                      <span class="text-muted">{verdictLabel(review)}</span>
+                    )}
+                  </td>
+                  <td class={cell}>
+                    {review.bestOffer ? (
+                      <a
+                        class="btn btn-buy min-h-10 px-3.5 text-[13px] whitespace-nowrap"
+                        href={affiliateHref(review.bestOffer.retailer, review.bestOffer.url)}
+                        rel={AFFILIATE_REL}
+                        target="_blank"
+                      >
+                        <span class="font-mono">{formatInr(review.bestOffer.price)}</span>
+                        <span class="sr-only">
+                          for {review.productName} at {retailerName(review.bestOffer.retailer)},
+                          opens in a new tab
+                        </span>
+                      </a>
+                    ) : (
+                      <a href={review.url}>
+                        Read the review<span class="sr-only">: {review.title}</span>
+                      </a>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )}
+
+    {first && guide && (
+      <section aria-labelledby="brand-guide">
+        <h2 id="brand-guide" class="sr-only">
+          Buying guide
+        </h2>
+        <article class="relative flex flex-wrap items-center gap-6 rounded-xl border border-border p-5">
+          <Image
+            src={guide.image}
+            alt={guide.imageAlt}
+            widths={[320, 640]}
+            sizes="(min-width: 768px) 320px, 100vw"
+            class="aspect-video w-full flex-none rounded-md object-cover sm:w-[320px]"
+          />
+          <div class="flex min-w-[min(100%,280px)] flex-1 flex-col gap-2">
+            <span class="lbl">Best picks</span>
+            <h3 class="text-[22px] sm:text-[26px]">
+              <a
+                href={guide.url}
+                class="text-text no-underline after:absolute after:inset-0 hover:underline"
+              >
+                {guide.title}
+              </a>
+            </h3>
+            <p class="text-muted">{guide.description}</p>
+          </div>
+        </article>
+      </section>
+    )}
+
+    {first && <AdSlot size="leaderboard" />}
+
+    <ArchiveGrid
+      id="brand-latest"
+      title={`Latest on ${name}`}
+      page={page}
+      base={path}
+      what="articles on this brand"
+      eager={!first}
+    />
+
+    {first && (
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-6">
+        <section
+          class="flex flex-col gap-3 rounded-[10px] bg-surface p-5"
+          aria-labelledby="brand-deals"
+        >
+          <h2 id="brand-deals" class="text-lg">
+            {name} deals today
+          </h2>
+          {deals.length > 0 ? (
+            <ul class="flex flex-col gap-2 text-[14px]">
+              {deals.map((item) => (
+                <li>
+                  <a href={item.url} class="font-semibold">
+                    {item.deal?.product}
+                  </a>
+                  {item.deal && (
+                    <span class="font-mono text-muted"> {formatInr(item.deal.dealPrice)}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p class="text-[14px] text-muted">
+              No live deals right now. We list price drops on products we have tested.
+            </p>
+          )}
+          <a class="btn btn-buy self-start" href="/deals/">
+            See all deals
+          </a>
+        </section>
+        {support && (
+          <section
+            class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
+            aria-labelledby="brand-support"
+          >
+            <h2 id="brand-support" class="text-lg">
+              Support and warranty in India
+            </h2>
+            <p class="text-[14px] text-muted">{support}</p>
+          </section>
+        )}
+        {similar.length > 0 && (
+          <nav
+            class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
+            aria-labelledby="brand-similar"
+          >
+            <h2 id="brand-similar" class="text-lg">
+              Similar brands
+            </h2>
+            <ul class="flex flex-wrap gap-2">
+              {similar.map((b) => (
+                <li>
+                  <a class="chip" href={b.href}>
+                    {b.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+      </div>
+    )}
+  </div>
+</ListingLayout>

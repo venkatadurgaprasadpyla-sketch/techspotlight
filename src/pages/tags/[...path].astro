@@ -1,0 +1,41 @@
+---
+/** Tag pages, paginated: every article carrying the tag, newest first. */
+import type { GetStaticPaths } from 'astro';
+import ArchivePage from '~/components/archive/ArchivePage.astro';
+import { tagListings, type TagListing } from '~/lib/archives';
+import { getArticles } from '~/lib/articles';
+import type { CardItem } from '~/lib/cards';
+import { paginate, type Page } from '~/lib/listing';
+
+interface Props {
+  listing: TagListing;
+  page: Page<CardItem>;
+}
+
+export const getStaticPaths = (async () => {
+  const listings = tagListings(await getArticles());
+  return listings.flatMap((listing) =>
+    paginate(listing.items, listing.path).map((page) => ({
+      params: { path: page.href.replace(/^\/tags\/|\/$/g, '') },
+      props: { listing, page } satisfies Props,
+    })),
+  );
+}) satisfies GetStaticPaths;
+
+const { listing, page } = Astro.props as Props;
+const n = listing.items.length;
+---
+
+<ArchivePage
+  label="Tag"
+  title={listing.label}
+  intro={`${n} ${n === 1 ? 'article' : 'articles'} tagged “${listing.label.toLowerCase()}”: reviews, guides, how-tos, news and deals.`}
+  path={listing.path}
+  crumbs={listing.crumbs}
+  items={listing.items}
+  page={page}
+>
+  <a slot="nav" class="self-start text-[14px]" href="/tags/">
+    All tags ›
+  </a>
+</ArchivePage>

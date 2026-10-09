@@ -1,0 +1,163 @@
+---
+/**
+ * Author page: /authors/<id>/ (page n at /authors/<id>/page/<n>/). Section order follows the
+ * Author board: profile band with stats, their latest work, then test kit and ethics.
+ * Outputs Person structured data.
+ */
+import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import ListingLayout from '~/components/listing/ListingLayout.astro';
+import { site } from '~/config/site';
+import { authorPath } from '~/lib/archives';
+import type { CardItem } from '~/lib/cards';
+import type { Page } from '~/lib/listing';
+import ArchiveGrid from './ArchiveGrid.astro';
+
+interface Props {
+  author: CollectionEntry<'authors'>;
+  items: CardItem[];
+  page: Page<CardItem>;
+}
+const { author, items, page } = Astro.props;
+const { name, role, bio, avatar, expertise, social, since, location, kit } = author.data;
+const path = authorPath(author.id);
+const firstName = name.split(' ')[0] ?? name;
+const listing = {
+  title: name,
+  crumbs: [
+    { label: 'Home', href: '/' },
+    { label: 'Our team', href: '/about/' },
+    { label: name, href: path },
+  ],
+  items,
+};
+const count = (collection: CardItem['collection']) =>
+  items.filter((i) => i.collection === collection).length;
+const stats = [
+  { value: String(count('reviews')), label: 'Products reviewed' },
+  { value: String(count('guides')), label: 'Buying guides' },
+  ...(since ? [{ value: String(since), label: 'Writing about tech since' }] : []),
+  ...(location ? [{ value: location, label: 'Based in' }] : []),
+];
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name,
+  jobTitle: role,
+  description: bio,
+  url: new URL(path, site.url).href,
+  worksFor: { '@type': 'Organization', name: site.name, url: site.url },
+  ...(expertise.length > 0 && { knowsAbout: expertise }),
+  ...(social.length > 0 && { sameAs: social.map((s) => s.href) }),
+};
+---
+
+<ListingLayout
+  listing={listing}
+  page={page}
+  description={`${name}, ${role} at ${site.name}. ${bio}`}
+  band
+>
+  <Fragment slot="header">
+    <div class="flex flex-wrap items-start gap-8">
+      {avatar ? (
+        <Image
+          src={avatar}
+          alt=""
+          width={160}
+          height={160}
+          class="size-[120px] flex-none rounded-full object-cover sm:size-40"
+          loading="eager"
+        />
+      ) : (
+        <span
+          class="flex size-[120px] flex-none items-center justify-center rounded-full border border-border bg-bg font-heading text-5xl font-bold text-muted sm:size-40"
+          aria-hidden="true"
+        >
+          {name.charAt(0)}
+        </span>
+      )}
+      <div class="flex min-w-[min(100%,320px)] flex-1 flex-col gap-2.5">
+        <span class="lbl">{role}</span>
+        <h1 class="text-[34px] sm:text-[42px]">
+          {name}
+          {page.current > 1 && <span class="text-muted">, page {page.current}</span>}
+        </h1>
+        <p class="max-w-[720px] text-[17px]">{bio}</p>
+        {expertise.length > 0 && (
+          <ul class="flex flex-wrap gap-2" aria-label="Covers">
+            {expertise.map((topic) => (
+              <li class="inline-flex min-h-9 items-center rounded-full border border-border-strong bg-bg px-3.5 text-[13px]">
+                {topic}
+              </li>
+            ))}
+          </ul>
+        )}
+        {social.length > 0 && (
+          <ul class="flex flex-wrap gap-2" aria-label={`${firstName} elsewhere`}>
+            {social.map((link) => (
+              <li>
+                <a class="chip" href={link.href} rel="me noopener" target="_blank">
+                  {link.label}
+                  <span class="sr-only"> (opens in a new tab)</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+    <dl class="flex flex-wrap gap-3 pt-2">
+      {stats.map((stat) => (
+        <div class="flex min-w-[140px] flex-col-reverse gap-0.5 rounded-[10px] border border-border bg-bg px-4 py-3">
+          <dt class="text-[13px] text-muted">{stat.label}</dt>
+          <dd class="font-heading text-2xl font-bold">{stat.value}</dd>
+        </div>
+      ))}
+    </dl>
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(jsonLd).replaceAll('<', '\\u003c')}
+    />
+  </Fragment>
+
+  <div class="flex flex-col gap-10 py-8 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
+    <ArchiveGrid
+      id="author-latest"
+      title={`Latest from ${firstName}`}
+      page={page}
+      base={path}
+      what={`articles from ${firstName}`}
+      min={220}
+    />
+    <aside class="flex flex-col gap-6" aria-label={`About ${firstName}'s testing`}>
+      {kit.length > 0 && (
+        <section
+          class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
+          aria-labelledby="test-kit"
+        >
+          <h2 id="test-kit" class="text-lg">
+            Test kit
+          </h2>
+          <ul class="flex list-disc flex-col gap-1.5 pl-5 text-[14px]">
+            {kit.map((thing) => (
+              <li>{thing}</li>
+            ))}
+          </ul>
+          <a href="/how-we-test/" class="text-[14px]">
+            How we test ›
+          </a>
+        </section>
+      )}
+      <section class="flex flex-col gap-3 rounded-[10px] bg-surface p-5" aria-labelledby="ethics">
+        <h2 id="ethics" class="text-lg">
+          Ethics statement
+        </h2>
+        <p class="text-[14px]">
+          {firstName} does not accept payment for coverage. Review units are returned or disclosed.
+          Read our <a href="/affiliate-disclosure/">affiliate disclosure</a>.
+        </p>
+      </section>
+    </aside>
+  </div>
+</ListingLayout>

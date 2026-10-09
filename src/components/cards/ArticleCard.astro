@@ -45,7 +45,7 @@ const dealEnded = item.deal !== undefined && dealStatus(item.deal.endsAt, new Da
 ---
 
 {variant === 'standard' && (
-  <article class="relative flex flex-col gap-2">
+  <article data-pagefind-ignore="all" class="relative flex flex-col gap-2">
     <Image
       src={item.image}
       alt={item.imageAlt}
@@ -83,7 +83,10 @@ const dealEnded = item.deal !== undefined && dealStatus(item.deal.endsAt, new Da
 )}
 
 {variant === 'compact' && (
-  <article class="relative flex flex-wrap gap-5 border-b border-border py-5">
+  <article
+    data-pagefind-ignore="all"
+    class="relative flex flex-wrap gap-5 border-b border-border py-5"
+  >
     <Image
       src={item.image}
       alt={item.imageAlt}
@@ -114,7 +117,10 @@ const dealEnded = item.deal !== undefined && dealStatus(item.deal.endsAt, new Da
 )}
 
 {variant === 'hero' && (
-  <article class="relative flex flex-wrap items-center gap-7 rounded-xl border border-border p-5">
+  <article
+    data-pagefind-ignore="all"
+    class="relative flex flex-wrap items-center gap-7 rounded-xl border border-border p-5"
+  >
     <Image
       src={item.image}
       alt={item.imageAlt}
@@ -140,7 +146,7 @@ const dealEnded = item.deal !== undefined && dealStatus(item.deal.endsAt, new Da
 )}
 
 {variant === 'review' && (
-  <article class="flex flex-wrap gap-5 border-b border-border py-5">
+  <article data-pagefind-ignore="all" class="flex flex-wrap gap-5 border-b border-border py-5">
     <Image
       src={item.image}
       alt={item.imageAlt}

@@ -5,6 +5,7 @@ import { render, type CollectionEntry } from 'astro:content';
 import AdSlot from '~/components/AdSlot.astro';
 import ArticleByline from '~/components/ArticleByline.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import SearchData from '~/components/SearchData.astro';
 import ArticleCard from '~/components/cards/ArticleCard.astro';
 import Contender from '~/components/versus/Contender.astro';
 import SpecsCompare from '~/components/versus/SpecsCompare.astro';
@@ -12,6 +13,7 @@ import { contentTypePath, contentTypes, findTopic } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import { AFFILIATE_REL, affiliateHref, getRetailer, lowestOffer } from '~/lib/affiliate';
 import { getArticles } from '~/lib/articles';
+import { searchData } from '~/lib/search-index';
 import { getPublished, getPublishedEntry } from '~/lib/content';
 import { leafSlug } from '~/lib/content-schema';
 import { formatInr } from '~/lib/format';
@@ -37,6 +39,7 @@ const leaf = leafSlug(data);
 const topic = findTopic(leaf);
 if (!topic) throw new Error(`Face-off ${entry.id}: unknown topic ${leaf}`);
 const url = articlePath('versus', entry.id, leaf);
+const search = await searchData(url);
 const names = { a: data.productA.productName, b: data.productB.productName };
 const crumbs = [...topicCrumbs(topic), { label: `${names.a} vs ${names.b}`, href: url }];
 assertNoHeadingClash(`Face-off ${entry.id}`, headings, [
@@ -92,7 +95,8 @@ const chip = {
 ---
 
 <BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
-  <article class="wrap">
+  <article data-pagefind-body={search && ''} class="wrap">
+    <SearchData data={search} />
     <div class="mx-auto flex w-full max-w-[960px] min-w-0 flex-col gap-9 pt-5 pb-12">
       <header class="flex flex-col gap-3.5">
         <Breadcrumbs crumbs={crumbs} />

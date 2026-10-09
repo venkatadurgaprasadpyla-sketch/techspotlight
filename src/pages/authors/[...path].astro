@@ -1,0 +1,33 @@
+---
+/** Author pages, paginated, for every author in src/content/authors. */
+import type { GetStaticPaths } from 'astro';
+import type { CollectionEntry } from 'astro:content';
+import AuthorPage from '~/components/archive/AuthorPage.astro';
+import { authorPath, itemsByAuthor } from '~/lib/archives';
+import { getArticles } from '~/lib/articles';
+import type { CardItem } from '~/lib/cards';
+import { getPublished } from '~/lib/content';
+import { paginate, type Page } from '~/lib/listing';
+
+interface Props {
+  author: CollectionEntry<'authors'>;
+  items: CardItem[];
+  page: Page<CardItem>;
+}
+
+export const getStaticPaths = (async () => {
+  const articles = await getArticles();
+  const authors = await getPublished('authors');
+  return authors.flatMap((author) => {
+    const items = itemsByAuthor(articles, author.id);
+    return paginate(items, authorPath(author.id)).map((page) => ({
+      params: { path: page.href.replace(/^\/authors\/|\/$/g, '') },
+      props: { author, items, page } satisfies Props,
+    }));
+  });
+}) satisfies GetStaticPaths;
+
+const { author, items, page } = Astro.props as Props;
+---
+
+<AuthorPage author={author} items={items} page={page} />

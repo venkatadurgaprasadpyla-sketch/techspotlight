@@ -1,0 +1,34 @@
+---
+/** Tag and month pages: a label, title and intro, optional links, then the article grid. */
+import ListingLayout from '~/components/listing/ListingLayout.astro';
+import type { CardItem } from '~/lib/cards';
+import type { Page } from '~/lib/listing';
+import type { Crumb } from '~/lib/listings';
+import ArchiveGrid from './ArchiveGrid.astro';
+
+interface Props {
+  label: string;
+  title: string;
+  intro: string;
+  path: string;
+  crumbs: Crumb[];
+  items: CardItem[];
+  page: Page<CardItem>;
+}
+const { label, title, intro, path, crumbs, items, page } = Astro.props;
+---
+
+<ListingLayout listing={{ title, crumbs, items }} page={page} description={intro}>
+  <Fragment slot="header">
+    <span class="lbl">{label}</span>
+    <h1 class="text-[36px] sm:text-[44px]">
+      {title}
+      {page.current > 1 && <span class="text-muted">, page {page.current}</span>}
+    </h1>
+    <p class="max-w-[760px] text-[17px] text-muted">{intro}</p>
+    <slot name="nav" />
+  </Fragment>
+  <div class="pb-8">
+    <ArchiveGrid id="archive-list" title="Articles" page={page} base={path} what="articles here" />
+  </div>
+</ListingLayout>
