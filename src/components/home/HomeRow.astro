@@ -1,0 +1,35 @@
+---
+/** A titled homepage row with an "All …" link; the cards go in the slot. */
+interface Props {
+  id: string;
+  title: string;
+  href: string;
+  linkLabel: string;
+  /** Minimum card width for the auto-fill grid. */
+  min?: 200 | 220 | 280;
+  /** On phones, show only the first two cards so the page stays scannable. */
+  compactOnPhones?: boolean;
+}
+const { id, title, href, linkLabel, min = 220, compactOnPhones = false } = Astro.props;
+const grid = {
+  200: 'grid-cols-[repeat(auto-fill,minmax(min(100%,200px),1fr))]',
+  220: 'grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))]',
+  280: 'grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))]',
+};
+---
+
+<section class="flex flex-col gap-5" aria-labelledby={id}>
+  <div class="sec-head">
+    <h2 id={id} class="text-2xl">
+      {title}
+    </h2>
+    <a class="lbl" href={href}>
+      {linkLabel} <span aria-hidden="true">›</span>
+    </a>
+  </div>
+  <div
+    class:list={['grid gap-6', grid[min], compactOnPhones && 'max-sm:[&>*:nth-child(n+3)]:hidden']}
+  >
+    <slot />
+  </div>
+</section>
