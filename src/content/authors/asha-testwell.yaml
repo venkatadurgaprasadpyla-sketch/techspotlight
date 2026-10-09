@@ -1,0 +1,10 @@
+# SAMPLE: a made-up author used to preview templates.
+name: Asha Testwell
+role: Sample laptops editor
+bio: >-
+  Asha is a fictional editor who exists only to fill author boxes while the site is being built.
+  Real author bios replace this file before launch.
+avatar: ../../assets/samples/author-asha.jpg
+expertise: [Laptops, Ultrabooks, Gaming laptops]
+social: []
+sample: true

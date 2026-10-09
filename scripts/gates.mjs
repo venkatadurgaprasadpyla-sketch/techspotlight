@@ -148,7 +148,7 @@ const npx = 'npx';
 let distReady = existsSync('dist');
 if (selected('G1')) {
   distReady = run('G1', 'Clean build', npx, ['astro', 'build'], {
-    failOn: /\[WARN\]|\bwarning\b/i,
+    failOn: /\[WARN\]|\[ERROR\]|\bwarning\b/i,
   });
 }
 if (selected('G2')) run('G2', 'Types', npx, ['astro', 'check', '--minimumFailingSeverity', 'hint']);

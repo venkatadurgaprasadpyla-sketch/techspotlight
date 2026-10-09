@@ -22,6 +22,7 @@ Independent tech review and buying-advice site for India (INR, Amazon.in and Fli
 | `npm run gates`                   | All automated quality gates; writes `gate-reports/summary.md`                   |
 | `npm run gates -- G1 G4`          | Run only the named gates                                                        |
 | `npm run gates:audit`             | Lighthouse + axe + screenshots for pages in `gates.config.json` (needs `dist/`) |
+| `npm run new -- review "Name"`    | Scaffold a draft article, author or brand (see CONTENT-GUIDE.md)                |
 
 ## Quality gates
 
@@ -54,6 +55,14 @@ When a task adds a page type, add a representative URL to `gates.config.json` �
 - `src/config/taxonomy.ts` is the single source of truth for hubs → categories → subcategories and content types. Leaf slugs (subcategories, or categories without subcategories) are unique site-wide.
 - Pages not built yet render the `Placeholder` layout (noindex). Every placeholder path must be listed by `placeholderPaths()` in `src/config/routes.ts` (the layout throws otherwise), which also keeps them out of the sitemap. When a task ships a real page, remove its path there.
 
+## Content
+
+- Collections (`src/content.config.ts`): reviews, guides, versus, howtos, news, deals (Markdown/MDX) and authors, brands (YAML) under `src/content/<name>/`. Schemas are factories in `src/lib/content-schema.ts`, unit tested with stand-in `image()`/`reference()` helpers (`tests/helpers/content.ts`).
+- Schemas validate topics against `taxonomy.ts`, retailer links against `site.retailers` hosts, and refuse `TODO` in anything that is not a draft.
+- Read content only through `getPublished()` / `getPublishedEntry()` in `src/lib/content.ts`: drafts are dropped in production and `sample: true` entries when `PUBLIC_HIDE_SAMPLES=true`.
+- `npm run new -- <type> "Name" [--topic <leaf>]` scaffolds a draft (`scripts/new-content.mjs`). `CONTENT-GUIDE.md` is the writer-facing guide, including how to paste output from the review-writer skill.
+- Sample content uses fictional brands (Northwind, Kestrel, Orbit) and images from `npm run images:samples`.
+
 ## Layout
 
 ```
@@ -63,7 +72,8 @@ src/components/ Header, MegaMenu, MobileDrawer, Footer, NewsletterForm, ThemeTog
 src/scripts/    nav.ts (mega-menu + drawer), theme.ts
 src/pages/      routes
 src/styles/     global.css (Tailwind + design tokens)
-src/lib/        pure helpers (unit tested), e.g. formatInr
-scripts/        gates.mjs, audit-pages.mjs
+src/lib/        pure helpers (unit tested): format, content-schema, visibility; content.ts reads collections
+src/content/    articles and data (see CONTENT-GUIDE.md); src/assets/ images
+scripts/        gates.mjs, audit-pages.mjs, new-content.mjs (scaffolder), make-sample-images.mjs
 tests/          Vitest specs
 ```
