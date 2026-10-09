@@ -35,7 +35,7 @@ export const getStaticPaths = (async () => {
   // Article pages until their templates ship. When a task adds a real route for a collection
   // (T4 reviews, T5 guides and versus, T6 how-tos and news, T7 deals), drop it from this list,
   // or both routes will build the same URLs.
-  const awaitingTemplate = new Set(['guides', 'versus', 'howtos', 'news', 'deals']);
+  const awaitingTemplate = new Set(['versus', 'howtos', 'news', 'deals']);
   for (const item of articles.filter((a) => awaitingTemplate.has(a.collection))) {
     const page = { path: item.url, title: item.title, intro: item.description };
     routes.push({ path: item.url, props: { kind: 'placeholder', page } });

@@ -28,6 +28,7 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
 import { AFFILIATE_REL, affiliateHref, lowestOffer } from '~/lib/affiliate';
 import { getArticles } from '~/lib/articles';
 import { leafSlug } from '~/lib/content-schema';
+import { assertNoHeadingClash } from '~/lib/headings';
 import { getPublished, getPublishedEntry } from '~/lib/content';
 import { formatDate, formatInr, isoDate } from '~/lib/format';
 import { topicCrumbs } from '~/lib/listings';
@@ -77,19 +78,19 @@ const moreReviews = others.filter((a) => a.collection === 'reviews' && a.leaf ==
 const latestInCategory = others.filter((a) => a.category === data.category).slice(0, 5);
 
 const bodyIds = new Set(headings.map((h) => h.slug));
-// Ids the template adds. A body heading with the same slug (e.g. a pasted "## Final verdict")
-// would duplicate an id and send the jump bar to the wrong place, so stop the build instead.
-const sectionIds = ['verdict', 'cheat-sheet', 'specs', 'scores', 'benchmarks', 'gallery', 'video'];
-const templateIds = [...sectionIds, 'final-verdict', 'prices', 'faq'].flatMap((id) => [
-  id,
-  `${id}-title`,
+// A body heading must not reuse an id the template adds (e.g. a pasted "## Final verdict").
+assertNoHeadingClash(`Review ${entry.id}`, headings, [
+  'verdict',
+  'cheat-sheet',
+  'specs',
+  'scores',
+  'benchmarks',
+  'gallery',
+  'video',
+  'final-verdict',
+  'prices',
+  'faq',
 ]);
-const clash = templateIds.filter((id) => bodyIds.has(id));
-if (clash.length) {
-  throw new Error(
-    `Review ${entry.id}: body headings ${clash.map((id) => `"${id}"`).join(', ')} clash with sections the template adds. Remove or rename them (see CONTENT-GUIDE.md).`,
-  );
-}
 const sections = [
   { id: 'verdict', label: 'Verdict' },
   { id: 'cheat-sheet', label: 'Cheat sheet' },

@@ -19,6 +19,7 @@ picks:
     image: ../../assets/samples/phone-nova.jpg
     imageAlt: Placeholder illustration of the Kestrel Nova 5G
     tagline: Two-day battery and clean software for under ₹25,000.
+    summary: Sample write-up. It outlasted every other sample phone in our battery test and ships without ads or duplicate apps.
     rating: 4
     price: 24999
     pros: [Two-day battery, Clean software]
@@ -34,6 +35,7 @@ picks:
     image: ../../assets/samples/phone-orbit.jpg
     imageAlt: Placeholder illustration of the Orbit X2
     tagline: The sample pick for people who shoot at night.
+    summary: Sample write-up. Its night mode keeps detail where the others smear, but you will charge it every evening.
     rating: 4
     price: 29999
     pros: [Good low-light camera, Compact]

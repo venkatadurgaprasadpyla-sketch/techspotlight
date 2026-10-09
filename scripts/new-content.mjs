@@ -117,6 +117,8 @@ faq: [] # - { q: ..., a: ... }`,
     image: ${IMAGE}
     imageAlt: ${q('TODO: describe the image')}
     tagline: ${q(`TODO: one line on why it leads ${name}`)}
+    summary: ${q('TODO: why it is here and how it did in our tests')}
+    # bestFor: e.g. Students
     rating: TODO # 0 to 5 in half steps
     price: TODO # rupees
     specs: []

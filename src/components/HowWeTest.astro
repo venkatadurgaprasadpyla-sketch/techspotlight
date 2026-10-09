@@ -1,0 +1,26 @@
+---
+/** Shared "How we test" block for buying guides and face-offs; the full page has the detail. */
+interface Props {
+  /** e.g. "laptops"; used in the copy. */
+  noun?: string | undefined;
+}
+const { noun = 'products' } = Astro.props;
+---
+
+<section
+  id="how-we-test"
+  class="flex scroll-mt-20 flex-col gap-3 rounded-[10px] bg-surface p-5 sm:p-6"
+  aria-labelledby="how-we-test-title"
+>
+  <h2 id="how-we-test-title" class="text-[22px]">
+    How we test
+  </h2>
+  <p>
+    Every one of these {noun} is bought or borrowed and used as a daily device before we rate it. We
+    run the same battery rundown, display measurements and benchmarks on each one, so the scores
+    compare fairly, and we check Indian prices on Amazon.in and Flipkart before we publish.
+  </p>
+  <p>
+    <a href="/how-we-test/">Read how we test and rate</a>
+  </p>
+</section>

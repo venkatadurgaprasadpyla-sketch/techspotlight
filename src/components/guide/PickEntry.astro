@@ -1,0 +1,181 @@
+---
+/** One ranked pick in a buying guide (Guide board): every pick repeats this layout. */
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+import Rating from '~/components/cards/Rating.astro';
+import ScoreCard from '~/components/review/ScoreCard.astro';
+import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import { formatInr } from '~/lib/format';
+
+interface Props {
+  pick: {
+    rank: number;
+    label: string;
+    productName: string;
+    tagline: string;
+    image: ImageMetadata;
+    imageAlt: string;
+    rating: number;
+    price: number;
+    specs: { label: string; value: string }[];
+    scores: { label: string; score: number; note?: string | undefined }[];
+    pros: string[];
+    cons: string[];
+    summary?: string | undefined;
+    buyIf: string[];
+    dontBuyIf: string[];
+    bestFor?: string | undefined;
+    retailers: { name: string; url: string; price?: number | undefined }[];
+  };
+  reviewUrl?: string | undefined;
+  /** The first pick's image is above the fold on wide screens only, so it stays lazy. */
+  eager?: boolean;
+}
+const { pick, reviewUrl, eager = false } = Astro.props;
+const id = `pick-${pick.rank}`;
+const priceOf = (o: { price?: number | undefined }) => (o.price ? o.price : Infinity);
+const offers = [...pick.retailers].sort((a, b) => priceOf(a) - priceOf(b));
+const store = (retailer: string) => getRetailer(retailer)?.name ?? retailer;
+---
+
+<section
+  id={id}
+  class="flex scroll-mt-20 flex-col gap-5 border-t-2 border-text pt-6"
+  aria-labelledby={`${id}-title`}
+>
+  <div class="flex flex-col gap-2">
+    <p class="flex items-baseline gap-3">
+      <span class="font-heading text-[40px] leading-none font-bold" aria-hidden="true">
+        {pick.rank}
+      </span>
+      <span class="lbl">{pick.label}</span>
+    </p>
+    <h2 id={`${id}-title`} class="text-[28px]">
+      <span class="sr-only">
+        {pick.rank}. {pick.label}:{' '}
+      </span>
+      {pick.productName}
+    </h2>
+    <Rating value={pick.rating} />
+    <p class="text-lg text-muted">{pick.tagline}</p>
+  </div>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <Image
+      src={pick.image}
+      alt={pick.imageAlt}
+      widths={[360, 560, 720]}
+      sizes="(min-width: 1024px) 380px, (min-width: 640px) 45vw, 100vw"
+      class="aspect-[4/3] w-full rounded-[10px] object-cover"
+      loading={eager ? 'eager' : 'lazy'}
+    />
+    <div class="flex flex-col gap-4">
+      {pick.specs.length > 0 && (
+        <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 rounded-[10px] bg-surface p-4 text-[14px]">
+          {pick.specs.map((spec) => (
+            <>
+              <dt class="font-semibold">{spec.label}</dt>
+              <dd class="font-mono text-[13px]">{spec.value}</dd>
+            </>
+          ))}
+        </dl>
+      )}
+      {pick.scores.length > 0 && (
+        <ScoreCard
+          scores={pick.scores}
+          id={`${id}-scores`}
+          title="Our scores"
+          headingLevel={3}
+          compact
+        />
+      )}
+    </div>
+  </div>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div class="flex flex-col gap-2">
+      <h3 class="font-sans text-base text-good">Reasons to buy</h3>
+      <ul class="flex list-disc flex-col gap-1 pl-5">
+        {pick.pros.map((pro) => (
+          <li>{pro}</li>
+        ))}
+      </ul>
+    </div>
+    <div class="flex flex-col gap-2">
+      <h3 class="font-sans text-base text-bad">Reasons to avoid</h3>
+      <ul class="flex list-disc flex-col gap-1 pl-5">
+        {pick.cons.map((con) => (
+          <li>{con}</li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  {pick.summary && <p class="text-[17px]">{pick.summary}</p>}
+
+  {(pick.buyIf.length > 0 || pick.dontBuyIf.length > 0) && (
+    <div class="grid gap-4 sm:grid-cols-2">
+      {pick.buyIf.length > 0 && (
+        <div class="flex flex-col gap-2 rounded-[10px] border-t-4 border-good bg-surface p-4">
+          <h3 class="font-sans text-base text-good">Buy it if</h3>
+          <ul class="flex list-disc flex-col gap-1 pl-5">
+            {pick.buyIf.map((reason) => (
+              <li>{reason}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {pick.dontBuyIf.length > 0 && (
+        <div class="flex flex-col gap-2 rounded-[10px] border-t-4 border-bad bg-surface p-4">
+          <h3 class="font-sans text-base text-bad">Don't buy it if</h3>
+          <ul class="flex list-disc flex-col gap-1 pl-5">
+            {pick.dontBuyIf.map((reason) => (
+              <li>{reason}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )}
+
+  {pick.bestFor && (
+    <p>
+      <b>Best for:</b> {pick.bestFor}
+    </p>
+  )}
+
+  <div class="flex flex-wrap items-center gap-3">
+    {offers.map((offer) => (
+      <a
+        class="btn btn-buy"
+        href={affiliateHref(offer.name, offer.url)}
+        rel={AFFILIATE_REL}
+        target="_blank"
+      >
+        {offer.price ? (
+          <>
+            <span class="font-mono">{formatInr(offer.price)}</span> at {store(offer.name)}
+          </>
+        ) : (
+          <>Check price at {store(offer.name)}</>
+        )}
+        <span class="sr-only">: {pick.productName}, opens in a new tab</span>
+      </a>
+    ))}
+    {offers.length === 0 && pick.price > 0 && (
+      <p class="font-mono text-[15px]">
+        {formatInr(pick.price)} <span class="font-sans text-[13px] text-muted">typical price</span>
+      </p>
+    )}
+    {reviewUrl && (
+      <a href={reviewUrl} class="btn btn-ghost">
+        Read our full review<span class="sr-only"> of the {pick.productName}</span>
+      </a>
+    )}
+  </div>
+  <p class="text-[13px]">
+    <a href="#quick-list">
+      Back to the quick list <span aria-hidden="true">↑</span>
+    </a>
+  </p>
+</section>

@@ -1,19 +1,34 @@
 ---
+/** Score bars out of 5. Reviews show one card (#scores); guides show a compact card per pick. */
 interface Props {
   scores: { label: string; score: number; note?: string | undefined }[];
+  id?: string;
+  title?: string;
+  headingLevel?: 2 | 3;
+  compact?: boolean;
 }
-const { scores } = Astro.props;
+const {
+  scores,
+  id = 'scores',
+  title = 'Scorecard',
+  headingLevel = 2,
+  compact = false,
+} = Astro.props;
+const Heading = `h${headingLevel}` as const;
 ---
 
 <section
-  id="scores"
-  class="flex scroll-mt-20 flex-col gap-3 rounded-[10px] border border-border p-5 sm:p-6"
-  aria-labelledby="scores-title"
+  id={id}
+  class:list={[
+    'flex scroll-mt-20 flex-col gap-3 rounded-[10px] border border-border',
+    compact ? 'p-4' : 'p-5 sm:p-6',
+  ]}
+  aria-labelledby={`${id}-title`}
 >
-  <h2 id="scores-title" class="text-[22px]">
-    Scorecard
-  </h2>
-  <ul class="flex flex-col gap-3">
+  <Heading id={`${id}-title`} class:list={[compact ? 'font-sans text-base' : 'text-[22px]']}>
+    {title}
+  </Heading>
+  <ul class:list={['flex flex-col', compact ? 'gap-2 text-[14px]' : 'gap-3']}>
     {scores.map((row) => (
       <li class="grid grid-cols-[7.5rem_1fr_2.5rem] items-center gap-3">
         <span>

@@ -72,6 +72,17 @@ yet. `npm run gates` fails if a published, non-sample article credits a sample a
   `npm run build` alone.
 - `updatedDate` cannot be before `publishDate`.
 
+## Buying guides
+
+Each pick needs `rank` (1, 2, 3 … in order), `label` ("Best overall"), `productName`, `tagline`,
+`image` and `imageAlt`, `rating`, `price` and at least one pro and con. Add `summary` (why it is
+on the list), `specs`, `scores`, `buyIf` / `dontBuyIf`, `bestFor` and `retailers` where you have
+them, and `reviewRef` when the product has a review, so the guide links to it and the review
+shows "Featured in". The compare table uses the spec labels the picks share, so use the same
+labels (`Display`, `Weight` …) across picks. Write "How to choose" in the body; the template adds
+the quick list, the picks, Compare, Also tested, How we test and the FAQ, so don't use those as
+body headings.
+
 ## Pasting a review from the TechSpotlight review-writer skill
 
 The skill writes for several markets with scores out of 10. TechSpotlight is India-only with

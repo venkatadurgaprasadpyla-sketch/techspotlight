@@ -1,0 +1,231 @@
+---
+/** Buying guide: /best/<id>/. Section order follows the Guide board. */
+import type { GetStaticPaths } from 'astro';
+import { Image } from 'astro:assets';
+import { render, type CollectionEntry } from 'astro:content';
+import AdSlot from '~/components/AdSlot.astro';
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import AlsoTested from '~/components/guide/AlsoTested.astro';
+import CompareTable from '~/components/guide/CompareTable.astro';
+import PickEntry from '~/components/guide/PickEntry.astro';
+import QuickList from '~/components/guide/QuickList.astro';
+import HowWeTest from '~/components/HowWeTest.astro';
+import Faq from '~/components/review/Faq.astro';
+import { findTopic } from '~/config/taxonomy';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { getRetailer, lowestOffer } from '~/lib/affiliate';
+import { getArticles } from '~/lib/articles';
+import { getPublished, getPublishedEntry } from '~/lib/content';
+import { leafSlug } from '~/lib/content-schema';
+import { formatDate, isoDate } from '~/lib/format';
+import { assertNoHeadingClash } from '~/lib/headings';
+import { topicCrumbs } from '~/lib/listings';
+import { articlePath } from '~/lib/urls';
+
+interface Props {
+  entry: CollectionEntry<'guides'>;
+}
+
+export const getStaticPaths = (async () => {
+  const guides = await getPublished('guides');
+  return guides.map((entry) => ({ params: { guide: entry.id }, props: { entry } }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props as Props;
+const { data } = entry;
+const { Content, headings } = await render(entry);
+const leaf = leafSlug(data);
+const topic = findTopic(leaf);
+if (!topic) throw new Error(`Guide ${entry.id}: unknown topic ${leaf}`);
+const url = articlePath('guides', entry.id, leaf);
+const crumbs = [...topicCrumbs(topic), { label: data.title, href: url }];
+const updated = data.updatedDate ?? data.publishDate;
+const noun = (topic.subcategory?.label ?? topic.category.label).toLowerCase();
+
+assertNoHeadingClash(`Guide ${entry.id}`, headings, [
+  'quick-list',
+  ...data.picks.map((p) => `pick-${p.rank}`),
+  'compare',
+  'also-tested',
+  'how-we-test',
+  'faq',
+]);
+
+const author = await getPublishedEntry('authors', data.author.id);
+const articles = await getArticles();
+// Links to full reviews only for reviews that are visible in this build.
+const reviewUrls = new Map(
+  articles.filter((a) => a.collection === 'reviews').map((a) => [a.id, a.url] as const),
+);
+const reviewUrl = (ref?: { id: string }) => (ref ? reviewUrls.get(ref.id) : undefined);
+
+const picks = data.picks.map((pick) => {
+  const best = lowestOffer(pick.retailers);
+  return {
+    ...pick,
+    reviewUrl: reviewUrl(pick.reviewRef),
+    shownPrice: best
+      ? { amount: best.price, store: getRetailer(best.name)?.name ?? best.name }
+      : pick.price > 0
+        ? { amount: pick.price }
+        : undefined,
+  };
+});
+const tested = data.picks.length + data.alsoTested.length;
+const related = articles
+  .filter((a) => a.collection === 'guides' && a.url !== url && a.hub === data.hub)
+  .sort((a, b) => Number(b.category === data.category) - Number(a.category === data.category))
+  .slice(0, 4);
+const bodyHeadings = headings.filter((h) => h.depth === 2);
+const toc = [
+  { href: '#quick-list', label: 'Quick list' },
+  ...picks.map((p) => ({ href: `#pick-${p.rank}`, label: `${p.rank}. ${p.productName}` })),
+  ...(picks.length > 1 ? [{ href: '#compare', label: 'Compare' }] : []),
+  ...(data.alsoTested.length ? [{ href: '#also-tested', label: 'Also tested' }] : []),
+  ...bodyHeadings.map((h) => ({ href: `#${h.slug}`, label: h.text })),
+  { href: '#how-we-test', label: 'How we test' },
+  ...(data.faq.length ? [{ href: '#faq', label: 'FAQ' }] : []),
+];
+const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
+---
+
+<BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
+  <article>
+    <header class="wrap flex flex-col gap-3.5 pt-5 pb-6">
+      <Breadcrumbs crumbs={crumbs} />
+      <p class="lbl">
+        Best picks <span aria-hidden="true">·</span> Updated{' '}
+        <time datetime={isoDate(updated)}>{formatDate(updated)}</time>
+      </p>
+      <h1 class="max-w-[900px] text-[30px] sm:text-[42px]">{data.title}</h1>
+      <div class="flex items-center gap-3 text-[14px]">
+        {author?.data.avatar && (
+          <Image
+            src={author.data.avatar}
+            alt=""
+            width={40}
+            height={40}
+            class="size-10 flex-none rounded-full object-cover"
+          />
+        )}
+        <p class="text-muted">
+          {author && (
+            <>
+              <b class="text-text">{author.data.name}</b>
+              <span class="hidden sm:inline">, {author.data.role}</span>
+              <span aria-hidden="true"> · </span>
+            </>
+          )}
+          {`${tested} ${noun} tested for this guide`}
+        </p>
+      </div>
+    </header>
+
+    <div class="wrap pb-4">
+      <Image
+        src={data.heroImage}
+        alt={data.heroAlt}
+        widths={[480, 800, 1200, 1600]}
+        sizes="(min-width: 1200px) 1152px, 100vw"
+        class="aspect-[21/9] w-full rounded-[10px] object-cover"
+        loading="eager"
+        fetchpriority="high"
+      />
+    </div>
+
+    <div class="wrap flex flex-wrap items-start gap-12 pt-2 pb-12">
+      <div class="flex max-w-[780px] min-w-0 flex-[999_1_640px] flex-col gap-9">
+        <div class="flex flex-col gap-3">
+          <p class="text-[13px] text-muted">
+            We may earn a commission when you buy through links on this page.{' '}
+            <a href="#how-we-test">How we test and rate</a>
+          </p>
+          <p class="text-lg">{data.description}</p>
+        </div>
+        <QuickList
+          picks={picks.map((p) => ({
+            rank: p.rank,
+            label: p.label,
+            productName: p.productName,
+            image: p.image,
+            rating: p.rating,
+            price: p.shownPrice,
+          }))}
+        />
+        <AdSlot size="in-feed" />
+        {picks.map((pick) => (
+          <PickEntry pick={pick} reviewUrl={pick.reviewUrl} />
+        ))}
+        {picks.length > 1 && (
+          <CompareTable
+            picks={picks.map((p) => ({
+              rank: p.rank,
+              productName: p.productName,
+              rating: p.rating,
+              price: p.shownPrice?.amount,
+              specs: p.specs,
+            }))}
+          />
+        )}
+        {data.alsoTested.length > 0 && (
+          <AlsoTested
+            items={data.alsoTested.map((item) => ({
+              productName: item.productName,
+              rating: item.rating,
+              summary: item.summary,
+              url: reviewUrl(item.reviewRef),
+            }))}
+          />
+        )}
+        <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
+          <Content />
+        </div>
+        <HowWeTest noun={noun} />
+        {data.faq.length > 0 && <Faq items={data.faq} />}
+      </div>
+
+      <aside
+        class="flex flex-[1_1_300px] flex-col gap-6 self-stretch"
+        aria-label="On this page and related guides"
+      >
+        <nav
+          class="hidden flex-col gap-3 rounded-[10px] border border-border bg-bg p-5 lg:sticky lg:top-6 lg:z-10 lg:flex"
+          aria-labelledby="on-this-page"
+        >
+          <h2 id="on-this-page" class="text-lg">
+            On this page
+          </h2>
+          <ul class="flex flex-col gap-2 text-[14px]">
+            {toc.map((item) => (
+              <li>
+                <a href={item.href} class="text-text">
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <AdSlot size="skyscraper" class="hidden self-center lg:flex" />
+        {related.length > 0 && (
+          <section
+            class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
+            aria-labelledby="related-guides"
+          >
+            <h2 id="related-guides" class="text-lg">
+              Related guides
+            </h2>
+            <ul class="flex flex-col gap-2.5">
+              {related.map((item) => (
+                <li>
+                  <a href={item.url} class={linkClass}>
+                    {item.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </aside>
+    </div>
+  </article>
+</BaseLayout>
