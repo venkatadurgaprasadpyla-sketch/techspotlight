@@ -201,6 +201,11 @@ if (selected('G11')) {
     '--audit-level=moderate',
   ]);
 }
+if (selected('G5')) {
+  needsDist('G5', 'Image audit (every page)', () =>
+    run('G5', 'Image audit (every page)', 'node', ['scripts/image-check.mjs']),
+  );
+}
 if (selected('G5', 'G6', 'G9')) {
   if (config.pages.length) {
     needsDist('G5/G6/G9', 'Lighthouse, axe and screenshots', () =>

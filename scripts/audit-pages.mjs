@@ -12,6 +12,11 @@ import lighthouse from 'lighthouse';
 import { chromium } from 'playwright';
 
 const config = JSON.parse(readFileSync('gates.config.json', 'utf8'));
+// AUDIT_PAGES="/,/about/" audits just those pages (handy locally; CI audits every page).
+if (process.env.AUDIT_PAGES) config.pages = process.env.AUDIT_PAGES.split(',');
+// Image audits that must pass outright on every page, whatever the category scores: the LCP
+// image is discoverable, not lazy and prioritised; images have explicit sizes and true ratios.
+const IMAGE_AUDITS = ['lcp-discovery-insight', 'unsized-images', 'image-aspect-ratio'];
 const PORT = 4329;
 const BASE = `http://127.0.0.1:${PORT}`;
 // CHROME_PATH wins; otherwise Playwright's own Chromium, falling back to a preinstalled one.
@@ -108,6 +113,7 @@ try {
     for (const page of config.pages) {
       const scores = {};
       const cls = [];
+      const imageFails = new Set();
       // A page that is deliberately noindex (placeholders, style guide) would always lose the
       // "is-crawlable" SEO audit. Skip only that audit, and only when the page says noindex.
       const html = await (await fetch(BASE + page)).text();
@@ -129,8 +135,14 @@ try {
           (scores[key] ??= []).push(cat.score ?? 0);
         }
         cls.push(result.lhr.audits['cumulative-layout-shift']?.numericValue ?? 0);
+        for (const id of IMAGE_AUDITS) {
+          const audit = result.lhr.audits[id];
+          if (!audit) imageFails.add(`${id} missing from Lighthouse results`);
+          else if (audit.score !== null && audit.score < 1) imageFails.add(`${id}: ${audit.title}`);
+        }
       }
       const shift = median(cls);
+      for (const fail of imageFails) failures.push(`G5 ${page} ${fail}`);
       if (shift > config.lighthouse.maxCls)
         failures.push(`G5 ${page} CLS ${shift.toFixed(3)} > ${config.lighthouse.maxCls}`);
       const summary = Object.entries(scores).map(([key, values]) => {
