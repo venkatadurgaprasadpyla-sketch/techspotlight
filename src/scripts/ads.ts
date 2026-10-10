@@ -1,12 +1,13 @@
 /**
  * Ads island: once the visitor accepts cookies, fills each reserved slot ([data-ad-slot]) that
- * has an AdSense unit with an <ins class="adsbygoogle"> as it nears the viewport, loading the
- * AdSense script on the first one. Config comes from <body data-ads> (src/lib/ads.ts); without
- * it, or without consent, nothing loads and the placeholders stay.
+ * has an AdSense unit as it nears the viewport, loading the AdSense script on the first one.
+ * A filled slot keeps a visible "Advertisement" label above the unit. Config comes from
+ * <body data-ads> (src/lib/ads.ts); without it, or without consent, nothing loads and the
+ * placeholders stay.
  */
 import { onConsent } from './consent';
 
-interface AdsConfig {
+export interface AdsConfig {
   client: string;
   units: Record<string, string>;
 }
@@ -16,52 +17,87 @@ declare global {
   }
 }
 
-let started = false;
-let scriptAdded = false;
+const STICKY_CLOSED = 'ts-sticky-closed';
+const AD_SCRIPT = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
 
 function addScript(client: string) {
-  if (scriptAdded) return;
-  scriptAdded = true;
+  if (document.querySelector(`script[src^="${AD_SCRIPT}"]`)) return;
   const script = document.createElement('script');
   script.async = true;
   script.crossOrigin = 'anonymous';
-  script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}`;
+  script.src = `${AD_SCRIPT}?client=${encodeURIComponent(client)}`;
   document.head.append(script);
 }
 
-function fill(slot: HTMLElement, config: AdsConfig, unit: string) {
+/** Replaces a slot's placeholder with its label and an AdSense unit. */
+export function fillSlot(slot: HTMLElement, config: AdsConfig, unit: string): HTMLElement {
   addScript(config.client);
   slot.textContent = '';
-  slot.removeAttribute('aria-hidden');
-  slot.setAttribute('role', 'complementary');
-  slot.setAttribute('aria-label', 'Advertisement');
+  slot.classList.add('ad-live');
+  const label = document.createElement('span');
+  label.className = 'ad-label';
+  label.textContent = 'Advertisement';
   const ins = document.createElement('ins');
   ins.className = 'adsbygoogle';
-  ins.style.cssText = 'display:block;width:100%;height:100%';
+  ins.style.cssText = 'display:block;width:100%;flex:1;min-height:0';
   ins.dataset.adClient = config.client;
   ins.dataset.adSlot = unit;
-  slot.append(ins);
+  if (slot.dataset.adSlot === 'in-article') {
+    ins.dataset.adLayout = 'in-article';
+    ins.dataset.adFormat = 'fluid';
+  } else {
+    // Fit the reserved box; never let AdSense grow it (no layout shift).
+    ins.dataset.adFormat = 'rectangle, horizontal, vertical';
+    ins.dataset.fullWidthResponsive = 'false';
+  }
+  slot.append(label, ins);
+  slot.removeAttribute('aria-hidden');
   (window.adsbygoogle ??= []).push({});
+  return ins;
 }
+
+function storage(): Storage | null {
+  try {
+    return sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** The mobile sticky bar: shown once its unit is filled, removed if it stays empty or is closed. */
+function setUpSticky(config: AdsConfig) {
+  const sticky = document.querySelector<HTMLElement>('[data-sticky-ad]');
+  const slot = sticky?.querySelector<HTMLElement>('[data-ad-slot]');
+  const unit = config.units['sticky-mobile'];
+  if (!sticky || !slot || !unit) return;
+  const remove = () => {
+    sticky.remove();
+    document.body.classList.remove('max-sm:pb-28');
+  };
+  if (storage()?.getItem(STICKY_CLOSED) === '1') return remove();
+  const ins = fillSlot(slot, config, unit);
+  new MutationObserver(() => {
+    const status = ins.dataset.adStatus;
+    if (status === 'unfilled') remove();
+    if (status === 'filled') {
+      sticky.hidden = false;
+      // Room for the bar and its close button above it.
+      document.body.classList.add('max-sm:pb-28');
+    }
+  }).observe(ins, { attributes: true, attributeFilter: ['data-ad-status'] });
+  sticky.querySelector('[data-sticky-close]')?.addEventListener('click', () => {
+    remove();
+    storage()?.setItem(STICKY_CLOSED, '1');
+    document.getElementById('main')?.focus({ preventScroll: true });
+  });
+}
+
+let started = false;
 
 function start(config: AdsConfig) {
   if (started) return;
   started = true;
-  const sticky = document.querySelector<HTMLElement>('[data-sticky-ad]');
-  if (sticky && sessionStorageGet('ts-sticky-closed') !== '1') {
-    sticky.hidden = false;
-    // Keep the end of the page (footer links) reachable above the bar.
-    document.body.classList.add('max-sm:pb-16');
-    sticky.querySelector('[data-sticky-close]')?.addEventListener('click', () => {
-      sticky.remove();
-      document.body.classList.remove('max-sm:pb-16');
-      try {
-        sessionStorage.setItem('ts-sticky-closed', '1');
-      } catch {
-        // Closed for this page only.
-      }
-    });
-  }
+  setUpSticky(config);
   const observer = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
@@ -69,21 +105,13 @@ function start(config: AdsConfig) {
         observer.unobserve(entry.target);
         const slot = entry.target as HTMLElement;
         const unit = config.units[slot.dataset.adSlot ?? ''];
-        if (unit) fill(slot, config, unit);
+        if (unit) fillSlot(slot, config, unit);
       }
     },
     { rootMargin: '400px 0px' },
   );
-  for (const slot of document.querySelectorAll<HTMLElement>('[data-ad-slot]')) {
+  for (const slot of document.querySelectorAll<HTMLElement>('main [data-ad-slot]')) {
     if (config.units[slot.dataset.adSlot ?? '']) observer.observe(slot);
-  }
-}
-
-function sessionStorageGet(key: string) {
-  try {
-    return sessionStorage.getItem(key);
-  } catch {
-    return null;
   }
 }
 

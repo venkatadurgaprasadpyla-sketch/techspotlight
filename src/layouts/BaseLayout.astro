@@ -13,6 +13,7 @@ type Props = HeadProps & {
 };
 const { noAds = false, ...head } = Astro.props;
 const ads = noAds ? undefined : adsClientConfig();
+const stickyAd = ads !== undefined && /^\d+$/.test(site.ads.units['sticky-mobile']);
 ---
 
 <!doctype html>
@@ -28,13 +29,13 @@ const ads = noAds ? undefined : adsClientConfig();
     >
       Skip to content
     </a>
+    {consentNeeded() && <ConsentBanner />}
     <Header />
     <main id="main" tabindex="-1" class="flex-1 focus:outline-none">
       <slot />
     </main>
     <Footer />
-    {ads && site.ads.units['sticky-mobile'] && <StickyAd />}
-    {consentNeeded() && <ConsentBanner />}
+    {stickyAd && <StickyAd />}
     <script>
       import { initAds } from '~/scripts/ads';
       import { initConsent } from '~/scripts/consent';

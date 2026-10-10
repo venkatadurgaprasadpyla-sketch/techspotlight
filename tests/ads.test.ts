@@ -31,6 +31,13 @@ describe('ads config', () => {
     });
   });
 
+  it('asks for consent only when at least one placement has a unit id', () => {
+    const noUnits = { ...live, units: { ...units, leaderboard: '', 'in-article': '' } };
+    expect(adsEnabled(noUnits)).toBe(false);
+    expect(consentNeeded(noUnits)).toBe(false);
+    expect(adsTxt(noUnits)).toMatch(/^google\.com, pub-/);
+  });
+
   it('writes ads.txt for Google once a publisher id is set', () => {
     expect(adsTxt(live)).toBe('google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0\n');
     expect(adsTxt(off)).toMatch(/^#/);

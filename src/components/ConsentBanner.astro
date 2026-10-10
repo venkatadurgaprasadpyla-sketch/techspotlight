@@ -25,13 +25,13 @@ const id = preview ? 'consent-title-preview' : 'consent-title';
 >
   <div class:list={['flex flex-wrap items-center gap-4 py-4', preview ? 'px-5' : 'wrap']}>
     <div class="flex min-w-[min(100%,420px)] flex-1 flex-col gap-1">
-      <h2 id={id} class="text-base">
+      <h2 id={id} class="text-base focus:outline-none" tabindex="-1">
         Cookies and ads
       </h2>
       <p class="text-[14px] text-muted">
-        We'd like to show ads from Google, which use cookies to measure and personalise them. Our
-        reviews stay free and independent either way. Read our{' '}
-        <a href="/privacy/#cookies">privacy policy</a>.
+        We'd like to show ads from Google, which use cookies to show, measure and personalise them.
+        If you reject, we show no ads at all. Our reviews stay free and independent either way. Read
+        our <a href="/privacy/#cookies">privacy policy</a>.
       </p>
     </div>
     <div class="flex gap-2">
