@@ -25,7 +25,39 @@ const articles = articleFolders.flatMap((folder) =>
   }),
 );
 
+/**
+ * Raw HTML that must never reach a page from an article body (bodies may be pasted from AI
+ * output): scripts, frames, embeds, styles, forms, inline event handlers and javascript: URLs.
+ * Videos go through the YouTube facade and images through Markdown, so none of this is needed.
+ */
+function unsafeHtml(body: string) {
+  const rules: [string, RegExp][] = [
+    ['<script>', /<script\b/i],
+    ['<iframe>', /<iframe\b/i],
+    ['<object>/<embed>', /<(object|embed)\b/i],
+    ['<style>', /<style\b/i],
+    ['<form>', /<form\b/i],
+    ['event handler attribute', /<[a-z][^>]*\son[a-z]+\s*=/i],
+    ['javascript: URL', /javascript:/i],
+  ];
+  return rules.filter(([, re]) => re.test(body)).map(([name]) => name);
+}
+
 describe('content files', () => {
+  it('carry no unsafe raw HTML in article bodies', () => {
+    const unsafe = articles.flatMap((a) => unsafeHtml(a.body).map((what) => `${a.path}: ${what}`));
+    expect(unsafe).toEqual([]);
+    expect(unsafeHtml('Hi <img src=x onerror="alert(1)"> [x](javascript:alert(1))')).toEqual([
+      'event handler attribute',
+      'javascript: URL',
+    ]);
+    expect(unsafeHtml('<IFRAME src="x"></IFRAME><script>1</script>')).toEqual([
+      '<script>',
+      '<iframe>',
+    ]);
+    expect(unsafeHtml('A <mark>plain</mark> body about onboarding = fine.')).toEqual([]);
+  });
+
   it('have no TODO left in the body of a published article', () => {
     const unfinished = articles
       .filter((a) => a.data.draft !== true && a.body.includes('TODO'))
