@@ -12,6 +12,8 @@ import ArticleCard from '~/components/cards/ArticleCard.astro';
 import Rating from '~/components/cards/Rating.astro';
 import { categoryPath, contentTypePath, contentTypes, findTopic, hubPath } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import { articleSeo } from '~/lib/seo';
+import { article } from '~/lib/structured-data';
 import { getArticles } from '~/lib/articles';
 import { searchData } from '~/lib/search-index';
 import type { CardItem } from '~/lib/cards';
@@ -49,6 +51,7 @@ assertNoHeadingClash(`News ${entry.id}`, headings, [
 ]);
 
 const author = await getPublishedEntry('authors', data.author.id);
+const seo = await articleSeo(data, url, author);
 const articles = await getArticles();
 const here = { url, hub: data.hub, category: data.category };
 const reviewIds = new Set(data.relatedReviews.map((r) => r.id));
@@ -87,7 +90,13 @@ const topics = [
 const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
 ---
 
-<BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  noindex={data.noindex}
+  {...seo.head}
+  jsonLd={[article(seo.input, 'NewsArticle')]}
+>
   <div class="wrap flex flex-col gap-12 pt-5 pb-12 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
     <article data-pagefind-body={search && ''} class="flex max-w-[780px] min-w-0 flex-col gap-8">
       <SearchData data={search} />

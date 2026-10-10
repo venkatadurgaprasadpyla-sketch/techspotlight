@@ -17,6 +17,8 @@ import Rating from '~/components/cards/Rating.astro';
 import DealCard from '~/components/deals/DealCard.astro';
 import { contentTypePath, contentTypes } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import { articleSeo } from '~/lib/seo';
+import { dealProduct } from '~/lib/structured-data';
 import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
 import { getArticles } from '~/lib/articles';
 import { searchData } from '~/lib/search-index';
@@ -68,6 +70,20 @@ const saving = data.originalPrice - data.dealPrice;
 const store = getRetailer(data.retailer)?.name ?? data.retailer;
 const checked = data.updatedDate ?? data.publishDate;
 const author = await getPublishedEntry('authors', data.author.id);
+const seo = await articleSeo(data, url, author);
+const jsonLd = [
+  dealProduct({
+    name: data.product,
+    description: data.description,
+    image: seo.head.image,
+    offer: {
+      price: data.dealPrice,
+      url: affiliateHref(data.retailer, data.url),
+      seller: store,
+      validUntil: endsAt,
+    },
+  }),
+];
 const articles = await getArticles();
 const review = data.reviewRef
   ? articles.find((a) => a.collection === 'reviews' && a.id === data.reviewRef?.id)
@@ -87,6 +103,8 @@ const badgeClass = { 'lowest-price': 'badge-ec', 'great-value': 'badge-bv', 'edi
   title={data.title}
   description={data.description}
   noindex={data.noindex || status === 'gone'}
+  {...seo.head}
+  jsonLd={jsonLd}
 >
   <article data-pagefind-body={search && ''}>
     <SearchData data={search} />

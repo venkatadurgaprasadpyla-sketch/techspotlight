@@ -11,15 +11,25 @@ import { pagefindIndex } from './src/integrations/pagefind.ts';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-// A page that declares <meta name="robots" content="noindex…"> never goes in the sitemap
-// (placeholders, empty listings, the style guide, 404). The sitemap is written after every
-// page, so read the built HTML rather than keeping a second list.
+// The sitemap lists indexable first pages only. A page that declares <meta name="robots"
+// content="noindex…"> (placeholders, empty listings, the style guide, 404) and page 2+ of a
+// listing stay out. The sitemap is written after every page, so read the built HTML rather than
+// keeping a second list; articles also give their lastmod from article:modified_time.
 const outDir = fileURLToPath(new URL('./dist/', import.meta.url));
 const NOINDEX = /<meta name="robots" content="noindex/;
+const MODIFIED = /<meta property="article:modified_time" content="([^"]+)"/;
 /** @param {string} page */
-function isIndexable(page) {
+function builtHtml(page) {
   const file = `${outDir}${new URL(page).pathname.slice(1)}index.html`;
-  return !existsSync(file) || !NOINDEX.test(readFileSync(file, 'utf8'));
+  return existsSync(file) ? readFileSync(file, 'utf8') : '';
+}
+/** @param {string} page */
+const isIndexable = (page) =>
+  !/\/page\/\d+\/$/.test(new URL(page).pathname) && !NOINDEX.test(builtHtml(page));
+/** @param {import('@astrojs/sitemap').SitemapItem} item */
+function withLastmod(item) {
+  const modified = MODIFIED.exec(builtHtml(item.url))?.[1];
+  return modified ? { ...item, lastmod: modified } : item;
 }
 
 // https://docs.astro.build/en/reference/configuration-reference/
@@ -31,7 +41,7 @@ export default defineConfig({
   markdown: {
     processor: satteri({ hastPlugins: [adSlotsPlugin()] }),
   },
-  integrations: [mdx(), sitemap({ filter: isIndexable }), pagefindIndex()],
+  integrations: [mdx(), sitemap({ filter: isIndexable, serialize: withLastmod }), pagefindIndex()],
   // Self-hosted latin subsets from the @fontsource packages: no network needed at build time.
   fonts: [
     {

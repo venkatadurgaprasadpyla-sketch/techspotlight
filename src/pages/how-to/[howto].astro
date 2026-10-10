@@ -12,6 +12,8 @@ import ArticleCard from '~/components/cards/ArticleCard.astro';
 import Faq from '~/components/review/Faq.astro';
 import { contentTypePath, contentTypes, findTopic } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import { articleSeo } from '~/lib/seo';
+import { article } from '~/lib/structured-data';
 import { getArticles } from '~/lib/articles';
 import { searchData } from '~/lib/search-index';
 import { getPublished, getPublishedEntry } from '~/lib/content';
@@ -50,6 +52,7 @@ assertNoHeadingClash(`How-to ${entry.id}`, headings, [
 ]);
 
 const author = await getPublishedEntry('authors', data.author.id);
+const seo = await articleSeo(data, url, author);
 const articles = await getArticles();
 const here = { url, hub: data.hub, category: data.category };
 const related = closestTo(
@@ -75,7 +78,13 @@ const glance = [
 const adAfter = data.steps.length > 3 ? 2 : -1;
 ---
 
-<BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  noindex={data.noindex}
+  {...seo.head}
+  jsonLd={[article(seo.input)]}
+>
   <article
     data-pagefind-body={search && ''}
     class="wrap flex flex-col gap-12 pt-5 pb-12 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]"
