@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// G5 Lighthouse (mobile), G6 axe (light/dark, 1280/390) and G9 screenshots for the pages in
-// gates.config.json. Expects `dist/` to exist and serves it on a local port.
+// G5 Lighthouse (mobile), G6 axe (light/dark, 1280/390) plus a no-sideways-scroll check at 390,
+// 1024 and 1280, and G9 screenshots for the pages in gates.config.json. Expects `dist/` to exist
+// and serves it on a local port.
 import { createServer } from 'node:http';
 import { gzipSync } from 'node:zlib';
 import { readFile } from 'node:fs/promises';
@@ -12,6 +13,31 @@ import lighthouse from 'lighthouse';
 import { chromium } from 'playwright';
 
 const config = JSON.parse(readFileSync('gates.config.json', 'utf8'));
+// AUDIT_PAGES="/,/about/" audits just those pages (handy locally; CI audits every page).
+if (process.env.AUDIT_PAGES) config.pages = process.env.AUDIT_PAGES.split(',');
+// Image audits that must pass outright on every page, whatever the category scores: images have
+// explicit sizes and true ratios, and the LCP image is prioritised, not lazy and (unless a script
+// renders it, as search results are) found in the HTML.
+const IMAGE_AUDITS = ['unsized-images', 'image-aspect-ratio'];
+
+/** Problems with the LCP image from Lighthouse's LCP discovery insight, plus notes. */
+function lcpProblems(audit, html) {
+  if (!audit) return { problems: ['lcp-discovery-insight missing from Lighthouse results'] };
+  const items = audit.details?.items ?? [];
+  const checks = items.find((i) => i.type === 'checklist')?.items;
+  if (!checks) return { problems: [] }; // the LCP is text, not an image
+  const src = items.find((i) => i.type === 'node')?.snippet?.match(/src="([^"]+)"/)?.[1] ?? '';
+  const inHtml = src !== '' && html.includes(new URL(src, BASE).pathname);
+  const problems = [];
+  const notes = [];
+  if (!checks.priorityHinted?.value) problems.push('LCP image has no fetchpriority="high"');
+  if (!checks.eagerlyLoaded?.value) problems.push('LCP image is lazy-loaded');
+  if (!checks.requestDiscoverable?.value)
+    (inHtml ? problems : notes).push(
+      inHtml ? 'LCP image is not discoverable in the HTML' : 'LCP image rendered by script',
+    );
+  return { problems, notes };
+}
 const PORT = 4329;
 const BASE = `http://127.0.0.1:${PORT}`;
 // CHROME_PATH wins; otherwise Playwright's own Chromium, falling back to a preinstalled one.
@@ -33,6 +59,10 @@ async function isUp(url) {
     return false;
   }
 }
+
+/** Pixels the page scrolls sideways (0 when nothing overflows the viewport). */
+const sideScroll = (tab) =>
+  tab.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 
 const median = (values) => values.sort((a, b) => a - b)[Math.floor(values.length / 2)];
 
@@ -108,6 +138,8 @@ try {
     for (const page of config.pages) {
       const scores = {};
       const cls = [];
+      const imageFails = new Set();
+      const imageNotes = new Set();
       // A page that is deliberately noindex (placeholders, style guide) would always lose the
       // "is-crawlable" SEO audit. Skip only that audit, and only when the page says noindex.
       const html = await (await fetch(BASE + page)).text();
@@ -129,8 +161,17 @@ try {
           (scores[key] ??= []).push(cat.score ?? 0);
         }
         cls.push(result.lhr.audits['cumulative-layout-shift']?.numericValue ?? 0);
+        const lcp = lcpProblems(result.lhr.audits['lcp-discovery-insight'], html);
+        lcp.problems.forEach((p) => imageFails.add(p));
+        lcp.notes?.forEach((n) => imageNotes.add(n));
+        for (const id of IMAGE_AUDITS) {
+          const audit = result.lhr.audits[id];
+          if (!audit) imageFails.add(`${id} missing from Lighthouse results`);
+          else if (audit.score !== null && audit.score < 1) imageFails.add(`${id}: ${audit.title}`);
+        }
       }
       const shift = median(cls);
+      for (const fail of imageFails) failures.push(`G5 ${page} ${fail}`);
       if (shift > config.lighthouse.maxCls)
         failures.push(`G5 ${page} CLS ${shift.toFixed(3)} > ${config.lighthouse.maxCls}`);
       const summary = Object.entries(scores).map(([key, values]) => {
@@ -141,7 +182,7 @@ try {
         return `${key} ${Math.round(score * 100)}`;
       });
       lines.push(
-        `G5 ${page}: ${summary.join(', ')}, CLS ${shift.toFixed(3)}${noindex ? ' (noindex: is-crawlable skipped)' : ''}`,
+        `G5 ${page}: ${summary.join(', ')}, CLS ${shift.toFixed(3)}${noindex ? ' (noindex: is-crawlable skipped)' : ''}${[...imageNotes].map((n) => ` (${n})`).join('')}`,
       );
     }
   } finally {
@@ -160,6 +201,9 @@ try {
           const tab = await context.newPage();
           await tab.goto(BASE + page, { waitUntil: 'networkidle' });
           await tab.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
+          const overflow = await sideScroll(tab);
+          if (overflow > 0)
+            failures.push(`G6 ${page} ${vp.name}/${theme}: page scrolls sideways by ${overflow}px`);
           const { violations } = await new AxeBuilder({ page: tab }).analyze();
           const serious = violations.filter(
             (v) => v.impact === 'serious' || v.impact === 'critical',
@@ -173,6 +217,13 @@ try {
           await context.close();
         }
       }
+      // Small-laptop width, between the two audited layouts, where header overflow once slipped by.
+      const context = await browser.newContext({ viewport: { width: 1024, height: 768 } });
+      const tab = await context.newPage();
+      await tab.goto(BASE + page, { waitUntil: 'networkidle' });
+      const overflow = await sideScroll(tab);
+      if (overflow > 0) failures.push(`G6 ${page} 1024: page scrolls sideways by ${overflow}px`);
+      await context.close();
     }
   } finally {
     await browser.close();

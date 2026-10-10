@@ -37,7 +37,8 @@ export default defineConfig({
   outDir,
   site: site.url,
   trailingSlash: 'always',
-  prefetch: { prefetchAll: false, defaultStrategy: 'hover' },
+  // Same-site links prefetch on hover or focus; on slow connections or Save-Data, only on tap.
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   markdown: {
     processor: satteri({ hastPlugins: [adSlotsPlugin()] }),
   },

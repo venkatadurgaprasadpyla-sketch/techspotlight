@@ -46,13 +46,16 @@ function excerpt(html: string) {
   );
 }
 
-function image(r: Result, cls: string) {
+/** Result thumbnail; `lead` is the best match's, the largest image on the results page. */
+function image(r: Result, cls: string, lead = false) {
   const img = el('img', cls);
   img.src = r.meta.image ?? '';
   img.alt = '';
   img.width = 320;
   img.height = 180;
-  img.loading = 'lazy';
+  img.decoding = 'async';
+  if (lead) img.fetchPriority = 'high';
+  else img.loading = 'lazy';
   return img;
 }
 
@@ -107,7 +110,7 @@ function bestMatch(r: Result) {
   return el(
     'div',
     'relative flex flex-wrap items-start gap-4',
-    image(r, 'aspect-video w-full flex-none rounded-md object-cover sm:w-[200px]'),
+    image(r, 'aspect-video w-full flex-none rounded-md object-cover sm:w-[200px]', true),
     el(
       'div',
       'flex min-w-[min(100%,260px)] flex-1 flex-col gap-1.5',

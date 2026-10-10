@@ -1,5 +1,5 @@
 {
-  "$comment": "Pages audited by Lighthouse (G5), axe (G6) and screenshots (G9). Each task adds the pages it touches.",
+  "$comment": "Pages audited by Lighthouse (G5), axe (G6) and screenshots (G9): one per page type, so every template is checked at 1280 and 390 in light and dark. Each task adds the pages it adds. /tags/sample/page/2/ needs 13+ sample entries: swap it for a real tag's page 2 when samples go.",
   "pages": [
     "/",
     "/styleguide/",
@@ -24,7 +24,21 @@
     "/about/",
     "/how-we-test/",
     "/privacy/",
-    "/contact/"
+    "/contact/",
+    "/computing/deals/",
+    "/computing/reviews/",
+    "/tags/sample/page/2/",
+    "/computing/components/storage/",
+    "/brands/apple/",
+    "/brands/orbit/",
+    "/brands/",
+    "/tags/",
+    "/archive/",
+    "/audio/",
+    "/review-policy/",
+    "/affiliate-disclosure/",
+    "/terms/",
+    "/404.html"
   ],
   "lighthouse": {
     "performance": 0.95,

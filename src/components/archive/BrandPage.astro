@@ -46,6 +46,10 @@ const [guide] = [
   ...guides.filter((g) => g.brands.includes(brand.id)),
   ...(anchor ? closestTo(anchor, guides, 1) : []),
 ];
+// The first big image (the LCP on phones) gets priority: the guide card when no verdicts table
+// sits above it, else the first grid card when neither is shown (and always on page 2+).
+const guideLeads = first && reviews.length === 0 && guide !== undefined;
+const gridLeads = !first || (reviews.length === 0 && guide === undefined);
 const now = new Date();
 const deals = items.filter((i) => i.deal && dealStatus(i.deal.endsAt, now) === 'live').slice(0, 3);
 const retailerName = (id: string) => getRetailer(id)?.name ?? id;
@@ -202,6 +206,8 @@ const cell = 'border-b border-border px-3.5 py-3 text-left align-middle';
             widths={[320, 640]}
             sizes="(min-width: 768px) 320px, 100vw"
             class="aspect-video w-full flex-none rounded-md object-cover sm:w-[320px]"
+            loading={guideLeads ? 'eager' : 'lazy'}
+            fetchpriority={guideLeads ? 'high' : undefined}
           />
           <div class="flex min-w-[min(100%,280px)] flex-1 flex-col gap-2">
             <span class="lbl">Best picks</span>
@@ -227,7 +233,7 @@ const cell = 'border-b border-border px-3.5 py-3 text-left align-middle';
       page={page}
       base={path}
       what="articles on this brand"
-      eager={!first}
+      eager={gridLeads}
     />
 
     {first && (
