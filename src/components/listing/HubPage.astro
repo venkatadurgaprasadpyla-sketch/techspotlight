@@ -2,6 +2,7 @@
 import AdSlot from '~/components/AdSlot.astro';
 import ArticleCard from '~/components/cards/ArticleCard.astro';
 import Pagination from '~/components/Pagination.astro';
+import { site } from '~/config/site';
 import { contentTypePath, contentTypes, hubPath } from '~/config/taxonomy';
 import type { CardItem } from '~/lib/cards';
 import type { Page } from '~/lib/listing';
@@ -19,11 +20,12 @@ interface Props {
 const { listing, page } = Astro.props;
 const { hub, items } = listing;
 const first = page.current === 1;
+const feed = { title: `${site.name}: ${hub.label}`, href: `${hubPath(hub)}rss.xml` };
 const guides = items.filter((i) => i.collection === 'guides');
 const pick = guides.find((i) => i.featured) ?? guides[0];
 ---
 
-<ListingLayout listing={listing} page={page} description={hub.intro} band>
+<ListingLayout listing={listing} page={page} description={hub.intro} band feed={feed}>
   <Fragment slot="header">
     <p class="lbl">Hub</p>
     <h1 class="text-[36px] sm:text-[44px]">

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { checkPage, expectedTypes } from '../scripts/seo-check.mjs';
+import { checkFeed, checkPage, expectedTypes } from '../scripts/seo-check.mjs';
 import type { CardItem } from '~/lib/cards';
+import { dealEndsAt } from '~/lib/deals';
 import { feedItems } from '~/lib/feeds';
 import {
   absolute,
@@ -29,11 +30,18 @@ const crumbs: JsonLd = {
 };
 
 /** A minimal built page with the head tags G12 looks for and the given JSON-LD. */
-function page(jsonLd: JsonLd[], { title = 'A page', noindex = false } = {}) {
+function page(
+  path: string,
+  jsonLd: JsonLd[],
+  { title = 'A page | TechSpotlight', noindex = false } = {},
+) {
+  const canonical = absolute(path);
   return [
     `<title>${title}</title>`,
     '<meta name="description" content="About this page" />',
-    '<link rel="canonical" href="https://techspotlight.pages.dev/x/" />',
+    `<link rel="canonical" href="${canonical}" />`,
+    '<meta property="og:site_name" content="TechSpotlight" />',
+    `<meta property="og:url" content="${canonical}" />`,
     noindex ? '<meta name="robots" content="noindex, follow" />' : '',
     '<meta property="og:image" content="https://techspotlight.pages.dev/og-default.png" />',
     ...jsonLd.map((d) => `<script type="application/ld+json">${JSON.stringify(d)}</script>`),
@@ -52,19 +60,19 @@ describe('structured data', () => {
     });
   });
 
-  it('dates articles by day and falls back to the publish date for dateModified', () => {
+  it('gives full timestamps and falls back to the publish date for dateModified', () => {
     const a = article(base);
     expect(a).toMatchObject({
       '@type': 'Article',
       headline: 'The best ultrabooks',
-      datePublished: '2026-10-01',
-      dateModified: '2026-10-01',
+      datePublished: '2026-10-01T00:00:00.000Z',
+      dateModified: '2026-10-01T00:00:00.000Z',
       mainEntityOfPage: 'https://techspotlight.pages.dev/best/best-ultrabooks/',
       author: { '@type': 'Person', name: 'Asha Testwell' },
     });
     expect(article({ ...base, updatedDate: new Date('2026-10-05') }, 'NewsArticle')).toMatchObject({
       '@type': 'NewsArticle',
-      dateModified: '2026-10-05',
+      dateModified: '2026-10-05T00:00:00.000Z',
     });
   });
 
@@ -121,10 +129,29 @@ describe('structured data', () => {
         price: 19999,
         url: 'https://www.flipkart.com/x',
         seller: 'Flipkart',
-        validUntil: new Date('2026-10-31T18:30:00Z'),
+        validUntil: dealEndsAt(new Date('2026-10-31'), '02:00'),
+        availability: 'SoldOut',
       },
     });
-    expect(deal.offers).toMatchObject({ priceValidUntil: '2026-10-31', priceCurrency: 'INR' });
+    // 02:00 IST on the 31st is still the 30th in UTC; the price holds through the 31st in India.
+    expect(deal.offers).toMatchObject({
+      priceValidUntil: '2026-10-31',
+      priceCurrency: 'INR',
+      availability: 'https://schema.org/SoldOut',
+    });
+    const midnight = dealProduct({
+      name: 'X',
+      description: 'Y',
+      image: absolute('/p.jpg'),
+      offer: {
+        price: 1,
+        url: 'https://a.in/',
+        seller: 'A',
+        validUntil: dealEndsAt(new Date('2026-10-31')),
+      },
+    });
+    expect(midnight.offers).toMatchObject({ priceValidUntil: '2026-10-31' });
+    expect(midnight.offers).not.toHaveProperty('availability');
   });
 });
 
@@ -141,29 +168,29 @@ describe('G12 check', () => {
   });
 
   it('passes pages built from the structured-data helpers', () => {
-    const guide = page([
+    const guide = page('/best/best-ultrabooks/', [
       article(base),
       itemList('Best', [{ name: 'A', url: '/a/' }]),
       faqPage([{ q: 'Q?', a: 'A.' }]),
       crumbs,
     ]);
     expect(checkPage('/best/best-ultrabooks/', guide).problems).toEqual([]);
-    expect(checkPage('/', page([organization(), website()])).problems).toEqual([]);
+    expect(checkPage('/', page('/', [organization(), website()])).problems).toEqual([]);
   });
 
   it('reports missing page-type data, bad fields, bad JSON and missing head tags', () => {
-    expect(checkPage('/best/x/', page([crumbs])).problems).toEqual([
+    expect(checkPage('/best/x/', page('/best/x/', [crumbs])).problems).toEqual([
       'missing Article JSON-LD',
       'missing ItemList JSON-LD',
     ]);
     const noAuthor = article({ ...base, author: undefined });
-    expect(checkPage('/vs/x/', page([noAuthor, crumbs])).problems).toEqual([
+    expect(checkPage('/vs/x/', page('/vs/x/', [noAuthor, crumbs])).problems).toEqual([
       'Article: bad author.name and author.url',
     ]);
     const broken = '<title>x</title><script type="application/ld+json">{oops</script>';
     const problems = checkPage('/x/', broken).problems;
     expect(problems).toContain('missing meta description');
-    expect(problems).toContain('missing canonical');
+    expect(problems).toContain('canonical is not this page: undefined');
     expect(problems).toContain('missing og:image');
     expect(problems.some((p: string) => p.startsWith('JSON-LD does not parse'))).toBe(true);
   });
@@ -176,17 +203,58 @@ describe('G12 check', () => {
       verdict: 'Ok',
       offers: [],
     });
-    expect(checkPage('/l/x-review/', page([r, crumbs])).problems).toEqual([
+    expect(checkPage('/l/x-review/', page('/l/x-review/', [r, crumbs])).problems).toEqual([
       'Review: bad reviewRating.ratingValue within worstRating..bestRating',
     ]);
     const odd = { '@context': 'https://schema.org', '@type': 'Recipe' };
-    expect(checkPage('/x/', page([odd, crumbs])).problems).toEqual([
+    expect(checkPage('/x/', page('/x/', [odd, crumbs])).problems).toEqual([
       'Recipe: no G12 rules for this @type',
     ]);
   });
 
+  it('rejects mixed list URLs, empty offers and a missing FAQPage when the page has an FAQ', () => {
+    const mixed = itemList('Best', [
+      { name: 'A', url: '/a-review/' },
+      { name: 'B', url: '/best/x/#pick-2' },
+    ]);
+    expect(
+      checkPage('/best/x/', page('/best/x/', [article(base), mixed, crumbs])).problems,
+    ).toEqual(['ItemList: bad urls all pages or all anchors']);
+    const deal = dealProduct({
+      name: 'X',
+      description: 'Y',
+      image: absolute('/p.jpg'),
+      offer: { price: 1, url: 'https://a.in/', seller: 'A' },
+    });
+    expect(
+      checkPage('/deals/x/', page('/deals/x/', [{ ...deal, offers: [] }, crumbs])).problems,
+    ).toEqual(['Product: bad offers with price, priceCurrency and url']);
+    const withFaq = page('/vs/x/', [article(base), crumbs]) + '<section id="faq"></section>';
+    expect(checkPage('/vs/x/', withFaq).problems).toEqual(['missing FAQPage JSON-LD']);
+  });
+
+  it('checks the title template and that the canonical is the page itself', () => {
+    const html = page('/other/', [crumbs], { title: 'Bare title' });
+    expect(checkPage('/x/', html).problems).toEqual([
+      'title does not follow "%s | site name": Bare title',
+      'canonical is not this page: https://techspotlight.pages.dev/other/',
+    ]);
+  });
+
+  it('checks RSS items', () => {
+    const ok =
+      '<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><item><title>A</title><link>https://x.in/a/</link><pubDate>Thu, 08 Oct 2026 00:00:00 GMT</pubDate></item></channel></rss>';
+    expect(checkFeed('rss.xml', ok)).toEqual([]);
+    expect(checkFeed('rss.xml', ok.replace('https://x.in', ''))).toEqual([
+      'rss.xml: item 1 link is not absolute',
+    ]);
+    expect(checkFeed('rss.xml', '<?xml version="1.0"?><rss version="2.0"></rss>')).toEqual([
+      'rss.xml: no items',
+    ]);
+  });
+
   it('only asks noindex pages for well-formed JSON-LD', () => {
-    expect(checkPage('/best/x/', page([], { noindex: true })).problems).toEqual([]);
+    expect(checkPage('/best/x/', page('/best/x/', [], { noindex: true })).problems).toEqual([]);
   });
 });
 

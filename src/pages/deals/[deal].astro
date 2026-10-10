@@ -71,9 +71,11 @@ const store = getRetailer(data.retailer)?.name ?? data.retailer;
 const checked = data.updatedDate ?? data.publishDate;
 const author = await getPublishedEntry('authors', data.author.id);
 const seo = await articleSeo(data, url, author);
+const dealBrand = data.brands[0] && (await getPublishedEntry('brands', data.brands[0].id));
 const jsonLd = [
   dealProduct({
     name: data.product,
+    brand: dealBrand ? dealBrand.data.name : undefined,
     description: data.description,
     image: seo.head.image,
     offer: {
@@ -81,6 +83,7 @@ const jsonLd = [
       url: affiliateHref(data.retailer, data.url),
       seller: store,
       validUntil: endsAt,
+      availability: status === 'live' ? 'InStock' : 'SoldOut',
     },
   }),
 ];

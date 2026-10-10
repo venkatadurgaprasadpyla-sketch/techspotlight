@@ -17,6 +17,8 @@ export interface Props {
   article?: { published: Date; modified?: Date | undefined } | undefined;
   /** Structured data for this page (src/lib/structured-data.ts). */
   jsonLd?: JsonLd[];
+  /** A section feed to advertise next to the site feed, e.g. a hub's /<hub>/rss.xml. */
+  feed?: { title: string; href: string } | undefined;
 }
 
 const {
@@ -27,6 +29,7 @@ const {
   imageAlt,
   article,
   jsonLd = [],
+  feed,
 } = Astro.props;
 const fullTitle = title ? `${title} | ${site.name}` : `${site.name}: ${site.tagline}`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
@@ -67,6 +70,9 @@ const ogLocale = site.locale.replace('-', '_');
   title={`${site.name}: latest`}
   href={absolute('/rss.xml')}
 />
+{feed && (
+  <link rel="alternate" type="application/rss+xml" title={feed.title} href={absolute(feed.href)} />
+)}
 {jsonLd.map((data) => (
   <script type="application/ld+json" set:html={JSON.stringify(data).replaceAll('<', '\\u003c')} />
 ))}

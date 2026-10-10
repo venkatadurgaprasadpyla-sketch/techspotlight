@@ -10,7 +10,9 @@ export type JsonLd = Record<string, unknown>;
 export const absolute = (path: string) => new URL(path, site.url).href;
 
 const ORG_ID = absolute('/#organization');
-const isoDate = (date: Date) => date.toISOString().slice(0, 10);
+/** The calendar day an instant falls on in India, e.g. "2026-10-31". */
+const istDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' });
+export const istDate = (date: Date) => istDay.format(date);
 
 export interface Byline {
   name: string;
@@ -29,7 +31,10 @@ export function organization(): JsonLd {
   };
 }
 
-/** WebSite with a SearchAction pointing at /search/?q=. */
+/**
+ * WebSite with a SearchAction pointing at /search/?q=. Google no longer shows the sitelinks
+ * search box, but the action still describes the site search to other consumers.
+ */
 export function website(): JsonLd {
   return {
     '@context': 'https://schema.org',
@@ -67,8 +72,8 @@ function articleFields(input: ArticleInput) {
     headline: input.title,
     description: input.description,
     image: input.images,
-    datePublished: isoDate(input.publishDate),
-    dateModified: isoDate(input.updatedDate ?? input.publishDate),
+    datePublished: input.publishDate.toISOString(),
+    dateModified: (input.updatedDate ?? input.publishDate).toISOString(),
     ...(input.author && { author: person(input.author) }),
     publisher: { '@id': ORG_ID, '@type': 'Organization', name: site.name },
     mainEntityOfPage: absolute(input.url),
@@ -85,8 +90,10 @@ export interface OfferInput {
   price: number;
   url: string;
   seller: string;
-  /** Last day the price holds (deals). */
+  /** When the price ends (deals): the instant from `dealEndsAt()`. */
   validUntil?: Date | undefined;
+  /** Stock we know about; review prices leave it out (we only know the last checked price). */
+  availability?: 'InStock' | 'SoldOut' | undefined;
 }
 
 const offer = (o: OfferInput) => ({
@@ -94,9 +101,10 @@ const offer = (o: OfferInput) => ({
   price: o.price,
   priceCurrency: site.currency,
   url: o.url,
-  availability: 'https://schema.org/InStock',
   seller: { '@type': 'Organization', name: o.seller },
-  ...(o.validUntil && { priceValidUntil: isoDate(o.validUntil) }),
+  ...(o.availability && { availability: `https://schema.org/${o.availability}` }),
+  // The last day in India the price holds (a deal ending at midnight IST holds through that day).
+  ...(o.validUntil && { priceValidUntil: istDate(new Date(o.validUntil.getTime() - 1)) }),
 });
 
 interface ReviewInput extends ArticleInput {
@@ -125,7 +133,10 @@ export function review(input: ReviewInput): JsonLd {
   };
 }
 
-/** The ranked picks of a buying guide. */
+/**
+ * The ranked picks of a buying guide. Items must all be separate pages or all anchors on one
+ * page (Google's list rules), so the guide page decides which.
+ */
 export function itemList(name: string, items: { name: string; url: string }[]): JsonLd {
   return {
     '@context': 'https://schema.org',
@@ -156,6 +167,7 @@ export function faqPage(faq: { q: string; a: string }[]): JsonLd {
 /** A deal: the Product and the discounted Offer. */
 export function dealProduct(input: {
   name: string;
+  brand?: string | undefined;
   description: string;
   image: string;
   offer: OfferInput;
@@ -164,6 +176,7 @@ export function dealProduct(input: {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: input.name,
+    ...(input.brand && { brand: { '@type': 'Brand', name: input.brand } }),
     description: input.description,
     image: input.image,
     offers: offer(input.offer),

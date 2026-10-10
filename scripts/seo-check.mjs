@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// G12 SEO sanity: every built page has a title, description, canonical URL and share image;
-// indexable pages have unique titles; every JSON-LD block parses and has the fields search
-// engines require for its @type; and each page type carries the structured data it should.
+// G12 SEO sanity: every built page has a templated title, description, self-referencing
+// canonical (matching og:url) and share image; indexable pages have unique titles; every JSON-LD
+// block parses and has the fields search engines require for its @type; each page type carries
+// the structured data it should; feeds are well formed; the sitemap lists only indexable first
+// pages. JSON-LD is expected as one object per script (no @graph), which is how BaseHead prints it.
 //
 //   node scripts/seo-check.mjs        checks dist/ (run after astro build)
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -68,6 +70,7 @@ const RULES = {
         has(d.itemListElement) &&
         d.itemListElement.every((e, i) => e.position === i + 1 && isUrl(e.url)),
     ],
+    ['urls all pages or all anchors', (d) => listUrlsOk(d.itemListElement ?? [])],
   ],
   FAQPage: [
     [
@@ -96,18 +99,35 @@ function articleRules() {
   ];
 }
 
+const AVAILABILITY = new Set(['https://schema.org/InStock', 'https://schema.org/SoldOut']);
+
 /** Offers are optional on a review's product (some have no price yet) but required on a deal. */
 function offersOk(offers, optional) {
   if (offers === undefined) return optional;
-  return [offers]
-    .flat()
-    .every((o) => typeof o.price === 'number' && o.priceCurrency === 'INR' && isUrl(o.url));
+  const list = [offers].flat();
+  return (
+    list.length > 0 &&
+    list.every(
+      (o) =>
+        typeof o.price === 'number' &&
+        o.priceCurrency === 'INR' &&
+        isUrl(o.url) &&
+        (o.availability === undefined || AVAILABILITY.has(o.availability)) &&
+        (o.priceValidUntil === undefined || /^\d{4}-\d{2}-\d{2}$/.test(o.priceValidUntil)),
+    )
+  );
 }
 
-/** The structured data each page type must carry, by URL path. */
-export function expectedTypes(path) {
+/** A guide's list points at separate pages or at anchors on one page, never a mix. */
+function listUrlsOk(items) {
+  const anchors = items.filter((e) => String(e.url).includes('#')).length;
+  return anchors === 0 || anchors === items.length;
+}
+
+/** The structured data each page type must carry, by URL path (and FAQ section in `html`). */
+export function expectedTypes(path, html = '') {
   if (path === '/') return ['Organization', 'WebSite'];
-  const types = ['BreadcrumbList'];
+  const types = ['BreadcrumbList', ...(/ id="faq"/.test(html) ? ['FAQPage'] : [])];
   if (/^\/best\/[^/]+\/$/.test(path)) return [...types, 'Article', 'ItemList'];
   if (/^\/news\/[^/]+\/$/.test(path)) return [...types, 'NewsArticle'];
   if (/^\/(vs|how-to)\/[^/]+\/$/.test(path)) return [...types, 'Article'];
@@ -128,10 +148,16 @@ export function checkPage(path, html) {
   const problems = [];
   const title = html.match(/<title>([^<]*)<\/title>/)?.[1];
   const noindex = /<meta name="robots" content="noindex/.test(html);
+  const siteName = meta(html, 'property', 'og:site_name');
+  const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
   if (!title) problems.push('missing <title>');
+  else if (path !== '/' && !(siteName && title.endsWith(` | ${siteName}`)))
+    problems.push(`title does not follow "%s | site name": ${title}`);
   if (!meta(html, 'name', 'description')) problems.push('missing meta description');
-  if (!/<link rel="canonical" href="https:\/\/[^"]+"/.test(html))
-    problems.push('missing canonical');
+  if (!isUrl(canonical) || new URL(canonical).pathname !== path)
+    problems.push(`canonical is not this page: ${canonical}`);
+  else if (meta(html, 'property', 'og:url') !== canonical)
+    problems.push('og:url differs from canonical');
   if (!isUrl(meta(html, 'property', 'og:image'))) problems.push('missing og:image');
 
   const found = [];
@@ -156,7 +182,7 @@ export function checkPage(path, html) {
     for (const [field, test] of rules) if (!test(data)) problems.push(`${type}: bad ${field}`);
   }
   if (!noindex) {
-    for (const type of expectedTypes(path))
+    for (const type of expectedTypes(path, html))
       if (!found.includes(type)) problems.push(`missing ${type} JSON-LD`);
   }
   return { title, noindex, types: found, problems };
@@ -190,7 +216,48 @@ export function checkSite(dist) {
       else titles.set(page.title, path);
     }
   }
+  problems.push(...checkFeeds(dist), ...checkSitemap(dist));
   return { pages, problems };
+}
+
+/** Every RSS feed: has items, each with a title, an absolute link and a date. */
+export function checkFeed(name, xml) {
+  const problems = [];
+  if (!/^<\?xml[^>]*\?><rss version="2\.0"/.test(xml)) problems.push(`${name}: not RSS 2.0`);
+  const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((m) => m[1]);
+  if (items.length === 0) problems.push(`${name}: no items`);
+  items.forEach((item, i) => {
+    if (!/<title>[^<]+<\/title>/.test(item)) problems.push(`${name}: item ${i + 1} has no title`);
+    if (!/<link>https:\/\/[^<]+<\/link>/.test(item))
+      problems.push(`${name}: item ${i + 1} link is not absolute`);
+    if (!/<pubDate>[^<]+<\/pubDate>/.test(item))
+      problems.push(`${name}: item ${i + 1} has no date`);
+  });
+  return problems;
+}
+
+function checkFeeds(dist) {
+  const feeds = walk(dist).filter((f) => f.endsWith('rss.xml'));
+  if (feeds.length === 0) return ['no RSS feeds built'];
+  return feeds.flatMap((file) => checkFeed(relative(dist, file), readFileSync(file, 'utf8')));
+}
+
+/** The sitemap lists built, indexable first pages only. */
+function checkSitemap(dist) {
+  const problems = [];
+  const files = walk(dist).filter((f) => /sitemap-\d+\.xml$/.test(f));
+  if (files.length === 0) return ['no sitemap built'];
+  for (const file of files) {
+    for (const [, loc] of readFileSync(file, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)) {
+      const path = new URL(loc).pathname;
+      const page = join(dist, path, 'index.html');
+      if (/\/page\/\d+\/$/.test(path)) problems.push(`sitemap lists page 2+: ${path}`);
+      else if (!existsSync(page)) problems.push(`sitemap lists a missing page: ${path}`);
+      else if (/<meta name="robots" content="noindex/.test(readFileSync(page, 'utf8')))
+        problems.push(`sitemap lists a noindex page: ${path}`);
+    }
+  }
+  return problems;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

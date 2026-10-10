@@ -15,8 +15,10 @@ interface Props {
   description: string;
   /** Extra classes for the breadcrumb row (e.g. to sit inside a tinted band). */
   band?: boolean;
+  /** A section RSS feed to advertise in the head. */
+  feed?: { title: string; href: string } | undefined;
 }
-const { listing, page, description, band = false } = Astro.props;
+const { listing, page, description, band = false, feed } = Astro.props;
 const title = page.current > 1 ? `${listing.title}, page ${page.current}` : listing.title;
 // Empty listings are thin content: keep them out of search until they have articles.
 const noindex = listing.items.length === 0;
@@ -26,7 +28,7 @@ const crumbs =
     : listing.crumbs;
 ---
 
-<BaseLayout title={title} description={description} noindex={noindex}>
+<BaseLayout title={title} description={description} noindex={noindex} feed={feed}>
   <div class:list={[band && 'border-b border-border bg-surface']}>
     <div class="wrap flex flex-col gap-3.5 pt-6 pb-8 sm:pt-8">
       <Breadcrumbs crumbs={crumbs} />

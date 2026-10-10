@@ -87,7 +87,11 @@ const jsonLd = [
     data.title,
     [...picks]
       .sort((a, b) => a.rank - b.rank)
-      .map((p) => ({ name: p.productName, url: p.reviewUrl ?? `${url}#pick-${p.rank}` })),
+      // Every pick's review page, or (when any pick has none) every pick's section here.
+      .map((p, _, all) => ({
+        name: p.productName,
+        url: all.every((q) => q.reviewUrl) && p.reviewUrl ? p.reviewUrl : `${url}#pick-${p.rank}`,
+      })),
   ),
   ...(data.faq.length ? [faqPage(data.faq)] : []),
 ];
