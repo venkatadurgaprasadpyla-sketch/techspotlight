@@ -14,11 +14,14 @@ export interface SearchFields {
   meta: SearchField[];
 }
 
-// Pagefind reads `key:value` and splits lists on commas, so values must not contain either.
-const clean = (value: string) => value.replace(/[,:]/g, ' ').replace(/\s+/g, ' ').trim();
+/**
+ * Pagefind splits these attributes on commas, so values must not contain any. The search
+ * page's filter chips use the same function, so their values match the index.
+ */
+export const searchValue = (value: string) => value.replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
 const fields = (entries: [string, string | number | undefined][]): SearchField[] =>
   entries.flatMap(([key, value]) =>
-    value === undefined || value === '' ? [] : [[key, clean(String(value))] as SearchField],
+    value === undefined || value === '' ? [] : [[key, searchValue(String(value))] as SearchField],
   );
 
 /** Filters and metadata for one article. `image` is a small thumbnail URL. */

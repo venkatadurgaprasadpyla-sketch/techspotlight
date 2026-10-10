@@ -9,6 +9,7 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
 import { getArticles } from '~/lib/articles';
 import { typeLabel } from '~/lib/cards';
 import { liveHubs } from '~/lib/listings';
+import { searchValue } from '~/lib/search';
 
 const articles = await getArticles();
 const plural: Record<string, string> = {
@@ -19,7 +20,10 @@ const plural: Record<string, string> = {
   news: 'News',
   deal: 'Deals',
 };
-const types = contentTypes.map((t) => ({ value: typeLabel[t.type], label: plural[t.type] }));
+const types = contentTypes.map((t) => ({
+  value: searchValue(typeLabel[t.type]),
+  label: plural[t.type],
+}));
 const popular = [
   ...articles
     .filter((a) => a.collection === 'guides')
@@ -91,7 +95,7 @@ const chip = 'chip aria-pressed:border-text aria-pressed:bg-text aria-pressed:te
             type="button"
             class={chip}
             data-filter="hub"
-            data-value={h.label}
+            data-value={searchValue(h.label)}
             aria-pressed="false"
           >
             {h.label}

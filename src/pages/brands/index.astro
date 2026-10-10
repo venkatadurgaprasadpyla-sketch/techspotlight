@@ -10,6 +10,8 @@ import { getPublished } from '~/lib/content';
 const articles = await getArticles();
 const brands = (await getPublished('brands'))
   .map((b) => ({ id: b.id, name: b.data.name, count: itemsByBrand(articles, b.id).length }))
+  // A brand file with no published articles has an empty (noindex) page: leave it out.
+  .filter((b) => b.count > 0)
   .sort((a, b) => a.name.localeCompare(b.name));
 const covered = new Set(brands.map((b) => b.id));
 const upcoming = [

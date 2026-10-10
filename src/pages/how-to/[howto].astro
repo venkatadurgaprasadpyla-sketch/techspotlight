@@ -7,6 +7,7 @@ import AdSlot from '~/components/AdSlot.astro';
 import ArticleByline from '~/components/ArticleByline.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import SearchData from '~/components/SearchData.astro';
+import ArticleTopics from '~/components/ArticleTopics.astro';
 import ArticleCard from '~/components/cards/ArticleCard.astro';
 import Faq from '~/components/review/Faq.astro';
 import { contentTypePath, contentTypes, findTopic } from '~/config/taxonomy';
@@ -114,6 +115,7 @@ const adAfter = data.steps.length > 3 ? 2 : -1;
       <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
         <Content />
       </div>
+      <ArticleTopics url={url} />
 
       {data.tools.length > 0 && (
         <section

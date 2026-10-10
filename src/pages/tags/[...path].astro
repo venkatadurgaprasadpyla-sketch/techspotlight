@@ -29,6 +29,7 @@ const n = listing.items.length;
 <ArchivePage
   label="Tag"
   title={listing.label}
+  docTitle={`${listing.label}: reviews, guides and news`}
   intro={`${n} ${n === 1 ? 'article' : 'articles'} tagged “${listing.label.toLowerCase()}”: reviews, guides, how-tos, news and deals.`}
   path={listing.path}
   crumbs={listing.crumbs}

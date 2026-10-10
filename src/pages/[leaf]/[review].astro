@@ -9,6 +9,7 @@ import { render, type CollectionEntry } from 'astro:content';
 import AdSlot from '~/components/AdSlot.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import SearchData from '~/components/SearchData.astro';
+import ArticleTopics from '~/components/ArticleTopics.astro';
 import ArticleCard from '~/components/cards/ArticleCard.astro';
 import BadgeTag from '~/components/cards/BadgeTag.astro';
 import Rating from '~/components/cards/Rating.astro';
@@ -121,7 +122,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
       </div>
       <h1 class="max-w-[900px] text-[30px] sm:text-[42px]">{data.title}</h1>
       <p class="hidden max-w-[780px] text-lg text-muted sm:block">{data.description}</p>
-      <div class="flex items-center gap-3 text-[14px]">
+      <div class="flex items-center gap-3 text-[14px]" data-pagefind-ignore>
         {author?.data.avatar && (
           <Image
             src={author.data.avatar}
@@ -134,7 +135,9 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
         <p>
           {author && (
             <>
-              <b>{author.data.name}</b>
+              <a href={authorPath(author.id)} class="font-semibold text-text">
+                {author.data.name}
+              </a>
               <span class="hidden text-muted sm:inline">, {author.data.role}</span>
               <span class="text-muted" aria-hidden="true">
                 {' '}
@@ -191,6 +194,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
         <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
           <Content />
         </div>
+        <ArticleTopics url={url} />
         {data.scores.length > 0 && <ScoreCard scores={data.scores} />}
         {data.benchmarks.length > 0 && (
           <BenchmarkTable benchmarks={data.benchmarks} productName={productName} />

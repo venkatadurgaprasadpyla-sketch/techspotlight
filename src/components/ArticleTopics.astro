@@ -1,0 +1,36 @@
+---
+/** Brand and tag links under an article body, so brand and tag pages are one click away. */
+import { brandPath, tagLabel, tagPath } from '~/lib/archives';
+import { getArticles } from '~/lib/articles';
+import { getPublished } from '~/lib/content';
+
+interface Props {
+  url: string;
+}
+const item = (await getArticles()).find((a) => a.url === Astro.props.url);
+const brands = new Map((await getPublished('brands')).map((b) => [b.id, b.data.name] as const));
+const links = item
+  ? [
+      ...item.brands.flatMap((id) => {
+        const name = brands.get(id);
+        return name ? [{ label: name, href: brandPath(id) }] : [];
+      }),
+      ...item.tags.map((tag) => ({ label: tagLabel(tag), href: tagPath(tag) })),
+    ]
+  : [];
+---
+
+{links.length > 0 && (
+  <nav aria-label="Brands and tags" class="flex flex-wrap items-center gap-2" data-pagefind-ignore>
+    <span class="mr-1 text-[13px] text-muted">Filed under:</span>
+    <ul class="contents">
+      {links.map((link) => (
+        <li>
+          <a class="chip" href={link.href}>
+            {link.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+)}

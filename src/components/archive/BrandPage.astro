@@ -79,17 +79,18 @@ const cell = 'border-b border-border px-3.5 py-3 text-left align-middle';
           {!first && <span class="text-muted">, page {page.current}</span>}
         </h1>
         <p class="max-w-[760px] text-[17px]">
-          <b>Our take:</b>{' '}
-          {description}
+          <b>Our take:</b> {description}
         </p>
         <ul class="flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-muted">
-          <li>
-            <b class="text-text">{reviews.length}</b>{' '}
-            {reviews.length === 1 ? 'product' : 'products'} tested
-          </li>
+          {reviews.length > 0 && (
+            <li>
+              <b class="text-text">{reviews.length}</b>{' '}
+              {reviews.length === 1 ? 'product' : 'products'} tested
+            </li>
+          )}
           {averageRating !== undefined && (
             <li>
-              <b class="text-text">{averageRating}</b> average rating
+              <b class="text-text">{averageRating.toFixed(1)}/5</b> average rating
             </li>
           )}
           {categories.length > 0 && <li>Covered in {categories.join(', ')}</li>}
@@ -110,7 +111,7 @@ const cell = 'border-b border-border px-3.5 py-3 text-left align-middle';
         <div
           class="relative overflow-x-auto rounded-[10px] border border-border"
           role="region"
-          aria-labelledby="verdicts"
+          aria-label="Verdicts table, scrolls sideways"
           tabindex="0"
         >
           <table class="w-full min-w-[640px] border-collapse text-[14px]">
@@ -158,7 +159,7 @@ const cell = 'border-b border-border px-3.5 py-3 text-left align-middle';
                     {review.badge ? (
                       <BadgeTag badge={review.badge} />
                     ) : (
-                      <span class="text-muted">{verdictLabel(review)}</span>
+                      <span class="text-muted">{verdictLabel(review.rating)}</span>
                     )}
                   </td>
                   <td class={cell}>

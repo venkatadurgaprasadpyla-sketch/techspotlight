@@ -150,10 +150,31 @@ export function initSearch(root: ParentNode = document) {
   const show = (section: HTMLElement, on: boolean) => (section.hidden = !on);
   const clear = () => [best, products, articles].forEach((s) => slot(s).replaceChildren());
 
+  let found = 0;
+  const say = (shown: number, query: string) => {
+    status.textContent =
+      shown < found
+        ? `Showing ${shown} of ${found} results for “${query}”`
+        : `${found} ${found === 1 ? 'result' : 'results'} for “${query}”`;
+  };
+
   const showMore = async () => {
-    const batch = rest.splice(0, MORE);
-    slot(articles).append(...(await Promise.all(batch.map((r) => r.data()))).map(articleRow));
-    more.hidden = rest.length === 0;
+    const mine = run;
+    more.disabled = true;
+    try {
+      const batch = await Promise.all(rest.splice(0, MORE).map((r) => r.data()));
+      if (mine !== run) return;
+      const rows = batch.map(articleRow);
+      slot(articles).append(...rows);
+      say(found - rest.length, input.value.trim());
+      more.hidden = rest.length === 0;
+      // The button may have just been hidden: move focus to the first new result.
+      rows[0]?.querySelector('a')?.focus();
+    } catch {
+      if (mine === run) status.textContent = 'Could not load more results. Please try again.';
+    } finally {
+      more.disabled = false;
+    }
   };
 
   const search = async () => {
@@ -169,24 +190,38 @@ export function initSearch(root: ParentNode = document) {
       show(empty, true);
       setEmpty('');
       status.textContent = '';
+      if (total) total.textContent = '';
       return;
     }
     status.textContent = 'Searching…';
     try {
       // A runtime URL, not a module Vite can bundle: the index is written after the build.
+      // A failed load is forgotten so the next search retries it.
       const src = '/pagefind/pagefind.js';
-      pagefind ??= import(/* @vite-ignore */ src) as Promise<Pagefind>;
+      pagefind ??= (import(/* @vite-ignore */ src) as Promise<Pagefind>).catch((error: unknown) => {
+        pagefind = undefined;
+        throw error;
+      });
       const filters = Object.fromEntries(Object.entries(chosen).filter(([, v]) => v));
-      const found = await (await pagefind).search(query, { filters });
-      if (!found || mine !== run) return;
-      const results = await Promise.all(found.results.slice(0, 12).map((r) => r.data()));
+      const result = await (await pagefind).search(query, { filters });
+      if (mine !== run) return;
+      if (!result) {
+        status.textContent = '';
+        return;
+      }
+      const results = await Promise.all(result.results.slice(0, 12).map((r) => r.data()));
       if (mine !== run) return;
       clear();
-      if (total) total.textContent = `\u00a0(${found.unfilteredResultCount})`;
-      const n = found.results.length;
-      status.textContent = `${n} ${n === 1 ? 'result' : 'results'} for “${query}”`;
-      show(empty, n === 0);
+      const all = result.unfilteredResultCount;
+      if (total) total.textContent = `\u00a0(${all})`;
+      found = result.results.length;
+      show(empty, found === 0);
       setEmpty(query);
+      if (found === 0 && all > 0) {
+        if (emptyTitle) emptyTitle.textContent = 'No results with these filters';
+        if (emptyText)
+          emptyText.textContent = `Choose All and clear the hub to see all ${all} results for “${query}”.`;
+      }
       const [top, ...others] = results;
       show(best, top !== undefined);
       if (top) slot(best).append(bestMatch(top));
@@ -194,14 +229,15 @@ export function initSearch(root: ParentNode = document) {
       show(products, rated.length > 0);
       slot(products).append(...rated.map(productCard));
       const listed = others.filter((r) => !rated.includes(r));
-      show(articles, listed.length > 0 || n > 12);
+      show(articles, listed.length > 0 || found > 12);
       slot(articles).append(...listed.slice(0, MORE).map(articleRow));
       // Only the first 12 results are loaded up front; "Load more" fetches the rest.
       rest = [
         ...listed.slice(MORE).map((r) => ({ data: () => Promise.resolve(r) })),
-        ...found.results.slice(12),
+        ...result.results.slice(12),
       ];
       more.hidden = rest.length === 0;
+      say(found - rest.length, query);
     } catch {
       if (mine === run) status.textContent = 'Search is not available right now. Please try again.';
     }

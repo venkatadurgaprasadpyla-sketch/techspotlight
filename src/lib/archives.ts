@@ -122,12 +122,9 @@ export function brandSummary(items: readonly CardItem[]): BrandSummary {
   };
 }
 
-/** The verdict column on a brand page: the review's badge, or a plain call from its rating. */
-export function verdictLabel(review: Pick<CardItem, 'badge' | 'rating'>): string {
-  if (review.badge === 'editors-choice') return "Editor's choice";
-  if (review.badge === 'best-value') return 'Best value';
-  if (review.badge === 'recommended') return 'Recommended';
-  const rating = review.rating ?? 0;
+/** The verdict column on a brand page for a review without a badge: a plain call from its rating. */
+export function verdictLabel(rating: number | undefined): string {
+  if (rating === undefined) return 'See the review';
   if (rating >= 4) return 'Recommended';
   if (rating >= 3) return 'Worth a look';
   return 'Skip it';

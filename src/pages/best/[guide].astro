@@ -4,6 +4,7 @@ import type { GetStaticPaths } from 'astro';
 import { Image } from 'astro:assets';
 import { render, type CollectionEntry } from 'astro:content';
 import AdSlot from '~/components/AdSlot.astro';
+import ArticleTopics from '~/components/ArticleTopics.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import SearchData from '~/components/SearchData.astro';
 import AlsoTested from '~/components/guide/AlsoTested.astro';
@@ -15,6 +16,7 @@ import Faq from '~/components/review/Faq.astro';
 import { findTopic } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import { getRetailer, lowestOffer } from '~/lib/affiliate';
+import { authorPath } from '~/lib/archives';
 import { getArticles } from '~/lib/articles';
 import { searchData } from '~/lib/search-index';
 import { getPublished, getPublishedEntry } from '~/lib/content';
@@ -107,7 +109,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
         <time datetime={isoDate(updated)}>{formatDate(updated)}</time>
       </p>
       <h1 class="max-w-[900px] text-[30px] sm:text-[42px]">{data.title}</h1>
-      <div class="flex items-center gap-3 text-[14px]">
+      <div class="flex items-center gap-3 text-[14px]" data-pagefind-ignore>
         {author?.data.avatar && (
           <Image
             src={author.data.avatar}
@@ -120,7 +122,9 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
         <p class="text-muted">
           {author && (
             <>
-              <b class="text-text">{author.data.name}</b>
+              <a href={authorPath(author.id)} class="font-semibold text-text">
+                {author.data.name}
+              </a>
               <span class="hidden sm:inline">, {author.data.role}</span>
               <span aria-hidden="true"> · </span>
             </>
@@ -189,6 +193,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
         <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
           <Content />
         </div>
+        <ArticleTopics url={url} />
         <HowWeTest />
         {data.faq.length > 0 && <Faq items={data.faq} />}
       </div>

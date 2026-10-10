@@ -94,16 +94,16 @@ describe('archives', () => {
     expect(similarBrands(items, 'northwind', ['kestrel', 'northwind', 'orbit'])).toEqual([]);
   });
 
-  it('labels verdicts from the badge, then the rating', () => {
-    expect(verdictLabel({ badge: 'editors-choice', rating: 3 })).toBe("Editor's choice");
-    expect(verdictLabel({ rating: 4 })).toBe('Recommended');
-    expect(verdictLabel({ rating: 3.5 })).toBe('Worth a look');
-    expect(verdictLabel({ rating: 2.5 })).toBe('Skip it');
+  it('labels unbadged verdicts from the rating', () => {
+    expect(verdictLabel(4)).toBe('Recommended');
+    expect(verdictLabel(3.5)).toBe('Worth a look');
+    expect(verdictLabel(2.5)).toBe('Skip it');
+    expect(verdictLabel(undefined)).toBe('See the review');
   });
 });
 
 describe('searchFields', () => {
-  it('gives reviews type, hub, product, rating and price, with no commas or colons', () => {
+  it('gives reviews type, hub, product, rating and price, with no commas', () => {
     const review = items.find((i) => i.id === 'northwind-aero-14');
     if (!review) throw new Error('sample review missing');
     const { filters, meta } = searchFields(review, '/_astro/x.webp');
@@ -115,7 +115,7 @@ describe('searchFields', () => {
     expect(m).toMatchObject({ type: 'Review', product: 'Northwind Aero 14', rating: '4.5' });
     expect(m.image).toBe('/_astro/x.webp');
     expect(Number(m.price)).toBe(review.bestOffer?.price);
-    for (const [, value] of [...filters, ...meta]) expect(value).not.toMatch(/[,:]/);
+    for (const [, value] of [...filters, ...meta]) expect(value).not.toMatch(/,/);
   });
 
   it('uses the deal price for deals and leaves out empty fields', () => {

@@ -7,6 +7,7 @@ import AdSlot from '~/components/AdSlot.astro';
 import ArticleByline from '~/components/ArticleByline.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import SearchData from '~/components/SearchData.astro';
+import ArticleTopics from '~/components/ArticleTopics.astro';
 import ArticleCard from '~/components/cards/ArticleCard.astro';
 import Rating from '~/components/cards/Rating.astro';
 import { categoryPath, contentTypePath, contentTypes, findTopic, hubPath } from '~/config/taxonomy';
@@ -138,6 +139,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
       <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
         <Content />
       </div>
+      <ArticleTopics url={url} />
 
       {data.source && (
         <p class="text-[14px] text-muted">

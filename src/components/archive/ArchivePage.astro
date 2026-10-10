@@ -9,16 +9,18 @@ import ArchiveGrid from './ArchiveGrid.astro';
 interface Props {
   label: string;
   title: string;
+  /** Browser and search title, when it should say more than the heading. */
+  docTitle?: string;
   intro: string;
   path: string;
   crumbs: Crumb[];
   items: CardItem[];
   page: Page<CardItem>;
 }
-const { label, title, intro, path, crumbs, items, page } = Astro.props;
+const { label, title, docTitle = title, intro, path, crumbs, items, page } = Astro.props;
 ---
 
-<ListingLayout listing={{ title, crumbs, items }} page={page} description={intro}>
+<ListingLayout listing={{ title: docTitle, crumbs, items }} page={page} description={intro}>
   <Fragment slot="header">
     <span class="lbl">{label}</span>
     <h1 class="text-[36px] sm:text-[44px]">
