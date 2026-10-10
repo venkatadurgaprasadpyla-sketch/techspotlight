@@ -248,9 +248,10 @@ describe('G12 check', () => {
     expect(checkFeed('rss.xml', ok.replace('https://x.in', ''))).toEqual([
       'rss.xml: item 1 link is not absolute',
     ]);
-    expect(checkFeed('rss.xml', '<?xml version="1.0"?><rss version="2.0"></rss>')).toEqual([
-      'rss.xml: no items',
-    ]);
+    const empty = '<?xml version="1.0"?><rss version="2.0"></rss>';
+    expect(checkFeed('rss.xml', empty)).toEqual(['rss.xml: no items']);
+    // A launch build before the first real article has empty feeds, and that is fine.
+    expect(checkFeed('rss.xml', empty, { allowEmpty: true })).toEqual([]);
   });
 
   it('only asks noindex pages for well-formed JSON-LD', () => {

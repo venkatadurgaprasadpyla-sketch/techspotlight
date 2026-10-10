@@ -87,6 +87,51 @@ const TYPES = {
   '.json': 'application/json',
 };
 const root = resolve('dist');
+
+/**
+ * Path rules from dist/_headers, applied like Cloudflare Pages does (rules for a full URL, which
+ * name a host, are skipped), so Lighthouse sees the production headers. Supports a splat (`*`),
+ * `:placeholder` segments, `! Name` to detach a header, and joins repeated headers with commas.
+ */
+function readHeaderRules() {
+  const rules = [];
+  const file = join(root, '_headers');
+  if (!existsSync(file)) return rules;
+  for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
+    if (!line.trim() || line.trim().startsWith('#')) continue;
+    if (!/^\s/.test(line)) {
+      const pattern = line.trim();
+      const source = pattern
+        .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*')
+        .replace(/:[A-Za-z]\w*/g, '[^/]+');
+      rules.push({
+        match: pattern.startsWith('/') ? new RegExp(`^${source}$`) : null,
+        headers: [],
+      });
+    } else if (line.trim().startsWith('!')) {
+      rules.at(-1)?.headers.push([line.trim().slice(1).trim(), null]);
+    } else {
+      const [name, ...value] = line.trim().split(':');
+      rules.at(-1)?.headers.push([name.trim(), value.join(':').trim()]);
+    }
+  }
+  return rules.filter((r) => r.match);
+}
+
+/** Sets the headers of every rule matching `pathname` on `res`, in file order. */
+function applyHeaderRules(res, pathname) {
+  for (const rule of headerRules) {
+    if (!rule.match.test(pathname)) continue;
+    for (const [name, value] of rule.headers) {
+      if (value === null) res.removeHeader(name);
+      else if (res.hasHeader(name)) res.setHeader(name, `${res.getHeader(name)}, ${value}`);
+      else res.setHeader(name, value);
+    }
+  }
+}
+const headerRules = readHeaderRules();
+
 const server = createServer(async (req, res) => {
   let pathname;
   try {
@@ -95,8 +140,11 @@ const server = createServer(async (req, res) => {
     res.writeHead(400).end('Bad request');
     return;
   }
+  applyHeaderRules(res, pathname);
   let file = resolve(join(root, pathname.endsWith('/') ? pathname + 'index.html' : pathname));
   if (file !== root && !file.startsWith(root + sep)) file = join(root, '404.html');
+  // Cloudflare reads _headers but never serves it.
+  if (pathname === '/_headers') file = join(root, '_headers.not-served');
   try {
     const body = await readFile(file);
     const type = TYPES[extname(file)] ?? 'application/octet-stream';

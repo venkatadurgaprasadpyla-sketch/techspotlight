@@ -42,6 +42,7 @@ When a task adds a page type, add a representative URL to `gates.config.json` â†
 - One branch per backlog task: `task/<id>-<slug>`, one PR into `main`. CI (`.github/workflows/gates.yml`) runs `npm run gates` on every PR.
 - Look up current Astro/Tailwind APIs before using them (Context7 or the official docs).
 - Never commit secrets. Config that is public (site URL, AdSense publisher ID, affiliate tags) goes in `src/config/site.ts`.
+- Deploys: Cloudflare Pages builds `main` with `PUBLIC_HIDE_SAMPLES=true` (README â†’ Deploying). `public/_headers` sets response headers; the audit server applies its path rules too. CI's `launch-build` job checks that production build (G1, G7, G8, G12, and `scripts/launch-check.mjs`: no links to sample entries).
 
 ## Design system
 
