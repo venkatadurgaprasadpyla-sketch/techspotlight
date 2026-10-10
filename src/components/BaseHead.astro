@@ -76,6 +76,14 @@ const ogLocale = site.locale.replace('-', '_');
 {jsonLd.map((data) => (
   <script type="application/ld+json" set:html={JSON.stringify(data).replaceAll('<', '\\u003c')} />
 ))}
+{site.analytics.cloudflareToken && (
+  <script
+    is:inline
+    defer
+    src="https://static.cloudflareinsights.com/beacon.min.js"
+    data-cf-beacon={JSON.stringify({ token: site.analytics.cloudflareToken })}
+  />
+)}
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <meta name="color-scheme" content="light dark" />
 {/* Filled from the resolved page background by src/scripts/theme.ts. */}

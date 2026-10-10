@@ -1,0 +1,55 @@
+---
+/** /review-policy/: independence, review units, updates and corrections. */
+import { site } from '~/config/site';
+import { minTestDays } from '~/config/editorial';
+import TrustLayout from '~/layouts/TrustLayout.astro';
+
+const toc = [
+  { id: 'independence', label: 'Independence' },
+  { id: 'review-units', label: 'Review units' },
+  { id: 'updates', label: 'Updates' },
+  { id: 'corrections', label: 'Corrections' },
+];
+---
+
+<TrustLayout
+  title="Review policy"
+  description={`How ${site.name} keeps reviews independent: review units, sponsorship, updates and corrections.`}
+  path="/review-policy/"
+  updated={site.legal.updated}
+  toc={toc}
+>
+  <div class="prose max-w-[72ch]">
+    <h2 id="independence">Independence</h2>
+    <p>
+      Our writers decide what to review and what score to give. Brands, retailers and advertisers
+      never see a review before it is published, cannot buy a rating or a place in a buying guide,
+      and cannot ask us to change or remove one.
+    </p>
+    <p>
+      We do not publish sponsored reviews. If we ever publish content paid for by a brand, it will
+      be labelled "Sponsored" at the top and will not carry a rating.
+    </p>
+
+    <h2 id="review-units">Review units</h2>
+    <p>
+      Some products are lent to us by the brand; others we buy ourselves. Loaned units are returned
+      when testing ends. Either way we test them the same way, for at least {minTestDays} days,
+      following our <a href="/how-we-test/">test plans</a>. We do not accept gifts in exchange for
+      coverage.
+    </p>
+
+    <h2 id="updates">Updates</h2>
+    <p>
+      Prices and availability in India change often. We re-check buying guides every month and
+      update reviews when a software update, a price change or a new rival changes our advice. The
+      date at the top of an article shows when it was last updated.
+    </p>
+
+    <h2 id="corrections">Corrections</h2>
+    <p>
+      If we get something wrong, we fix it and add a note at the bottom of the article saying what
+      changed and when. If you spot a mistake, please <a href="/contact/">tell us</a>.
+    </p>
+  </div>
+</TrustLayout>

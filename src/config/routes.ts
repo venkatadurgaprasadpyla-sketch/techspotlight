@@ -1,7 +1,7 @@
 /**
  * Routes that exist only as "coming soon" placeholders so navigation never links to a 404.
- * Hubs not yet launched (`mvp: false`) and their whole tree, the static pages built in later
- * tasks, and menu brands that have no brand file yet. Every placeholder is noindex, which also keeps it out of the sitemap.
+ * Hubs not yet launched (`mvp: false`) and their whole tree, and menu brands that have no
+ * brand file yet. Every placeholder is noindex, which also keeps it out of the sitemap.
  * Live hubs and the content-type pages are real listings (src/lib/listings.ts).
  * When a task ships a real page, remove its entry here.
  */
@@ -20,17 +20,8 @@ export type PlaceholderPage = {
   intro?: string;
 };
 
-/** Static placeholder pages, each with its own file in src/pages (T10 builds these). */
-export const staticPlaceholders: PlaceholderPage[] = [
-  { path: '/about/', title: 'About TechSpotlight' },
-  { path: '/how-we-test/', title: 'How we test' },
-  { path: '/affiliate-disclosure/', title: 'Affiliate disclosure' },
-  { path: '/privacy/', title: 'Privacy policy' },
-  { path: '/contact/', title: 'Contact us' },
-];
-
 function buildPlaceholders(): PlaceholderPage[] {
-  const pages: PlaceholderPage[] = [...staticPlaceholders];
+  const pages: PlaceholderPage[] = [];
   for (const hub of hubs.filter((h) => !h.mvp)) {
     pages.push({ path: hubPath(hub), title: hub.label, intro: hub.intro });
     for (const type of contentTypes) {
@@ -52,10 +43,8 @@ function buildPlaceholders(): PlaceholderPage[] {
   return pages;
 }
 
-const staticPaths = new Set(staticPlaceholders.map((p) => p.path));
-/** Paths served by their own file or by the brands route, not by the [section] routes. */
-export const isOutsideSections = (path: string) =>
-  staticPaths.has(path) || path.startsWith('/brands/');
+/** Paths served by the brands route, not by the [section] routes. */
+export const isOutsideSections = (path: string) => path.startsWith('/brands/');
 
 export const placeholderPages: readonly PlaceholderPage[] = buildPlaceholders();
 export const placeholderPaths: ReadonlySet<string> = new Set(placeholderPages.map((p) => p.path));

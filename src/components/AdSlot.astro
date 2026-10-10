@@ -1,14 +1,23 @@
 ---
-/** Reserved space for an ad so the layout never shifts when ads load (wired up in T10). */
+/**
+ * Reserved space for an ad: a fixed-size, labelled box, so the layout never shifts when an ad
+ * loads. The ads island (src/scripts/ads.ts) fills it with an AdSense unit once AdSense is
+ * configured and the visitor accepts cookies; otherwise the placeholder stays. In-article slots
+ * use the same markup from src/lib/ad-slots.ts. Trust and policy pages place none.
+ */
+import type { AdPlacement } from '~/lib/ads';
+
 const sizes = {
   leaderboard: 'h-[90px] w-full',
   sidebar: 'h-[250px] w-full max-w-[300px]',
   'in-feed': 'h-[120px] w-full',
   skyscraper: 'h-[600px] w-full max-w-[300px]',
-} as const;
+  'in-article': 'ad-in-article',
+  'sticky-mobile': 'h-[50px] w-[320px] max-w-full',
+} as const satisfies Record<AdPlacement, string>;
 
 interface Props {
-  size: keyof typeof sizes;
+  size: AdPlacement;
   class?: string;
 }
 const { size, class: className } = Astro.props;

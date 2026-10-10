@@ -1,0 +1,50 @@
+---
+/** /terms/: terms of use. */
+import { site } from '~/config/site';
+import TrustLayout from '~/layouts/TrustLayout.astro';
+
+const { owner, jurisdiction } = site.legal;
+---
+
+<TrustLayout
+  title="Terms of use"
+  description={`The terms for using ${site.name}: our content, prices, links to retailers and liability.`}
+  path="/terms/"
+  updated={site.legal.updated}
+>
+  <div class="prose max-w-[72ch]">
+    <p>
+      By using {site.name} you agree to these terms. If you do not agree, please do not use the
+      site.
+    </p>
+    <h2 id="content">Our content</h2>
+    <p>
+      Reviews, guides, photos and other content on {site.name} belong to {owner} unless we say
+      otherwise. You may quote short extracts with a link back to the original page. Please do not
+      republish whole articles or images without permission.
+    </p>
+    <h2 id="advice">Advice and prices</h2>
+    <p>
+      Our reviews are honest opinions based on our testing, not guarantees. Prices, offers and stock
+      change quickly; we show the price we last checked and the date we checked it, but the
+      retailer's price at checkout is the one that applies.
+    </p>
+    <h2 id="retailers">Retailers and other sites</h2>
+    <p>
+      We link to retailers and other sites we do not control. Purchases are between you and the
+      retailer, under their terms, returns policy and warranty. Some links earn us a commission; see
+      our <a href="/affiliate-disclosure/">affiliate disclosure</a>.
+    </p>
+    <h2 id="liability">Liability</h2>
+    <p>
+      We work hard to be accurate, but the site is provided as is. To the extent the law allows,{' '}
+      {owner} is not liable for losses that come from relying on the site or from a purchase made
+      through a link on it.
+    </p>
+    <h2 id="changes">Changes and law</h2>
+    <p>
+      We may update these terms; the date above shows the latest version. These terms are governed
+      by the laws of {jurisdiction}.
+    </p>
+  </div>
+</TrustLayout>

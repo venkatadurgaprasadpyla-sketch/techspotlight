@@ -1,0 +1,24 @@
+---
+/**
+ * Closable 320×50 ad pinned to the bottom of small screens. Rendered only when AdSense has a
+ * unit for it, and shown by the ads island only after consent, so it never covers content
+ * with an empty box. Fixed position: it cannot shift the layout.
+ */
+import AdSlot from './AdSlot.astro';
+---
+
+<div
+  class="fixed inset-x-0 bottom-0 z-40 flex justify-center border-t border-border bg-bg pt-1 pb-[max(4px,env(safe-area-inset-bottom))] sm:hidden"
+  data-sticky-ad
+  hidden
+>
+  <AdSlot size="sticky-mobile" />
+  <button
+    type="button"
+    class="icon-btn absolute right-2 -top-11 size-10 border border-border bg-bg"
+    aria-label="Close advertisement"
+    data-sticky-close
+  >
+    <span aria-hidden="true">×</span>
+  </button>
+</div>

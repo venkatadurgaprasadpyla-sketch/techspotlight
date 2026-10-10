@@ -1,15 +1,11 @@
 ---
 import { site } from '~/config/site';
 import { contentTypePath, contentTypes, hubPath, hubs } from '~/config/taxonomy';
+import { trustPages } from '~/config/trust';
+import { consentNeeded } from '~/lib/ads';
 import NewsletterForm from './NewsletterForm.astro';
 
-const company = [
-  { href: '/about/', label: 'About' },
-  { href: '/how-we-test/', label: 'How we test' },
-  { href: '/affiliate-disclosure/', label: 'Affiliate disclosure' },
-  { href: '/privacy/', label: 'Privacy' },
-  { href: '/contact/', label: 'Contact' },
-];
+const company = trustPages;
 const browse = [
   { href: '/brands/', label: 'Brands' },
   { href: '/tags/', label: 'Tags' },
@@ -63,6 +59,13 @@ const year = new Date().getFullYear();
             <a href={link.href}>{link.label}</a>
           </li>
         ))}
+        {consentNeeded() && (
+          <li>
+            <button type="button" class="foot-btn" data-consent-open hidden>
+              Cookie settings
+            </button>
+          </li>
+        )}
       </ul>
     </nav>
     <div class="sm:col-span-2 lg:col-span-1">
@@ -78,12 +81,18 @@ const year = new Date().getFullYear();
 </footer>
 
 <style>
-  .foot a {
+  .foot a,
+  .foot-btn {
     color: var(--ts-on-inverse-muted);
     text-decoration: none;
     font-size: 14px;
   }
-  .foot a:hover {
+  .foot-btn {
+    cursor: pointer;
+    min-height: 24px;
+  }
+  .foot a:hover,
+  .foot-btn:hover {
     color: var(--ts-on-inverse);
     text-decoration: underline;
   }

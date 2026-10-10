@@ -1,5 +1,106 @@
 ---
-import Placeholder from '~/layouts/Placeholder.astro';
+/**
+ * /privacy/: what the site stores and shares. Each section follows the config: ads, analytics
+ * and the newsletter are described as live only when configured in src/config/site.ts.
+ */
+import { site } from '~/config/site';
+import TrustLayout from '~/layouts/TrustLayout.astro';
+import { adsEnabled } from '~/lib/ads';
+
+const ads = adsEnabled();
+const analytics = site.analytics.cloudflareToken !== '';
+const newsletter = site.newsletterEndpoint !== '';
+const toc = [
+  { id: 'summary', label: 'In short' },
+  { id: 'cookies', label: 'Cookies and ads' },
+  { id: 'analytics', label: 'Analytics' },
+  { id: 'newsletter', label: 'Newsletter' },
+  { id: 'retailers', label: 'Retailer links' },
+  { id: 'your-rights', label: 'Your rights' },
+];
 ---
 
-<Placeholder path="/privacy/" />
+<TrustLayout
+  title="Privacy policy"
+  description={`What ${site.name} stores on your device, what we share, and how to change your cookie choice.`}
+  path="/privacy/"
+  updated={site.legal.updated}
+  toc={toc}
+>
+  <div class="prose max-w-[72ch]">
+    <h2 id="summary">In short</h2>
+    <p>
+      You can read {site.name} without an account. We do not sell personal data. Your device stores
+      your light or dark theme choice and, if we ask, your cookie choice. Ads from Google load only
+      if you accept cookies.
+    </p>
+
+    <h2 id="cookies">Cookies and ads</h2>
+    {ads ? (
+      <p>
+        We show ads from Google AdSense. Google and its partners use cookies to show and measure ads
+        and, if you accept, to personalise them. Before you choose, no ad code loads. You can change
+        your choice at any time with "Cookie settings" in the footer. Read{' '}
+        <a href="https://policies.google.com/technologies/partner-sites">
+          how Google uses information from sites that use its services
+        </a>
+        .
+      </p>
+    ) : (
+      <p>
+        We do not show ads yet, so no advertising cookies are set. When we start showing ads from
+        Google AdSense, we will ask for your consent first and update this page.
+      </p>
+    )}
+    <p>We store these on your device ourselves, with no expiry unless you clear them:</p>
+    <ul>
+      <li>
+        <code>ts-theme</code>: your light or dark theme choice.
+      </li>
+      <li>
+        <code>ts-consent</code>: whether you accepted or rejected cookies.
+      </li>
+      <li>
+        <code>ts-sticky-closed</code>: that you closed the mobile ad bar, for this visit only.
+      </li>
+    </ul>
+
+    <h2 id="analytics">Analytics</h2>
+    {analytics ? (
+      <p>
+        We count visits with Cloudflare Web Analytics. It sets no cookies, does not track you across
+        sites and does not collect personal data such as your IP address for profiling.
+      </p>
+    ) : (
+      <p>We do not run analytics.</p>
+    )}
+
+    <h2 id="newsletter">Newsletter</h2>
+    {newsletter ? (
+      <p>
+        If you sign up, we keep your email address to send the newsletter and nothing else. Every
+        email has an unsubscribe link, and unsubscribing deletes your address from the list.
+      </p>
+    ) : (
+      <p>
+        Our newsletter is not live yet. When it is, we will keep your email address only to send it,
+        and every email will have an unsubscribe link.
+      </p>
+    )}
+
+    <h2 id="retailers">Retailer links</h2>
+    <p>
+      When you follow a link to a retailer such as Amazon.in or Flipkart, their privacy policy
+      applies on their site. They may tell us that a sale happened, so we can earn a commission, but
+      not who you are. See our <a href="/affiliate-disclosure/">affiliate disclosure</a>.
+    </p>
+
+    <h2 id="your-rights">Your rights</h2>
+    <p>
+      Under India's Digital Personal Data Protection Act, 2023, you can ask what personal data we
+      hold about you, and ask us to correct or delete it. <a href="/contact/">Contact us</a> and we
+      will reply within 30 days. You can clear what this site stores on your device at any time in
+      your browser settings.
+    </p>
+  </div>
+</TrustLayout>

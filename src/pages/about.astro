@@ -1,5 +1,140 @@
 ---
-import Placeholder from '~/layouts/Placeholder.astro';
+/** /about/: the About board. Who we are, our promises, the team, how we make money. */
+import { Image } from 'astro:assets';
+import { site } from '~/config/site';
+import { promises } from '~/config/editorial';
+import TrustLayout from '~/layouts/TrustLayout.astro';
+import { authorPath } from '~/lib/archives';
+import { getPublished } from '~/lib/content';
+import { absolute, organization } from '~/lib/structured-data';
+
+const team = await getPublished('authors');
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: `About ${site.name}`,
+    url: absolute('/about/'),
+    about: { '@id': absolute('/#organization') },
+  },
+  organization(),
+];
+const toc = [
+  { id: 'promises', label: 'Our promises' },
+  ...(team.length ? [{ id: 'team', label: 'The team' }] : []),
+  { id: 'money', label: 'How we make money' },
+  { id: 'get-in-touch', label: 'Get in touch' },
+];
 ---
 
-<Placeholder path="/about/" />
+<TrustLayout
+  title="About us"
+  heading="We test the tech so you can buy it with confidence."
+  description={`${site.name} is an independent team in India reviewing laptops, phones and gadgets hands-on. No brand pays for a rating.`}
+  path="/about/"
+  toc={toc}
+  jsonLd={jsonLd}
+>
+  <p slot="intro" class="max-w-[760px] text-lg">
+    {site.name} is an independent team in India reviewing laptops, phones and gadgets hands-on. No
+    brand pays for a rating, and every recommendation comes with the price you'll actually pay here.
+  </p>
+
+  <section aria-labelledby="promises" class="flex scroll-mt-6 flex-col gap-5">
+    <h2 id="promises" class="text-2xl">
+      Our promises
+    </h2>
+    <ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-4">
+      {promises.map((promise) => (
+        <li class="flex flex-col gap-2 rounded-[10px] border border-border p-5">
+          <h3 class="text-lg">{promise.title}</h3>
+          <p class="text-[15px] text-muted">{promise.text}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {team.length > 0 && (
+    <section aria-labelledby="team" class="flex scroll-mt-6 flex-col gap-5">
+      <h2 id="team" class="text-2xl">
+        The team
+      </h2>
+      <ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-5">
+        {team.map((person) => (
+          <li class="relative flex flex-col items-start gap-2">
+            {person.data.avatar ? (
+              <Image
+                src={person.data.avatar}
+                alt=""
+                width={160}
+                height={160}
+                class="size-24 rounded-full object-cover"
+              />
+            ) : (
+              <span
+                class="flex size-24 items-center justify-center rounded-full border border-border bg-surface font-heading text-3xl font-bold text-muted"
+                aria-hidden="true"
+              >
+                {person.data.name.charAt(0)}
+              </span>
+            )}
+            <a
+              href={authorPath(person.id)}
+              class="font-heading text-lg font-bold text-text no-underline after:absolute after:inset-0 hover:underline"
+            >
+              {person.data.name}
+            </a>
+            <span class="text-[14px] text-muted">{person.data.role}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  <section aria-labelledby="money" class="flex scroll-mt-6 flex-col gap-5">
+    <h2 id="money" class="text-2xl">
+      How we make money
+    </h2>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4">
+      <div class="flex flex-col gap-2 rounded-[10px] bg-surface p-5">
+        <h3 class="text-lg">Affiliate links</h3>
+        <p class="text-[15px]">
+          When you buy through a retailer link, Amazon.in or Flipkart may pay us a small commission.
+          The price you pay stays the same.{' '}
+          <a href="/affiliate-disclosure/">Affiliate disclosure</a>
+        </p>
+      </div>
+      <div class="flex flex-col gap-2 rounded-[10px] bg-surface p-5">
+        <h3 class="text-lg">Display ads</h3>
+        <p class="text-[15px]">
+          Ads are clearly labelled and never placed inside verdicts, scores or buy buttons. They
+          load only after you accept cookies. <a href="/privacy/#cookies">Cookies and ads</a>
+        </p>
+      </div>
+    </div>
+    <p>
+      Neither ever changes a rating or a ranking. Read our{' '}
+      <a href="/review-policy/">review policy</a> and <a href="/how-we-test/">how we test</a>.
+    </p>
+  </section>
+
+  <section
+    aria-labelledby="get-in-touch"
+    class="flex scroll-mt-6 flex-col items-start gap-3 rounded-[10px] border border-border p-6"
+  >
+    <h2 id="get-in-touch" class="text-2xl">
+      Spotted a mistake or want us to test something?
+    </h2>
+    <p class="text-muted">
+      We read every message. Corrections are noted at the bottom of the article.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <a class="btn" href="/contact/">
+        Contact us
+      </a>
+      <a class="btn btn-ghost" href="/review-policy/#corrections">
+        Corrections policy
+      </a>
+    </div>
+  </section>
+</TrustLayout>

@@ -20,14 +20,19 @@
     "/authors/asha-testwell/",
     "/tags/battery/",
     "/archive/2026/10/",
-    "/search/?q=laptop"
+    "/search/?q=laptop",
+    "/about/",
+    "/how-we-test/",
+    "/privacy/",
+    "/contact/"
   ],
   "lighthouse": {
     "performance": 0.95,
     "accessibility": 1,
     "best-practices": 0.95,
     "seo": 1,
-    "runs": 3
+    "runs": 3,
+    "maxCls": 0.05
   },
   "budgets": {
     "islandKbGzip": 5,

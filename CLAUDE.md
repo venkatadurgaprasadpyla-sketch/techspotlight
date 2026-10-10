@@ -29,7 +29,7 @@ Independent tech review and buying-advice site for India (INR, Amazon.in and Fli
 A change is done only when every gate passes. Thresholds live in `gates.config.json`; never lower them or skip a check to get green.
 
 - G1 build with no warnings · G2 `astro check` clean · G3 ESLint 0 warnings + Prettier · G4 Vitest
-- G5 Lighthouse mobile: performance ≥ 95, accessibility 100, best practices ≥ 95, SEO 100 (median of 3)
+- G5 Lighthouse mobile: performance ≥ 95, accessibility 100, best practices ≥ 95, SEO 100, CLS ≤ 0.05 (median of 3)
 - G6 axe: 0 serious/critical at 1280 and 390, light and dark (screenshots go to `gate-reports/screens/` for G9)
 - G7 no broken internal links or anchors · G8 JS/CSS budgets · G11 `npm audit --omit=dev` clean
 - G12 SEO: `scripts/seo-check.mjs` checks every built page for title, description, canonical, og:image, unique titles on indexable pages, and JSON-LD that parses, has the required fields per `@type` and matches the page type.
@@ -64,6 +64,8 @@ When a task adds a page type, add a representative URL to `gates.config.json` �
 - Search: `/search/` uses Pagefind's JS API from the island `src/scripts/search.ts`. `src/integrations/pagefind.ts` indexes only pages with `data-pagefind-body` (each article root) after `astro build`; `SearchData` adds an article's filters and result metadata (`src/lib/search.ts`). Mark non-content inside articles `data-pagefind-ignore`; `.sr-only` and `.ad-slot` are excluded automatically. Search does not work in `npm run dev` (the index exists only in builds). G8 gives Pagefind's runtime its own budget (`searchRuntimeKbGzip`).
 - Article URLs come from `articlePath()` in `src/lib/urls.ts`; listings render `CardItem`s (`src/lib/cards.ts`) loaded once by `getArticles()` (`src/lib/articles.ts`).
 - SEO: `BaseHead` prints the title template, canonical, Open Graph/Twitter tags (share image from `articleSeo()`/`ogImage()` in `src/lib/seo.ts`, else `public/og-default.png`), the RSS link and any `jsonLd`. Builders live in `src/lib/structured-data.ts` (Organization + WebSite on the home page, Review, Article/NewsArticle, ItemList, FAQPage, deal Product; `Breadcrumbs` adds BreadcrumbList, `AuthorPage` Person). `npm run images:og` regenerates `og-default.png` and `logo.png`. Feeds: `/rss.xml` and `/<hub>/rss.xml` (`src/lib/feeds.ts`).
+- Ads: `AdSlot` reserves a fixed, labelled box per placement (leaderboard, sidebar, in-feed, skyscraper, in-article, sticky-mobile); in-article slots come from `src/lib/ad-slots.ts`. With `site.ads.publisherId` and unit ids set (`src/config/site.ts`), `<body data-ads>` (from `src/lib/ads.ts`) lets the island `src/scripts/ads.ts` fill slots near the viewport, only after the visitor accepts cookies in `ConsentBanner` (`src/scripts/consent.ts`, `localStorage['ts-consent']`; footer "Cookie settings" reopens it). Banner, sticky ad and AdSense code exist only when ads are configured. `/ads.txt` follows the publisher id. Cloudflare Web Analytics loads when `site.analytics.cloudflareToken` is set.
+- Trust pages (About board): `TrustLayout` with the side menu from `src/config/trust.ts`; about, how-we-test, review-policy, affiliate-disclosure, privacy, terms, contact. They pass `noAds`. Promises, test plans, rating scale and award rules live in `src/config/editorial.ts`; the privacy page describes ads, analytics and the newsletter only as live when configured.
 - Placeholders and empty listings are noindex. The sitemap leaves out any page whose built HTML is noindex and page 2+ of listings, and takes `lastmod` from `article:modified_time` (`astro.config.mjs`), so there is no second list to keep in sync.
 - Components: `cards/ArticleCard` (standard, compact, hero, review), `Rating`, `BadgeTag`, `Breadcrumbs` (with BreadcrumbList JSON-LD), `Pagination`, `AdSlot`, `listing/*` (page templates, `ExploreGrid`, `Sidebar`). Outbound retailer links go through `affiliateHref()` with `rel={AFFILIATE_REL}`.
 
@@ -79,8 +81,8 @@ When a task adds a page type, add a representative URL to `gates.config.json` �
 ## Layout
 
 ```
-src/config/     site.ts (public config), taxonomy.ts, routes.ts (placeholder registry)
-src/layouts/    BaseLayout (head, header, footer), Placeholder
+src/config/     site.ts (public config), taxonomy.ts, routes.ts (placeholder registry), trust.ts, editorial.ts
+src/layouts/    BaseLayout (head, header, footer, consent, ads), TrustLayout, Placeholder
 src/components/ Header, MegaMenu, MobileDrawer, Footer, NewsletterForm, ThemeToggle, Logo, Icon
 src/scripts/    nav.ts (mega-menu + drawer), theme.ts, review islands (jumpbar, gallery, youtube)
 src/pages/      routes

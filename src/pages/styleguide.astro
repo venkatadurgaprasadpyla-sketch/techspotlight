@@ -1,4 +1,6 @@
 ---
+import AdSlot from '~/components/AdSlot.astro';
+import ConsentBanner from '~/components/ConsentBanner.astro';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 
 // Internal reference for the DesignSystem board (G9). noindex and excluded from the sitemap.
@@ -149,13 +151,17 @@ const swatches = [
           <p class="text-[13px] text-muted">Prices checked 9 Oct 2026. We may earn a commission.</p>
         </div>
         <div class="flex flex-col gap-3 rounded-[10px] border border-border p-5">
-          <p class="lbl">Ad slots (reserved height, built in T10)</p>
-          <div class="ad-slot h-[90px]">Leaderboard 728×90</div>
+          <p class="lbl">Ad slots (reserved height; AdSense fills them after consent)</p>
+          <AdSlot size="leaderboard" />
           <div class="flex flex-wrap gap-3">
-            <div class="ad-slot h-[250px] w-[300px] max-w-full">Sidebar 300×250</div>
-            <div class="ad-slot h-[250px] min-w-40 flex-1">In-article fluid</div>
+            <AdSlot size="sidebar" />
+            <AdSlot size="in-article" class="my-0 min-w-40 flex-1" />
           </div>
-          <div class="ad-slot h-[50px]">Sticky mobile 320×50</div>
+          <AdSlot size="sticky-mobile" />
+        </div>
+        <div class="col-span-full flex flex-col gap-3">
+          <p class="lbl">Cookie consent banner (fixed to the bottom on the site)</p>
+          <ConsentBanner preview />
         </div>
       </div>
     </section>
