@@ -15,6 +15,8 @@ import HowWeTest from '~/components/HowWeTest.astro';
 import Faq from '~/components/review/Faq.astro';
 import { findTopic } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import { articleSeo } from '~/lib/seo';
+import { article, faqPage, itemList } from '~/lib/structured-data';
 import { getRetailer, lowestOffer } from '~/lib/affiliate';
 import { authorPath } from '~/lib/archives';
 import { getArticles } from '~/lib/articles';
@@ -59,6 +61,7 @@ assertNoHeadingClash(`Guide ${entry.id}`, headings, [
 ]);
 
 const author = await getPublishedEntry('authors', data.author.id);
+const seo = await articleSeo(data, url, author);
 const articles = await getArticles();
 // Links to full reviews only for reviews that are visible in this build.
 const reviewUrls = new Map(
@@ -78,6 +81,20 @@ const picks = data.picks.map((pick) => {
         : undefined,
   };
 });
+const jsonLd = [
+  article(seo.input),
+  itemList(
+    data.title,
+    [...picks]
+      .sort((a, b) => a.rank - b.rank)
+      // Every pick's review page, or (when any pick has none) every pick's section here.
+      .map((p, _, all) => ({
+        name: p.productName,
+        url: all.every((q) => q.reviewUrl) && p.reviewUrl ? p.reviewUrl : `${url}#pick-${p.rank}`,
+      })),
+  ),
+  ...(data.faq.length ? [faqPage(data.faq)] : []),
+];
 const tested = data.picks.length + data.alsoTested.length;
 // Same category first, then the same hub, then any other guide.
 const closeness = (a: { hub: string; category: string }) =>
@@ -99,7 +116,13 @@ const toc = [
 const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
 ---
 
-<BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  noindex={data.noindex}
+  {...seo.head}
+  jsonLd={jsonLd}
+>
   <article data-pagefind-body={search && ''}>
     <SearchData data={search} />
     <header class="wrap flex flex-col gap-3.5 pt-5 pb-6">

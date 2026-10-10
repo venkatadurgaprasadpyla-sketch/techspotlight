@@ -12,6 +12,7 @@ import NewsletterForm from '~/components/NewsletterForm.astro';
 import { site } from '~/config/site';
 import { contentTypePath, contentTypes, hubPath } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import { organization, website } from '~/lib/structured-data';
 import { getArticles } from '~/lib/articles';
 import { typeLabel, type CardItem, type DealInfo } from '~/lib/cards';
 import { percentOff } from '~/lib/deals';
@@ -39,7 +40,11 @@ const titleLink =
 const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
 ---
 
-<BaseLayout description={site.description} noindex={articles.length === 0}>
+<BaseLayout
+  description={site.description}
+  noindex={articles.length === 0}
+  jsonLd={[organization(), website()]}
+>
   <h1 class="sr-only">
     {site.name}: {site.tagline}
   </h1>

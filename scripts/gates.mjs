@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Runs the automated quality gates (G1–G8 plus the dependency audit part of G11).
+// Runs the automated quality gates (G1–G8, the dependency audit part of G11 and the automated
+// part of G12: SEO tags and JSON-LD, scripts/seo-check.mjs).
 // See CLAUDE.md for what each gate means. Exits non-zero if any gate fails.
 //
 //   npm run gates            every gate
@@ -9,7 +10,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { join, posix, relative } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
-const KNOWN = ['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9', 'G11'];
+const KNOWN = ['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9', 'G11', 'G12'];
 const config = JSON.parse(readFileSync('gates.config.json', 'utf8'));
 const only = process.argv.slice(2).map((id) => id.toUpperCase());
 const unknown = only.filter((id) => !KNOWN.includes(id));
@@ -188,6 +189,11 @@ if (selected('G7')) {
   );
 }
 if (selected('G8')) needsDist('G8', 'Budgets', budgets);
+if (selected('G12')) {
+  needsDist('G12', 'SEO tags and JSON-LD', () =>
+    run('G12', 'SEO tags and JSON-LD', 'node', ['scripts/seo-check.mjs']),
+  );
+}
 if (selected('G11')) {
   run('G11', 'Production dependency audit', 'npm', [
     'audit',

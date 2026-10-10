@@ -27,7 +27,9 @@ import VerdictBox from '~/components/review/VerdictBox.astro';
 import YouTubeFacade from '~/components/review/YouTubeFacade.astro';
 import { findTopic } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
-import { AFFILIATE_REL, affiliateHref, lowestOffer } from '~/lib/affiliate';
+import { articleSeo } from '~/lib/seo';
+import { faqPage, review } from '~/lib/structured-data';
+import { AFFILIATE_REL, affiliateHref, getRetailer, lowestOffer } from '~/lib/affiliate';
 import { authorPath } from '~/lib/archives';
 import { getArticles } from '~/lib/articles';
 import { searchData } from '~/lib/search-index';
@@ -66,6 +68,28 @@ const author = await getPublishedEntry('authors', data.author.id);
 const offers = data.retailers;
 const lowest = lowestOffer(offers);
 const best = lowest && { retailer: lowest.name, url: lowest.url, price: lowest.price };
+const seo = await articleSeo(data, url, author);
+const brand = await getPublishedEntry('brands', data.product.brand.id);
+const jsonLd = [
+  review({
+    ...seo.input,
+    product: { name: productName, brand: brand?.data.name, image: seo.head.image },
+    rating: data.rating,
+    verdict: data.verdict,
+    offers: offers.flatMap((o) =>
+      o.price
+        ? [
+            {
+              price: o.price,
+              url: affiliateHref(o.name, o.url),
+              seller: getRetailer(o.name)?.name ?? o.name,
+            },
+          ]
+        : [],
+    ),
+  }),
+  ...(data.faq.length ? [faqPage(data.faq)] : []),
+];
 
 // Related content: guides that pick this product, face-offs that include it, more reviews.
 const articles = await getArticles();
@@ -111,7 +135,13 @@ const sections = [
 const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
 ---
 
-<BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  noindex={data.noindex}
+  {...seo.head}
+  jsonLd={jsonLd}
+>
   <article data-pagefind-body={search && ''}>
     <SearchData data={search} />
     <header class="wrap flex flex-col gap-3.5 pt-5 pb-6">

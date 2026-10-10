@@ -32,7 +32,8 @@ A change is done only when every gate passes. Thresholds live in `gates.config.j
 - G5 Lighthouse mobile: performance ≥ 95, accessibility 100, best practices ≥ 95, SEO 100 (median of 3)
 - G6 axe: 0 serious/critical at 1280 and 390, light and dark (screenshots go to `gate-reports/screens/` for G9)
 - G7 no broken internal links or anchors · G8 JS/CSS budgets · G11 `npm audit --omit=dev` clean
-- G9 visual match against the layout boards, G10 code review, G11 security review and G12 SEO sanity are manual PO checks.
+- G12 SEO: `scripts/seo-check.mjs` checks every built page for title, description, canonical, og:image, unique titles on indexable pages, and JSON-LD that parses, has the required fields per `@type` and matches the page type.
+- G9 visual match against the layout boards, G10 code review and G11 security review are manual PO checks; so is the rest of G12 (Rich Results spot checks).
 
 When a task adds a page type, add a representative URL to `gates.config.json` → `pages`.
 
@@ -62,7 +63,8 @@ When a task adds a page type, add a representative URL to `gates.config.json` �
 - Archives: brand pages `/brands/<id>/` (`archive/BrandPage`, one per file in `src/content/brands`; menu brands without a file stay placeholders), author pages `/authors/<id>/` (`archive/AuthorPage`, Person JSON-LD), tag pages `/tags/<tag>/` and months `/archive/<yyyy>/<mm>/` (`archive/ArchivePage`), plus `/brands/`, `/tags/`, `/archive/` indexes. All paginated like listings; logic in `src/lib/archives.ts`. Articles link to them through bylines, `AuthorBio` and `ArticleTopics` (brand and tag chips under the body).
 - Search: `/search/` uses Pagefind's JS API from the island `src/scripts/search.ts`. `src/integrations/pagefind.ts` indexes only pages with `data-pagefind-body` (each article root) after `astro build`; `SearchData` adds an article's filters and result metadata (`src/lib/search.ts`). Mark non-content inside articles `data-pagefind-ignore`; `.sr-only` and `.ad-slot` are excluded automatically. Search does not work in `npm run dev` (the index exists only in builds). G8 gives Pagefind's runtime its own budget (`searchRuntimeKbGzip`).
 - Article URLs come from `articlePath()` in `src/lib/urls.ts`; listings render `CardItem`s (`src/lib/cards.ts`) loaded once by `getArticles()` (`src/lib/articles.ts`).
-- Placeholders and empty listings are noindex. The sitemap leaves out any page whose built HTML is noindex (`astro.config.mjs`), so there is no second list to keep in sync.
+- SEO: `BaseHead` prints the title template, canonical, Open Graph/Twitter tags (share image from `articleSeo()`/`ogImage()` in `src/lib/seo.ts`, else `public/og-default.png`), the RSS link and any `jsonLd`. Builders live in `src/lib/structured-data.ts` (Organization + WebSite on the home page, Review, Article/NewsArticle, ItemList, FAQPage, deal Product; `Breadcrumbs` adds BreadcrumbList, `AuthorPage` Person). `npm run images:og` regenerates `og-default.png` and `logo.png`. Feeds: `/rss.xml` and `/<hub>/rss.xml` (`src/lib/feeds.ts`).
+- Placeholders and empty listings are noindex. The sitemap leaves out any page whose built HTML is noindex and page 2+ of listings, and takes `lastmod` from `article:modified_time` (`astro.config.mjs`), so there is no second list to keep in sync.
 - Components: `cards/ArticleCard` (standard, compact, hero, review), `Rating`, `BadgeTag`, `Breadcrumbs` (with BreadcrumbList JSON-LD), `Pagination`, `AdSlot`, `listing/*` (page templates, `ExploreGrid`, `Sidebar`). Outbound retailer links go through `affiliateHref()` with `rel={AFFILIATE_REL}`.
 
 ## Content

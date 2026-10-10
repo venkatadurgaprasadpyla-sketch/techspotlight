@@ -12,6 +12,8 @@ import Contender from '~/components/versus/Contender.astro';
 import SpecsCompare from '~/components/versus/SpecsCompare.astro';
 import { contentTypePath, contentTypes, findTopic } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import { articleSeo } from '~/lib/seo';
+import { article } from '~/lib/structured-data';
 import { AFFILIATE_REL, affiliateHref, getRetailer, lowestOffer } from '~/lib/affiliate';
 import { getArticles } from '~/lib/articles';
 import { searchData } from '~/lib/search-index';
@@ -52,6 +54,7 @@ assertNoHeadingClash(`Face-off ${entry.id}`, headings, [
 ]);
 
 const author = await getPublishedEntry('authors', data.author.id);
+const seo = await articleSeo(data, url, author);
 const articles = await getArticles();
 const reviews = new Map(
   articles.filter((a) => a.collection === 'reviews').map((a) => [a.id, a] as const),
@@ -95,7 +98,13 @@ const chip = {
 };
 ---
 
-<BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  noindex={data.noindex}
+  {...seo.head}
+  jsonLd={[article(seo.input)]}
+>
   <article data-pagefind-body={search && ''} class="wrap">
     <SearchData data={search} />
     <div class="mx-auto flex w-full max-w-[960px] min-w-0 flex-col gap-9 pt-5 pb-12">
