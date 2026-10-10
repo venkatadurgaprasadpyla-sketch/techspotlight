@@ -8,3 +8,10 @@ avatar: ../../assets/samples/author-asha.jpg
 expertise: [Laptops, Ultrabooks, Gaming laptops]
 social: []
 sample: true
+since: 2014
+location: Bengaluru
+kit:
+  - Colorimeter for display brightness and colour accuracy
+  - Cinebench and 3DMark for performance
+  - Sound meter for fan noise at 30 cm
+  - Battery rundown at 200 nits, web browsing loop

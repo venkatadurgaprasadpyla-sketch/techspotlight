@@ -1,0 +1,19 @@
+---
+/**
+ * An article's search filters and result metadata as empty elements, read by Pagefind when it
+ * indexes the build. Goes inside the element marked `data-pagefind-body`.
+ */
+import type { SearchFields } from '~/lib/search';
+
+interface Props {
+  data: SearchFields | undefined;
+}
+const { data } = Astro.props;
+---
+
+{data?.filters.map(([key, value]) => (
+  <span hidden data-pagefind-filter={`${key}:${value}`} />
+))}
+{data?.meta.map(([key, value]) => (
+  <span hidden data-pagefind-meta={`${key}:${value}`} />
+))}

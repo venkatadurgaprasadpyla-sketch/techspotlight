@@ -1,5 +1,173 @@
 ---
-import Placeholder from '~/layouts/Placeholder.astro';
+/**
+ * /search/: the Search board. Results come from the static Pagefind index, rendered by the
+ * search island (src/scripts/search.ts) from ?q=. Without JS, or before a search, the page
+ * shows popular links. Noindex: there is nothing here for search engines.
+ */
+import { contentTypePath, contentTypes } from '~/config/taxonomy';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { getArticles } from '~/lib/articles';
+import { typeLabel } from '~/lib/cards';
+import { liveHubs } from '~/lib/listings';
+import { searchValue } from '~/lib/search';
+
+const articles = await getArticles();
+const plural: Record<string, string> = {
+  review: 'Reviews',
+  best: 'Best picks',
+  versus: 'Face-offs',
+  'how-to': 'How-tos',
+  news: 'News',
+  deal: 'Deals',
+};
+const types = contentTypes.map((t) => ({
+  value: searchValue(typeLabel[t.type]),
+  label: plural[t.type],
+}));
+const popular = [
+  ...articles
+    .filter((a) => a.collection === 'guides')
+    .slice(0, 3)
+    .map((a) => ({ label: a.title, href: a.url })),
+  ...contentTypes
+    .filter((t) => t.type === 'review' || t.type === 'deal')
+    .map((t) => ({
+      label: t.type === 'deal' ? "Today's deals" : 'Latest reviews',
+      href: contentTypePath(t),
+    })),
+];
+const chip = 'chip aria-pressed:border-text aria-pressed:bg-text aria-pressed:text-bg';
 ---
 
-<Placeholder path="/search/" />
+<BaseLayout
+  title="Search"
+  description="Search TechSpotlight reviews, buying guides, face-offs, how-tos, news and deals."
+  noindex
+>
+  <div class="wrap flex max-w-[960px] flex-col gap-6 pt-8 pb-12">
+    <h1 class="sr-only">Search TechSpotlight</h1>
+    <form
+      role="search"
+      action="/search/"
+      method="get"
+      class="flex overflow-hidden rounded-xl border-2 border-text focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent"
+      data-search-form
+    >
+      <label for="q" class="sr-only">
+        Search reviews, guides and deals
+      </label>
+      <input
+        id="q"
+        name="q"
+        type="search"
+        class="min-h-[60px] min-w-0 flex-1 bg-bg px-5 text-lg focus:outline-none sm:text-xl"
+        placeholder="Search TechSpotlight"
+        autocomplete="off"
+      />
+      <button class="btn min-h-[60px] rounded-none px-5 sm:px-7" type="submit">
+        Search
+      </button>
+    </form>
+
+    <div class="flex flex-wrap items-center justify-between gap-3" data-needs-js>
+      <div class="flex flex-wrap gap-2" role="group" aria-label="Filter by type">
+        <button type="button" class={chip} data-filter="type" data-value="" aria-pressed="true">
+          All<span data-search-total></span>
+        </button>
+        {types.map((t) => (
+          <button
+            type="button"
+            class={chip}
+            data-filter="type"
+            data-value={t.value}
+            aria-pressed="false"
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div class="flex flex-wrap items-center gap-2" role="group" aria-labelledby="hub-filter">
+        <span id="hub-filter" class="text-[13px] text-muted">
+          Hub:
+        </span>
+        {liveHubs().map((h) => (
+          <button
+            type="button"
+            class={chip}
+            data-filter="hub"
+            data-value={searchValue(h.label)}
+            aria-pressed="false"
+          >
+            {h.label}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <p class="text-[14px] text-muted empty:hidden" role="status" data-search-status></p>
+
+    <div class="flex min-h-[70vh] flex-col gap-8">
+      <section
+        class="flex flex-col gap-3 rounded-[10px] bg-surface p-5"
+        aria-labelledby="best-match"
+        data-search-best
+        hidden
+      >
+        <h2 id="best-match" class="lbl font-sans">
+          Best match
+        </h2>
+        <div data-slot></div>
+      </section>
+
+      <section class="flex flex-col gap-3" aria-labelledby="products" data-search-products hidden>
+        <h2 id="products" class="text-xl">
+          Products we've reviewed
+        </h2>
+        <ul
+          class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-5"
+          data-slot
+        ></ul>
+      </section>
+
+      <section class="flex flex-col" aria-labelledby="articles" data-search-articles hidden>
+        <h2 id="articles" class="text-xl">
+          Articles
+        </h2>
+        <ul data-slot></ul>
+        <button type="button" class="btn btn-ghost mt-4 self-center" data-search-more hidden>
+          Load more results
+        </button>
+      </section>
+
+      <section
+        class="flex flex-col gap-3 rounded-[10px] border border-dashed border-border-strong p-6"
+        aria-labelledby="search-empty"
+        data-search-empty
+      >
+        <h2 id="search-empty" class="text-xl" data-search-empty-title>
+          Popular right now
+        </h2>
+        <noscript>
+          <p class="text-muted">Search needs JavaScript. These pages are a good place to start.</p>
+        </noscript>
+        <p class="text-muted" data-needs-js data-search-empty-text>
+          Try a product, brand or topic, or start with one of these.
+        </p>
+        <ul class="flex flex-wrap gap-2">
+          {popular.map((p) => (
+            <li>
+              <a class="chip" href={p.href}>
+                {p.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { initSearch } from '~/scripts/search';
+  initSearch();
+</script>

@@ -1,0 +1,40 @@
+---
+/** /tags/: every tag in use, A to Z, with how many articles carry it. */
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { tagListings } from '~/lib/archives';
+import { getArticles } from '~/lib/articles';
+
+const tags = tagListings(await getArticles());
+const crumbs = [
+  { label: 'Home', href: '/' },
+  { label: 'Tags', href: '/tags/' },
+];
+---
+
+<BaseLayout
+  title="Tags"
+  description="Browse TechSpotlight reviews, guides, how-tos, news and deals by tag."
+  noindex={tags.length === 0}
+>
+  <div class="wrap flex flex-col gap-8 pt-6 pb-12 sm:pt-8">
+    <header class="flex flex-col gap-3.5">
+      <Breadcrumbs crumbs={crumbs} />
+      <h1 class="text-[36px] sm:text-[44px]">Tags</h1>
+      <p class="max-w-[760px] text-[17px] text-muted">Every topic we tag, A to Z.</p>
+    </header>
+    <ul class="flex flex-wrap gap-2">
+      {tags.map((t) => (
+        <li>
+          <a class="chip" href={t.path}>
+            {t.label}
+            <span class="ml-1.5 text-muted">
+              {t.items.length}
+              <span class="sr-only">{t.items.length === 1 ? ' article' : ' articles'}</span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</BaseLayout>

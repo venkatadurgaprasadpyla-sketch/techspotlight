@@ -15,7 +15,12 @@
     "/how-to/check-laptop-battery-health-windows/",
     "/news/northwind-announces-aero-15/",
     "/deals/",
-    "/deals/kestrel-nova-5g-deal/"
+    "/deals/kestrel-nova-5g-deal/",
+    "/brands/northwind/",
+    "/authors/asha-testwell/",
+    "/tags/battery/",
+    "/archive/2026/10/",
+    "/search/?q=laptop"
   ],
   "lighthouse": {
     "performance": 0.95,
@@ -27,6 +32,8 @@
   "budgets": {
     "islandKbGzip": 5,
     "pageJsKbGzip": 20,
-    "cssKbGzip": 30
+    "cssKbGzip": 30,
+    "searchRuntimeKbGzip": 30,
+    "$comment": "islandKbGzip applies to our own scripts. Pagefind's runtime under /pagefind/ (loaded only by /search/) has its own total budget, searchRuntimeKbGzip."
   }
 }

@@ -1,13 +1,16 @@
 ---
-/** Shared frame for listing pages: SEO title and description, breadcrumbs, then the page. */
+/**
+ * Shared frame for listing pages (sections, brands, authors, tags, archive): SEO title and
+ * description, breadcrumbs, then the page.
+ */
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import type { CardItem } from '~/lib/cards';
 import type { Page } from '~/lib/listing';
-import type { Listing } from '~/lib/listings';
+import type { Crumb } from '~/lib/listings';
 
 interface Props {
-  listing: Listing;
+  listing: { title: string; crumbs: Crumb[]; items: readonly CardItem[] };
   page: Page<CardItem>;
   description: string;
   /** Extra classes for the breadcrumb row (e.g. to sit inside a tinted band). */

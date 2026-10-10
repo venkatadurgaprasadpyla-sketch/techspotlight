@@ -1,0 +1,56 @@
+---
+/** Month pages, paginated: /archive/<yyyy>/<mm>/, articles filed by publish date. */
+import type { GetStaticPaths } from 'astro';
+import ArchivePage from '~/components/archive/ArchivePage.astro';
+import { monthListings, type MonthListing } from '~/lib/archives';
+import { getArticles } from '~/lib/articles';
+import type { CardItem } from '~/lib/cards';
+import { paginate, type Page } from '~/lib/listing';
+
+interface Props {
+  listing: MonthListing;
+  page: Page<CardItem>;
+  newer?: MonthListing | undefined;
+  older?: MonthListing | undefined;
+}
+
+export const getStaticPaths = (async () => {
+  const months = monthListings(await getArticles());
+  return months.flatMap((listing, i) =>
+    paginate(listing.items, listing.path).map((page) => ({
+      params: { path: page.href.replace(/^\/archive\/|\/$/g, '') },
+      props: { listing, page, newer: months[i - 1], older: months[i + 1] } satisfies Props,
+    })),
+  );
+}) satisfies GetStaticPaths;
+
+const { listing, page, newer, older } = Astro.props as Props;
+const n = listing.items.length;
+---
+
+<ArchivePage
+  label="Archive"
+  title={listing.label}
+  docTitle={`${listing.label} archive`}
+  intro={`${n} ${n === 1 ? 'article' : 'articles'} published in ${listing.label}.`}
+  path={listing.path}
+  crumbs={listing.crumbs}
+  items={listing.items}
+  page={page}
+>
+  <nav slot="nav" aria-label="Other months" class="flex flex-wrap gap-2">
+    {older && (
+      <a class="chip" href={older.path}>
+        ‹ {older.label}
+      </a>
+    )}
+    <a class="chip" href="/archive/">
+      All months
+    </a>
+    {newer && (
+      <a class="chip" href={newer.path}>
+        {newer.label} ›
+      </a>
+    )}
+  </nav>
+</ArchivePage>

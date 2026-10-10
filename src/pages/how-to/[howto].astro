@@ -6,11 +6,14 @@ import { render, type CollectionEntry } from 'astro:content';
 import AdSlot from '~/components/AdSlot.astro';
 import ArticleByline from '~/components/ArticleByline.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import SearchData from '~/components/SearchData.astro';
+import ArticleTopics from '~/components/ArticleTopics.astro';
 import ArticleCard from '~/components/cards/ArticleCard.astro';
 import Faq from '~/components/review/Faq.astro';
 import { contentTypePath, contentTypes, findTopic } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import { getArticles } from '~/lib/articles';
+import { searchData } from '~/lib/search-index';
 import { getPublished, getPublishedEntry } from '~/lib/content';
 import { leafSlug } from '~/lib/content-schema';
 import { assertNoHeadingClash } from '~/lib/headings';
@@ -34,6 +37,7 @@ const leaf = leafSlug(data);
 const topic = findTopic(leaf);
 if (!topic) throw new Error(`How-to ${entry.id}: unknown topic ${leaf}`);
 const url = articlePath('howtos', entry.id, leaf);
+const search = await searchData(url);
 const crumbs = [...topicCrumbs(topic), { label: data.title, href: url }];
 assertNoHeadingClash(`How-to ${entry.id}`, headings, [
   'quick-answer',
@@ -72,7 +76,11 @@ const adAfter = data.steps.length > 3 ? 2 : -1;
 ---
 
 <BaseLayout title={data.title} description={data.description} noindex={data.noindex}>
-  <article class="wrap flex flex-col gap-12 pt-5 pb-12 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
+  <article
+    data-pagefind-body={search && ''}
+    class="wrap flex flex-col gap-12 pt-5 pb-12 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]"
+  >
+    <SearchData data={search} />
     <div class="flex max-w-[780px] min-w-0 flex-col gap-8">
       <header class="flex flex-col gap-3.5">
         <Breadcrumbs crumbs={crumbs} />
@@ -107,6 +115,7 @@ const adAfter = data.steps.length > 3 ? 2 : -1;
       <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
         <Content />
       </div>
+      <ArticleTopics url={url} />
 
       {data.tools.length > 0 && (
         <section

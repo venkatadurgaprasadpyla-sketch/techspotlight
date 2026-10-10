@@ -8,13 +8,16 @@ interface Props {
   bio: string;
   avatar?: ImageMetadata | undefined;
   expertise: string[];
+  /** Their author page. */
+  href?: string;
 }
-const { name, role, bio, avatar, expertise } = Astro.props;
+const { name, role, bio, avatar, expertise, href } = Astro.props;
 ---
 
 <section
   class="flex flex-wrap items-start gap-5 rounded-[10px] border border-border p-5"
   aria-labelledby="author-bio-title"
+  data-pagefind-ignore
 >
   {avatar && (
     <Image
@@ -35,5 +38,10 @@ const { name, role, bio, avatar, expertise } = Astro.props;
       {expertise.length > 0 && <> · {expertise.join(', ')}</>}
     </p>
     <p>{bio}</p>
+    {href && (
+      <a href={href} class="self-start text-[14px] font-semibold">
+        More from {name.split(' ')[0]} ›
+      </a>
+    )}
   </div>
 </section>

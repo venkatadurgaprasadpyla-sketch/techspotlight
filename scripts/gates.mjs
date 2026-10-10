@@ -78,7 +78,7 @@ function moduleGraph(entry, sources) {
 
 function budgets() {
   process.stdout.write('\n▶ G8 Budgets\n');
-  const { islandKbGzip, pageJsKbGzip, cssKbGzip } = config.budgets;
+  const { islandKbGzip, pageJsKbGzip, cssKbGzip, searchRuntimeKbGzip } = config.budgets;
   const files = walk('dist');
   const problems = [];
   const sizes = new Map();
@@ -91,10 +91,20 @@ function budgets() {
       if (file.endsWith('.js')) sources.set(key, buf.toString('utf8'));
     }
   }
+  // Our own scripts must each stay small. Pagefind's search runtime is third-party, loaded
+  // only by /search/ when someone searches, and has one total budget instead.
+  let searchRuntime = 0;
   for (const [path, kb] of sizes) {
-    if (path.endsWith('.js') && kb > islandKbGzip)
+    if (!path.endsWith('.js')) continue;
+    if (path.startsWith('/pagefind/')) searchRuntime += kb;
+    else if (kb > islandKbGzip)
       problems.push(`${path} is ${kb.toFixed(2)} KB gz (> ${islandKbGzip})`);
   }
+  if (searchRuntime > searchRuntimeKbGzip)
+    problems.push(
+      `Pagefind runtime is ${searchRuntime.toFixed(2)} KB gz (> ${searchRuntimeKbGzip})`,
+    );
+  process.stdout.write(`  Pagefind runtime: ${searchRuntime.toFixed(2)} KB (gzip)\n`);
   for (const file of files.filter((f) => f.endsWith('.html'))) {
     const html = readFileSync(file, 'utf8');
     const page = '/' + relative('dist', file).split('\\').join('/');

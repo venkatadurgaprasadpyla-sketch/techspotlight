@@ -10,13 +10,16 @@ import { Image } from 'astro:assets';
 import { render, type CollectionEntry } from 'astro:content';
 import AdSlot from '~/components/AdSlot.astro';
 import ArticleByline from '~/components/ArticleByline.astro';
+import ArticleTopics from '~/components/ArticleTopics.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import SearchData from '~/components/SearchData.astro';
 import Rating from '~/components/cards/Rating.astro';
 import DealCard from '~/components/deals/DealCard.astro';
 import { contentTypePath, contentTypes } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
 import { getArticles } from '~/lib/articles';
+import { searchData } from '~/lib/search-index';
 import type { CardItem, DealInfo } from '~/lib/cards';
 import { getPublished, getPublishedEntry } from '~/lib/content';
 import { leafSlug } from '~/lib/content-schema';
@@ -46,6 +49,7 @@ const { entry } = Astro.props as Props;
 const { data } = entry;
 const { Content, headings } = await render(entry);
 const url = articlePath('deals', entry.id, leafSlug(data));
+const search = await searchData(url);
 const dealsType = contentTypes.find((t) => t.type === 'deal');
 if (!dealsType) throw new Error('No deals content type');
 const dealsPath = contentTypePath(dealsType);
@@ -84,7 +88,8 @@ const badgeClass = { 'lowest-price': 'badge-ec', 'great-value': 'badge-bv', 'edi
   description={data.description}
   noindex={data.noindex || status === 'gone'}
 >
-  <article>
+  <article data-pagefind-body={search && ''}>
+    <SearchData data={search} />
     <header class="wrap flex flex-col gap-3.5 pt-5 pb-6">
       <Breadcrumbs crumbs={crumbs} />
       <span class="lbl">Deal</span>
@@ -200,6 +205,7 @@ const badgeClass = { 'lowest-price': 'badge-ec', 'great-value': 'badge-bv', 'edi
         <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
           <Content />
         </div>
+        <ArticleTopics url={url} />
 
         {moreDeals.length > 0 && (
           <section class="flex flex-col gap-5" aria-labelledby="more-deals">

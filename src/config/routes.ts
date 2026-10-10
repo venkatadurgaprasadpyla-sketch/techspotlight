@@ -1,7 +1,7 @@
 /**
  * Routes that exist only as "coming soon" placeholders so navigation never links to a 404.
  * Hubs not yet launched (`mvp: false`) and their whole tree, the static pages built in later
- * tasks, and brand pages. Every placeholder is noindex, which also keeps it out of the sitemap.
+ * tasks, and menu brands that have no brand file yet. Every placeholder is noindex, which also keeps it out of the sitemap.
  * Live hubs and the content-type pages are real listings (src/lib/listings.ts).
  * When a task ships a real page, remove its entry here.
  */
@@ -20,15 +20,13 @@ export type PlaceholderPage = {
   intro?: string;
 };
 
-/** Static placeholder pages, each with its own file in src/pages (T8 search, T10 policies). */
+/** Static placeholder pages, each with its own file in src/pages (T10 builds these). */
 export const staticPlaceholders: PlaceholderPage[] = [
-  { path: '/search/', title: 'Search' },
   { path: '/about/', title: 'About TechSpotlight' },
   { path: '/how-we-test/', title: 'How we test' },
   { path: '/affiliate-disclosure/', title: 'Affiliate disclosure' },
   { path: '/privacy/', title: 'Privacy policy' },
   { path: '/contact/', title: 'Contact us' },
-  { path: '/brands/', title: 'Brands' },
 ];
 
 function buildPlaceholders(): PlaceholderPage[] {
@@ -49,6 +47,7 @@ function buildPlaceholders(): PlaceholderPage[] {
     }
   }
   const brands = new Map(hubs.flatMap((hub) => hub.topBrands).map((b) => [b.slug, b.label]));
+  // src/pages/brands/[...path].astro skips any of these that has a brand file.
   for (const [slug, label] of brands) pages.push({ path: `/brands/${slug}/`, title: label });
   return pages;
 }

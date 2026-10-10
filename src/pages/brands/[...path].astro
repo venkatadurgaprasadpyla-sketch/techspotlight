@@ -1,0 +1,68 @@
+---
+/**
+ * Brand pages, paginated, for every brand in src/content/brands. Brands linked from the menus
+ * that have no brand file yet stay "coming soon" placeholders (src/config/routes.ts).
+ */
+import type { GetStaticPaths } from 'astro';
+import type { CollectionEntry } from 'astro:content';
+import BrandPage from '~/components/archive/BrandPage.astro';
+import { placeholdersAt, type PlaceholderPage } from '~/config/routes';
+import Placeholder from '~/layouts/Placeholder.astro';
+import { brandPath, itemsByBrand, similarBrands } from '~/lib/archives';
+import { getArticles } from '~/lib/articles';
+import type { CardItem } from '~/lib/cards';
+import { getPublished } from '~/lib/content';
+import { paginate, type Page } from '~/lib/listing';
+
+type Props =
+  | { kind: 'placeholder'; page: PlaceholderPage }
+  | {
+      kind: 'brand';
+      brand: CollectionEntry<'brands'>;
+      items: CardItem[];
+      page: Page<CardItem>;
+      all: CardItem[];
+      similar: { name: string; href: string }[];
+    };
+
+export const getStaticPaths = (async () => {
+  // getStaticPaths runs on its own, so helpers it uses must live inside it.
+  const param = (path: string) => path.replace(/^\/brands\/|\/$/g, '');
+  const articles = await getArticles();
+  const brands = await getPublished('brands');
+  const names = new Map(brands.map((b) => [b.id, b.data.name] as const));
+  const ids = brands.map((b) => b.id);
+  const routes = brands.flatMap((brand) => {
+    const items = itemsByBrand(articles, brand.id);
+    const similar = similarBrands(articles, brand.id, ids).map((id) => ({
+      name: names.get(id) ?? id,
+      href: brandPath(id),
+    }));
+    return paginate(items, brandPath(brand.id)).map((page) => ({
+      params: { path: param(page.href) },
+      props: { kind: 'brand', brand, items, page, all: articles, similar } satisfies Props,
+    }));
+  });
+  const placeholders = placeholdersAt(1, '/brands/')
+    .filter((page) => !names.has(param(page.path)))
+    .map((page) => ({
+      params: { path: param(page.path) },
+      props: { kind: 'placeholder', page } satisfies Props,
+    }));
+  return [...routes, ...placeholders];
+}) satisfies GetStaticPaths;
+
+const props = Astro.props as Props;
+---
+
+{props.kind === 'placeholder' ? (
+  <Placeholder {...props.page} />
+) : (
+  <BrandPage
+    brand={props.brand}
+    items={props.items}
+    page={props.page}
+    all={props.all}
+    similar={props.similar}
+  />
+)}
