@@ -19,7 +19,7 @@ describe('G5 image check', () => {
       'x.png: no decoding',
       'x.png: no loading="lazy"',
     ]);
-    const hi = img('fetchpriority="high"');
+    const hi = img('fetchpriority="high"').replace('loading="lazy"', 'loading="eager"');
     expect(checkImages(hi + hi)).toEqual(['2 images with fetchpriority="high" (max 1)']);
   });
 
@@ -28,5 +28,20 @@ describe('G5 image check', () => {
     expect(checkImages('<img data-lightbox-img>')).toEqual([
       '<img data-lightbox-img>: no alt attribute',
     ]);
+  });
+});
+
+describe('G5 image check edge cases', () => {
+  it('rejects a lazy image marked as the LCP image', () => {
+    expect(checkImages(img('fetchpriority="high"'))).toEqual([
+      'a.webp: fetchpriority="high" but loading="lazy"',
+    ]);
+  });
+
+  it('accepts an eager image without a priority hint and any attribute quoting', () => {
+    expect(checkImages(img().replace('loading="lazy"', 'loading="eager"'))).toEqual([]);
+    expect(
+      checkImages("<img src='/_astro/b.webp' alt width=8 height=8 decoding=async loading=lazy>"),
+    ).toEqual([]);
   });
 });

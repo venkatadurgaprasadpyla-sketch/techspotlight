@@ -37,7 +37,7 @@ export default defineConfig({
   outDir,
   site: site.url,
   trailingSlash: 'always',
-  // Same-site links prefetch on hover or focus (Astro skips this on slow connections and Save-Data).
+  // Same-site links prefetch on hover or focus; on slow connections or Save-Data, only on tap.
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   markdown: {
     processor: satteri({ hastPlugins: [adSlotsPlugin()] }),

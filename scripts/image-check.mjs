@@ -31,7 +31,11 @@ export function checkImages(html) {
       if (!a.get(key)) problems.push(`${name}: no ${key}`);
     const eager = a.get('loading') === 'eager' || a.get('fetchpriority') === 'high';
     if (!eager && a.get('loading') !== 'lazy') problems.push(`${name}: no loading="lazy"`);
-    if (a.get('fetchpriority') === 'high') priority += 1;
+    if (a.get('fetchpriority') === 'high') {
+      priority += 1;
+      if (a.get('loading') === 'lazy')
+        problems.push(`${name}: fetchpriority="high" but loading="lazy"`);
+    }
   }
   if (priority > 1) problems.push(`${priority} images with fetchpriority="high" (max 1)`);
   return problems;
