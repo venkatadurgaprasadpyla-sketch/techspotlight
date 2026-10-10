@@ -204,6 +204,7 @@ export function checkSite(dist) {
   const problems = [];
   const titles = new Map();
   let pages = 0;
+  let hasArticles = false;
   for (const file of walk(dist).filter((f) => f.endsWith('index.html'))) {
     const path =
       '/' +
@@ -211,7 +212,10 @@ export function checkSite(dist) {
         .split('\\')
         .join('/')
         .replace(/index\.html$/, '');
-    const page = checkPage(path, readFileSync(file, 'utf8'));
+    const html = readFileSync(file, 'utf8');
+    // Every article template marks its root for search; listings and trust pages do not.
+    hasArticles ||= /\sdata-pagefind-body[\s=>]/.test(html);
+    const page = checkPage(path, html);
     pages += 1;
     page.problems.forEach((p) => problems.push(`${path}: ${p}`));
     if (!page.noindex && page.title) {
@@ -220,16 +224,19 @@ export function checkSite(dist) {
       else titles.set(page.title, path);
     }
   }
-  problems.push(...checkFeeds(dist), ...checkSitemap(dist));
+  problems.push(...checkFeeds(dist, hasArticles), ...checkSitemap(dist));
   return { pages, problems };
 }
 
-/** Every RSS feed: has items, each with a title, an absolute link and a date. */
-export function checkFeed(name, xml) {
+/**
+ * Every RSS feed is RSS 2.0 and each item has a title, an absolute link and a date. A feed may be
+ * empty when `allowEmpty` (hub feeds before the hub's first article; the site feed before any).
+ */
+export function checkFeed(name, xml, { allowEmpty = false } = {}) {
   const problems = [];
   if (!/^<\?xml[^>]*\?><rss version="2\.0"/.test(xml)) problems.push(`${name}: not RSS 2.0`);
   const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((m) => m[1]);
-  if (items.length === 0) problems.push(`${name}: no items`);
+  if (items.length === 0 && !allowEmpty) problems.push(`${name}: no items`);
   items.forEach((item, i) => {
     if (!/<title>[^<]+<\/title>/.test(item)) problems.push(`${name}: item ${i + 1} has no title`);
     if (!/<link>https:\/\/[^<]+<\/link>/.test(item))
@@ -240,10 +247,15 @@ export function checkFeed(name, xml) {
   return problems;
 }
 
-function checkFeeds(dist) {
+function checkFeeds(dist, hasArticles) {
   const feeds = walk(dist).filter((f) => f.endsWith('rss.xml'));
   if (feeds.length === 0) return ['no RSS feeds built'];
-  return feeds.flatMap((file) => checkFeed(relative(dist, file), readFileSync(file, 'utf8')));
+  return feeds.flatMap((file) => {
+    const name = relative(dist, file);
+    return checkFeed(name, readFileSync(file, 'utf8'), {
+      allowEmpty: name !== 'rss.xml' || !hasArticles,
+    });
+  });
 }
 
 /** The sitemap lists built, indexable first pages only. */
