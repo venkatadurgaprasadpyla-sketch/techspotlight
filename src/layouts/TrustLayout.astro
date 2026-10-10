@@ -1,0 +1,89 @@
+---
+/**
+ * Trust and policy pages (About board): breadcrumbs, a title band, then a side menu of every
+ * trust page next to the content. No ads on these pages. `toc` adds in-page links under the
+ * current page in the menu.
+ */
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import { trustPages } from '~/config/trust';
+import type { JsonLd } from '~/lib/structured-data';
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  /** Visible heading when it differs from the document title. */
+  heading?: string;
+  description: string;
+  path: (typeof trustPages)[number]['href'];
+  /** Last reviewed, shown under the heading on policies. */
+  updated?: string | undefined;
+  toc?: { id: string; label: string }[];
+  jsonLd?: JsonLd[];
+}
+const { title, heading = title, description, path, updated, toc = [], jsonLd } = Astro.props;
+const crumbs = [
+  { label: 'Home', href: '/' },
+  { label: title, href: path },
+];
+const updatedLabel =
+  updated &&
+  new Intl.DateTimeFormat('en-IN', { dateStyle: 'long', timeZone: 'Asia/Kolkata' }).format(
+    new Date(updated),
+  );
+---
+
+<BaseLayout title={title} description={description} jsonLd={jsonLd} noAds>
+  <div class="border-b border-border bg-surface">
+    <div class="wrap flex flex-col gap-3.5 pt-6 pb-8 sm:pt-8">
+      <Breadcrumbs crumbs={crumbs} />
+      <h1 class="max-w-[880px] text-[32px] sm:text-[42px]">{heading}</h1>
+      <slot name="intro" />
+      {updatedLabel && (
+        <p class="text-[13px] text-muted">
+          Last updated <time datetime={updated}>{updatedLabel}</time>
+        </p>
+      )}
+    </div>
+  </div>
+  <div class="wrap flex flex-col gap-10 py-10 lg:grid lg:grid-cols-[220px_minmax(0,1fr)]">
+    <nav aria-label="About TechSpotlight" class="lg:sticky lg:top-6 lg:self-start">
+      <ul class="flex flex-wrap gap-2 lg:flex-col lg:gap-0.5">
+        {trustPages.map((page) => {
+          const current = page.href === path;
+          return (
+            <li>
+              <a
+                href={page.href}
+                aria-current={current ? 'page' : undefined}
+                class:list={[
+                  'chip lg:flex lg:min-h-10 lg:rounded-md lg:border-0 lg:px-3',
+                  current &&
+                    'border-text bg-text text-bg lg:bg-surface lg:font-semibold lg:text-text',
+                ]}
+              >
+                {page.label}
+              </a>
+              {current && toc.length > 0 && (
+                <ul class="hidden flex-col border-l border-border py-1 pl-3 lg:ml-3 lg:flex">
+                  {toc.map((item) => (
+                    <li>
+                      <a
+                        href={`#${item.id}`}
+                        class="flex min-h-9 items-center text-[14px] text-muted no-underline hover:text-text hover:underline"
+                      >
+                        {item.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+    <div class="flex min-w-0 flex-col gap-12">
+      <slot />
+    </div>
+  </div>
+</BaseLayout>

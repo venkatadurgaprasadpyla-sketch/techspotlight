@@ -1,5 +1,69 @@
 ---
-import Placeholder from '~/layouts/Placeholder.astro';
+/** /contact/: how to reach the team, for tips, corrections, review requests and press. */
+import { site } from '~/config/site';
+import TrustLayout from '~/layouts/TrustLayout.astro';
+
+const email = site.contactEmail;
+const reasons = [
+  {
+    title: 'Corrections',
+    text: 'Tell us the page and what is wrong. We fix errors and note the change on the article.',
+    subject: 'Correction',
+  },
+  {
+    title: 'Something to test',
+    text: 'Suggest a product or a comparison you want to see, especially at Indian prices.',
+    subject: 'Review request',
+  },
+  {
+    title: 'Brands and PR',
+    text: 'Send launch news and review unit offers. Loans never buy coverage or a score.',
+    subject: 'Press',
+  },
+];
+const mailto = (subject: string) => `mailto:${email}?subject=${encodeURIComponent(subject)}`;
 ---
 
-<Placeholder path="/contact/" />
+<TrustLayout
+  title="Contact us"
+  description={`Get in touch with ${site.name}: corrections, review requests, and press and brand enquiries.`}
+  path="/contact/"
+>
+  <p slot="intro" class="max-w-[760px] text-lg">
+    We read every message. Most get a reply within two working days.
+  </p>
+
+  <section aria-labelledby="write-to-us" class="flex flex-col gap-5">
+    <h2 id="write-to-us" class="text-2xl">
+      Write to us
+    </h2>
+    {email ? (
+      <p class="text-lg">
+        Email{' '}
+        <a href={`mailto:${email}`} class="font-semibold">
+          {email}
+        </a>
+      </p>
+    ) : (
+      <p class="text-muted">Our inbox is being set up. Please check back soon.</p>
+    )}
+    <ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-4">
+      {reasons.map((reason) => (
+        <li class="flex flex-col items-start gap-2 rounded-[10px] border border-border p-5">
+          <h3 class="text-lg">{reason.title}</h3>
+          <p class="text-[15px] text-muted">{reason.text}</p>
+          {email && (
+            <a href={mailto(reason.subject)} class="mt-auto text-[15px]">
+              Email about {reason.title.toLowerCase()}
+            </a>
+          )}
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <p>
+    Before you write, our <a href="/review-policy/">review policy</a> and{' '}
+    <a href="/how-we-test/">how we test</a> may answer your question.
+  </p>
+</TrustLayout>

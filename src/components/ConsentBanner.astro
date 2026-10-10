@@ -1,0 +1,46 @@
+---
+/**
+ * Cookie consent for ads. Rendered only when something on the site sets cookies (AdSense,
+ * see consentNeeded()). Hidden until src/scripts/consent.ts finds no stored choice; "Cookie
+ * settings" in the footer reopens it. Without JS it never shows and no ads load. `preview`
+ * renders it in place for the style guide.
+ */
+interface Props {
+  preview?: boolean;
+}
+const { preview = false } = Astro.props;
+const id = preview ? 'consent-title-preview' : 'consent-title';
+---
+
+<section
+  class:list={[
+    'border-border bg-surface',
+    preview
+      ? 'rounded-[10px] border'
+      : 'fixed inset-x-0 bottom-0 z-50 border-t shadow-[0_-8px_24px_rgb(0_0_0/0.12)]',
+  ]}
+  aria-labelledby={id}
+  data-consent-banner={!preview && ''}
+  hidden={!preview}
+>
+  <div class:list={['flex flex-wrap items-center gap-4 py-4', preview ? 'px-5' : 'wrap']}>
+    <div class="flex min-w-[min(100%,420px)] flex-1 flex-col gap-1">
+      <h2 id={id} class="text-base focus:outline-none" tabindex="-1">
+        Cookies and ads
+      </h2>
+      <p class="text-[14px] text-muted">
+        We'd like to show ads from Google, which use cookies to show, measure and personalise them.
+        If you reject, we show no ads at all. Our reviews stay free and independent either way. Read
+        our <a href="/privacy/#cookies">privacy policy</a>.
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <button type="button" class="btn btn-ghost" data-consent="denied">
+        Reject
+      </button>
+      <button type="button" class="btn" data-consent="granted">
+        Accept
+      </button>
+    </div>
+  </div>
+</section>

@@ -1,5 +1,48 @@
 ---
-import Placeholder from '~/layouts/Placeholder.astro';
+/** /affiliate-disclosure/: how affiliate links and ads pay for the site. */
+import { site } from '~/config/site';
+import TrustLayout from '~/layouts/TrustLayout.astro';
+import { adsEnabled } from '~/lib/ads';
+
+const retailers = site.retailers.map((r) => r.name).join(' and ');
+const ads = adsEnabled();
 ---
 
-<Placeholder path="/affiliate-disclosure/" />
+<TrustLayout
+  title="Affiliate disclosure"
+  description={`How ${site.name} earns money from retailer links and ads, and why it never changes our ratings.`}
+  path="/affiliate-disclosure/"
+  updated={site.legal.updated}
+>
+  <div class="prose max-w-[72ch]">
+    <p>
+      {site.name} is free to read. We pay for testing and writing with affiliate commissions and
+      display ads.
+    </p>
+    <h2 id="affiliate-links">Affiliate links</h2>
+    <p>
+      Buttons and links to retailers such as {retailers} are affiliate links. If you buy something
+      after following one, the retailer may pay us a small commission. You pay the same price either
+      way, and the retailer does not tell us who you are.
+    </p>
+    <p>
+      We add affiliate links after a review or guide is written. Whether a retailer pays a
+      commission plays no part in what we recommend, the score we give or the order of a list. When
+      a product is cheaper at a retailer that pays us nothing, we still show that price.
+    </p>
+    <h2 id="ads">Ads</h2>
+    <p>
+      {ads
+        ? 'We show display ads from Google AdSense on articles and listings, only after you accept cookies.'
+        : 'We plan to show display ads from Google AdSense on articles and listings. They will load only after you accept cookies.'}{' '}
+      Ads are labelled "Advertisement" and never placed inside verdicts, scores or buy buttons.
+      There are no ads on this page or our other policy pages. See our{' '}
+      <a href="/privacy/#cookies">privacy policy</a>
+      for the cookies ads use.
+    </p>
+    <h2 id="questions">Questions</h2>
+    <p>
+      Read our <a href="/review-policy/">review policy</a>, or <a href="/contact/">contact us</a>.
+    </p>
+  </div>
+</TrustLayout>

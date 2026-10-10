@@ -82,6 +82,10 @@ const RULES = {
         ),
     ],
   ],
+  AboutPage: [
+    ['name', (d) => has(d.name)],
+    ['url', (d) => isUrl(d.url)],
+  ],
   Person: [
     ['name', (d) => has(d.name)],
     ['url', (d) => isUrl(d.url)],

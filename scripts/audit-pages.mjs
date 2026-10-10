@@ -107,6 +107,7 @@ try {
   try {
     for (const page of config.pages) {
       const scores = {};
+      const cls = [];
       // A page that is deliberately noindex (placeholders, style guide) would always lose the
       // "is-crawlable" SEO audit. Skip only that audit, and only when the page says noindex.
       const html = await (await fetch(BASE + page)).text();
@@ -127,7 +128,11 @@ try {
         for (const [key, cat] of Object.entries(result.lhr.categories)) {
           (scores[key] ??= []).push(cat.score ?? 0);
         }
+        cls.push(result.lhr.audits['cumulative-layout-shift']?.numericValue ?? 0);
       }
+      const shift = median(cls);
+      if (shift > config.lighthouse.maxCls)
+        failures.push(`G5 ${page} CLS ${shift.toFixed(3)} > ${config.lighthouse.maxCls}`);
       const summary = Object.entries(scores).map(([key, values]) => {
         const score = median(values);
         const min = config.lighthouse[key];
@@ -136,7 +141,7 @@ try {
         return `${key} ${Math.round(score * 100)}`;
       });
       lines.push(
-        `G5 ${page}: ${summary.join(', ')}${noindex ? ' (noindex: is-crawlable skipped)' : ''}`,
+        `G5 ${page}: ${summary.join(', ')}, CLS ${shift.toFixed(3)}${noindex ? ' (noindex: is-crawlable skipped)' : ''}`,
       );
     }
   } finally {

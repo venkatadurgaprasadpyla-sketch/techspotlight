@@ -1,5 +1,116 @@
 ---
-import Placeholder from '~/layouts/Placeholder.astro';
+/** /how-we-test/: test plans per category, the rating scale and what our awards mean. */
+import BadgeTag from '~/components/cards/BadgeTag.astro';
+import { badgeRules, minTestDays, ratingScale, testPlans } from '~/config/editorial';
+import TrustLayout from '~/layouts/TrustLayout.astro';
+
+const toc = [
+  { id: 'test-plans', label: 'Test plans' },
+  { id: 'rating-scale', label: 'Rating scale' },
+  { id: 'awards', label: 'Awards' },
+  { id: 'prices', label: 'Prices' },
+];
+const cell = 'border-b border-border px-4 py-3 text-left align-top';
 ---
 
-<Placeholder path="/how-we-test/" />
+<TrustLayout
+  title="How we test"
+  description="How TechSpotlight tests laptops, phones, audio and wearables, what our star ratings mean and how we check Indian prices."
+  path="/how-we-test/"
+  toc={toc}
+>
+  <p slot="intro" class="max-w-[760px] text-lg">
+    Each category has a fixed test plan, so scores are comparable across products and over time. We
+    use every rated product for at least {minTestDays} days as our own daily device.
+  </p>
+
+  <section aria-labelledby="test-plans" class="flex scroll-mt-6 flex-col gap-5">
+    <h2 id="test-plans" class="text-2xl">
+      Test plans
+    </h2>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4">
+      {testPlans.map((plan) => (
+        <section
+          class="flex flex-col gap-3 rounded-[10px] border border-border p-5"
+          aria-label={plan.category}
+        >
+          <div class="flex items-baseline justify-between gap-3">
+            <h3 class="text-lg">{plan.category}</h3>
+            <span class="font-mono text-[13px] text-muted">{plan.tests.length} tests</span>
+          </div>
+          <ul class="flex list-disc flex-col gap-1.5 pl-5 text-[15px]">
+            {plan.tests.map((test) => (
+              <li>{test}</li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  </section>
+
+  <section aria-labelledby="rating-scale" class="flex scroll-mt-6 flex-col gap-5">
+    <h2 id="rating-scale" class="text-2xl">
+      Our rating scale
+    </h2>
+    <p class="max-w-[70ch]">
+      We rate out of 5 in half steps. A score reflects the product at its price in India when we
+      reviewed it; if the price changes a lot, we say so in the review.
+    </p>
+    <div class="overflow-x-auto rounded-[10px] border border-border">
+      <table class="w-full border-collapse text-[15px]">
+        <thead class="bg-surface">
+          <tr>
+            <th scope="col" class:list={[cell, 'w-40']}>
+              Score
+            </th>
+            <th scope="col" class={cell}>
+              Meaning
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {ratingScale.map((row) => (
+            <tr>
+              <th scope="row" class:list={[cell, 'font-normal whitespace-nowrap']}>
+                <span class="tracking-[1px] text-rating" aria-hidden="true">
+                  {'★'.repeat(row.stars)}
+                </span>{' '}
+                <b>{row.stars}</b>
+                <span class="sr-only"> out of 5</span>
+              </th>
+              <td class={cell}>{row.meaning}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="awards" class="flex scroll-mt-6 flex-col gap-5">
+    <h2 id="awards" class="text-2xl">
+      Awards
+    </h2>
+    <dl class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-4">
+      {badgeRules.map((rule) => (
+        <div class="flex flex-col gap-2 rounded-[10px] bg-surface p-5">
+          <dt>
+            <BadgeTag badge={rule.badge} />
+          </dt>
+          <dd class="text-[15px]">{rule.rule}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+
+  <section aria-labelledby="prices" class="flex scroll-mt-6 flex-col gap-3">
+    <h2 id="prices" class="text-2xl">
+      Prices
+    </h2>
+    <p class="max-w-[70ch]">
+      We list prices in rupees from Amazon.in and Flipkart, with the date we last checked them. We
+      re-check prices when we update a review or guide, but retailers change them often, so the
+      price at checkout is the one that counts. Read our <a href="/review-policy/">review policy</a>{' '}
+      for how we handle review units and updates.
+    </p>
+  </section>
+</TrustLayout>

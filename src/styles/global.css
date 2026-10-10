@@ -187,11 +187,18 @@
     );
   }
   .ad-slot {
-    @apply flex items-center justify-center rounded-md border border-dashed border-ad-border bg-ad text-center font-mono text-[11px] tracking-[0.06em] text-ad-text uppercase;
+    @apply flex items-center justify-center overflow-hidden rounded-md border border-dashed border-ad-border bg-ad text-center font-mono text-[11px] tracking-[0.06em] text-ad-text uppercase;
   }
-  /* Reserved in-article ad space, inserted by src/lib/ad-slots.ts. */
+  /* A slot filled by src/scripts/ads.ts: the label row, then the ad unit in the rest. */
+  .ad-slot.ad-live {
+    @apply flex-col items-stretch justify-start border-solid bg-transparent;
+  }
+  .ad-label {
+    @apply block h-[18px] flex-none text-[10px] leading-[18px];
+  }
+  /* Reserved in-article ad space (250px unit + label), inserted by src/lib/ad-slots.ts. */
   .ad-in-article {
-    @apply my-8 h-[250px] w-full;
+    @apply my-8 h-[268px] w-full;
   }
   .sr-only-focusable:not(:focus) {
     @apply sr-only;
