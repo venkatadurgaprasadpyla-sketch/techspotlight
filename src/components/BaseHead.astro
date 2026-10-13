@@ -101,6 +101,14 @@ const ogLocale = site.locale.replace('-', '_');
       t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     document.documentElement.dataset.theme = t;
+    // UAE visitors see UAE stores and AED prices; see offerRegions() in src/lib/affiliate.ts.
+    try {
+      if (Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Dubai') {
+        document.documentElement.dataset.region = 'ae';
+      }
+    } catch {
+      // No Intl: keep the India default.
+    }
   })();
 </script>
 {/* Controls that only work with JS (deal filters, copy buttons) are in the HTML from the start,

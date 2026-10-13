@@ -62,7 +62,8 @@ describe('toCardItem', () => {
       badge: 'editors-choice',
       productName: 'Northwind Aero 14',
       authorName: 'Asha Testwell',
-      bestOffer: { retailer: 'amazon-in', price: 72490 },
+      // Amazon prices are never quoted, so the cheapest shown price is Flipkart's.
+      bestOffer: { retailer: 'flipkart', price: 73999 },
     });
     expect(aero.date).toEqual(new Date('2026-10-01'));
     expect(aero.specLine?.split(' · ')).toHaveLength(4);

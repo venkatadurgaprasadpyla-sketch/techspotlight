@@ -1,13 +1,31 @@
 ---
-/** Specs that scroll sideways on small screens with the label column pinned. */
-import { formatInr } from '~/lib/format';
+/**
+ * Specs that scroll sideways on small screens with the label column pinned. The launch price
+ * row shows rupees in India and, when known, dirhams to UAE visitors.
+ */
+import type { Region } from '~/config/site';
+import { formatAed, formatInr } from '~/lib/format';
 
 interface Props {
   specs: { label: string; value: string }[];
-  msrp?: number;
+  msrp?: number | undefined;
+  msrpAed?: number | undefined;
 }
-const { specs, msrp } = Astro.props;
-const rows = msrp ? [{ label: 'Launch price', value: formatInr(msrp) }, ...specs] : specs;
+const { specs, msrp, msrpAed } = Astro.props;
+type Row = { label: string; value: string; region?: Region | undefined };
+const priceRows: Row[] = [
+  ...(msrp
+    ? [
+        {
+          label: 'Launch price',
+          value: formatInr(msrp),
+          region: msrpAed ? ('in' as const) : undefined,
+        },
+      ]
+    : []),
+  ...(msrpAed ? [{ label: 'UAE price', value: formatAed(msrpAed), region: 'ae' as const }] : []),
+];
+const rows: Row[] = [...priceRows, ...specs];
 ---
 
 <section id="specs" class="flex scroll-mt-20 flex-col gap-3.5" aria-labelledby="specs-title">
@@ -23,7 +41,7 @@ const rows = msrp ? [{ label: 'Launch price', value: formatInr(msrp) }, ...specs
     <table class="w-full min-w-[480px] border-collapse text-left">
       <tbody>
         {rows.map((row) => (
-          <tr class="border-b border-border last:border-0">
+          <tr class="border-b border-border last:border-0" data-region-only={row.region}>
             <th
               scope="row"
               class="sticky left-0 w-[38%] bg-surface px-4 py-3 align-top font-semibold"

@@ -9,10 +9,13 @@ import {
   contentTypes,
   hubPath,
   hubs,
+  newsCategories,
+  newsCategoryPath,
   subcategoryPath,
   type Category,
   type ContentType,
   type Hub,
+  type NewsCategory,
   type Subcategory,
   type TopicLocation,
 } from '~/config/taxonomy';
@@ -36,7 +39,7 @@ export type Listing =
   | (Base & { kind: 'hub'; hub: Hub })
   | (Base & { kind: 'category'; hub: Hub; category: Category })
   | (Base & { kind: 'subcategory'; hub: Hub; category: Category; subcategory: Subcategory })
-  | (Base & { kind: 'type'; type: ContentType; hub?: Hub });
+  | (Base & { kind: 'type'; type: ContentType; hub?: Hub; newsCategory?: NewsCategory });
 
 const home: Crumb = { label: 'Home', href: '/' };
 
@@ -60,6 +63,24 @@ export function buildListings(items: readonly CardItem[], now = new Date()): Lis
       crumbs: [home, { label: type.label, href: path }],
       items: ofType(items, type),
     });
+    if (type.type === 'news') {
+      for (const newsCategory of newsCategories) {
+        const sectionPath = newsCategoryPath(newsCategory);
+        listings.push({
+          kind: 'type',
+          type,
+          newsCategory,
+          path: sectionPath,
+          title: newsCategory.label,
+          crumbs: [
+            home,
+            { label: type.label, href: path },
+            { label: newsCategory.label, href: sectionPath },
+          ],
+          items: ofType(items, type).filter((i) => i.newsCategory === newsCategory.slug),
+        });
+      }
+    }
   }
   for (const hub of liveHubs()) {
     const inHub = items.filter((i) => i.hub === hub.slug);

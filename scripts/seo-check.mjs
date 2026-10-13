@@ -103,6 +103,9 @@ function articleRules() {
   ];
 }
 
+/** India (rupees) and UAE (dirhams) stores. */
+const CURRENCIES = new Set(['INR', 'AED']);
+
 const AVAILABILITY = new Set(['https://schema.org/InStock', 'https://schema.org/SoldOut']);
 
 /** Offers are optional on a review's product (some have no price yet) but required on a deal. */
@@ -114,7 +117,7 @@ function offersOk(offers, optional) {
     list.every(
       (o) =>
         typeof o.price === 'number' &&
-        o.priceCurrency === 'INR' &&
+        CURRENCIES.has(o.priceCurrency) &&
         isUrl(o.url) &&
         (o.availability === undefined || AVAILABILITY.has(o.availability)) &&
         (o.priceValidUntil === undefined || /^\d{4}-\d{2}-\d{2}$/.test(o.priceValidUntil)),
@@ -133,7 +136,10 @@ export function expectedTypes(path, html = '') {
   if (path === '/') return ['Organization', 'WebSite'];
   const types = ['BreadcrumbList', ...(/ id="faq"/.test(html) ? ['FAQPage'] : [])];
   if (/^\/best\/[^/]+\/$/.test(path)) return [...types, 'Article', 'ItemList'];
-  if (/^\/news\/[^/]+\/$/.test(path)) return [...types, 'NewsArticle'];
+  // /news/<section>/ listings share the pattern; only article pages have og:type article.
+  if (/^\/news\/[^/]+\/$/.test(path) && /property="og:type" content="article"/.test(html)) {
+    return [...types, 'NewsArticle'];
+  }
   if (/^\/(vs|how-to)\/[^/]+\/$/.test(path)) return [...types, 'Article'];
   if (/^\/deals\/[^/]+\/$/.test(path)) return [...types, 'Product'];
   if (/^\/[^/]+\/[^/]+-review\/$/.test(path)) return [...types, 'Review'];

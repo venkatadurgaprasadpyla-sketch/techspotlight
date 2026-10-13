@@ -116,6 +116,14 @@
   }
 }
 
+/* Store buttons and prices for one region only. BaseHead sets data-region="ae" for UAE
+   visitors before first paint; everyone else (and pages without JS) sees India. Unlayered and
+   !important so it wins over display utilities on the same element. */
+html[data-region='ae'] [data-region-only='in'],
+html:not([data-region='ae']) [data-region-only='ae'] {
+  display: none !important;
+}
+
 @layer components {
   .wrap {
     @apply mx-auto w-full max-w-[1200px] px-4 sm:px-6;

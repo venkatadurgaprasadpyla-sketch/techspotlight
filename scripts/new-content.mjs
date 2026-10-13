@@ -51,7 +51,8 @@ function base({ name, type, topic, author, today }) {
     ? `subcategory: ${topic.subcategory}`
     : '# subcategory: only when the category has subcategories';
   return `title: ${q(`TODO: headline for ${name}`)}
-description: ${q('TODO: one or two sentences for search results (160 characters max)')}
+description: ${q('TODO: one or two sentences for search results (under 155 characters)')}
+# seoTitle: shorter title for Google, under 44 characters (60 with the site name)
 type: ${type}
 hub: ${topic.hub} # check: hub, category and subcategory must match src/config/taxonomy.ts
 category: ${topic.category}
@@ -68,7 +69,9 @@ featured: false
 noindex: false`;
 }
 
-const retailer = (today) => `  - name: amazon-in # amazon-in or flipkart
+const retailer = (
+  today,
+) => `  - name: amazon-in # amazon-in, flipkart, croma, reliance-digital, amazon-ae or noon
     url: https://www.amazon.in/dp/TODO
     price: TODO # rupees, whole number
     lastChecked: ${today}`;
@@ -80,6 +83,7 @@ const bodies = {
   model: ${q('TODO: model number')}
   # releaseDate: 2026-01-01
   msrp: TODO # launch price in rupees
+  # msrpAed: 3299 # UAE launch price in dirhams, if sold in the UAE
 rating: TODO # 0 to 5 in half steps
 badge: null # editors-choice, recommended, best-value or null
 verdict: ${q('TODO: one short paragraph')}
@@ -163,14 +167,15 @@ steps:
     # imageAlt: required when there is an image
     # tip: optional editor's tip
 troubleshooting: [] # - { q: problem, a: fix }`,
-  news: () => `# source: { name: ..., url: https://... }
+  news: () => `newsCategory: hot-news # software-updates, ai, launches, apps or hot-news
+# source: { name: ..., url: https://... }
 # heroCredit: 'Image: Brand'
 keyFacts: [] # - { label: India price, value: '₹24,999 (8GB/128GB)' }
 relatedReviews: [] # review ids`,
   deal: ({ name }) => `product: ${q(name)}
 originalPrice: TODO # rupees
 dealPrice: TODO # rupees, lower than originalPrice
-retailer: amazon-in # amazon-in or flipkart
+retailer: amazon-in # an India store: amazon-in, flipkart, croma or reliance-digital
 url: https://www.amazon.in/dp/TODO
 # expiresAt: 2026-12-31 # last day; runs to midnight IST
 # expiresTime: '18:00' # optional: ends at this IST time on that day

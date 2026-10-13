@@ -43,6 +43,26 @@ export const contentTypes: ContentType[] = [
   { slug: 'deals', type: 'deal', label: 'Deals' },
 ];
 
+/** News sections, each with its own listing at /news/<slug>/. */
+export const newsCategories = [
+  {
+    slug: 'software-updates',
+    label: 'Software Updates',
+    intro: 'New versions of Android, iOS, Windows and apps: what changed and how to update.',
+  },
+  { slug: 'ai', label: 'AI', intro: 'AI tools and features, explained for everyday use.' },
+  { slug: 'launches', label: 'Launches', intro: 'New phones, laptops and gadgets, with prices.' },
+  { slug: 'apps', label: 'Apps', intro: 'App launches, changes and the ones worth installing.' },
+  { slug: 'hot-news', label: 'Hot News', intro: 'The tech stories people are talking about.' },
+] as const;
+
+export type NewsCategory = (typeof newsCategories)[number];
+export type NewsCategorySlug = NewsCategory['slug'];
+
+export const newsCategoryPath = (category: Pick<NewsCategory, 'slug'>) => `/news/${category.slug}/`;
+
+export const getNewsCategory = (slug: string) => newsCategories.find((c) => c.slug === slug);
+
 const sub = (label: string, slug?: string): Subcategory => ({
   label,
   slug: slug ?? slugify(label),

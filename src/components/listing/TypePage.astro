@@ -1,7 +1,13 @@
 ---
 import ArticleCard from '~/components/cards/ArticleCard.astro';
 import Pagination from '~/components/Pagination.astro';
-import { contentTypePath, contentTypes, hubPath } from '~/config/taxonomy';
+import {
+  contentTypePath,
+  contentTypes,
+  hubPath,
+  newsCategories,
+  newsCategoryPath,
+} from '~/config/taxonomy';
 import type { CardItem } from '~/lib/cards';
 import type { Page } from '~/lib/listing';
 import { liveHubs, trending, type Listing } from '~/lib/listings';
@@ -15,7 +21,7 @@ interface Props {
   all: CardItem[];
 }
 const { listing, page, all } = Astro.props;
-const { type, hub } = listing;
+const { type, hub, newsCategory } = listing;
 const intros: Record<string, string> = {
   review: 'Hands-on reviews with verdicts, scores and prices in rupees.',
   best: 'Our tested picks for every budget, updated as prices and models change.',
@@ -25,9 +31,11 @@ const intros: Record<string, string> = {
   deal: 'Price drops and coupons on products we have tested.',
 };
 const scope = hub ? `${hub.label} ` : '';
-const intro = `${scope}${type.label.toLowerCase()}: ${intros[type.type]}`.replace(/^./, (c) =>
-  c.toUpperCase(),
-);
+const lead = newsCategory?.intro ?? intros[type.type];
+const intro = newsCategory
+  ? `${newsCategory.label} news: ${lead}`
+  : `${scope}${type.label.toLowerCase()}: ${lead}`.replace(/^./, (c) => c.toUpperCase());
+const what = newsCategory ? `${newsCategory.label} news` : type.label.toLowerCase();
 const latest = hub ? all.filter((i) => i.hub === hub.slug) : all;
 ---
 
@@ -37,7 +45,7 @@ const latest = hub ? all.filter((i) => i.hub === hub.slug) : all;
       {listing.title}
       {page.current > 1 && <span class="text-muted">, page {page.current}</span>}
     </h1>
-    <p class="max-w-[760px] text-[17px] text-muted">{intros[type.type]}</p>
+    <p class="max-w-[760px] text-[17px] text-muted">{lead}</p>
     <nav aria-label={hub ? `${hub.label} sections` : 'Content types'}>
       <ul class="flex flex-wrap gap-2">
         {hub && (
@@ -50,9 +58,14 @@ const latest = hub ? all.filter((i) => i.hub === hub.slug) : all;
         {contentTypes.map((t) => (
           <li>
             <a
-              class:list={['chip', t.slug === type.slug && page.current > 1 && 'is-on']}
+              class:list={[
+                'chip',
+                t.slug === type.slug && (page.current > 1 || newsCategory) && 'is-on',
+              ]}
               href={contentTypePath(t, hub)}
-              aria-current={t.slug === type.slug && page.current === 1 ? 'page' : undefined}
+              aria-current={
+                t.slug === type.slug && page.current === 1 && !newsCategory ? 'page' : undefined
+              }
             >
               {t.label}
             </a>
@@ -60,7 +73,27 @@ const latest = hub ? all.filter((i) => i.hub === hub.slug) : all;
         ))}
       </ul>
     </nav>
-    {!hub && (
+    {!hub && type.type === 'news' && (
+      <nav aria-label="News sections">
+        <ul class="flex flex-wrap items-center gap-2">
+          <li class="mr-1.5 text-[13px] text-muted">By section:</li>
+          {newsCategories.map((c) => (
+            <li>
+              <a
+                class:list={['chip', c.slug === newsCategory?.slug && page.current > 1 && 'is-on']}
+                href={newsCategoryPath(c)}
+                aria-current={
+                  c.slug === newsCategory?.slug && page.current === 1 ? 'page' : undefined
+                }
+              >
+                {c.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )}
+    {!hub && !newsCategory && (
       <nav aria-label="By topic">
         <ul class="flex flex-wrap items-center gap-2">
           <li class="mr-1.5 text-[13px] text-muted">By topic:</li>
@@ -80,7 +113,7 @@ const latest = hub ? all.filter((i) => i.hub === hub.slug) : all;
     <section class="flex min-w-0 flex-[999_1_620px] flex-col gap-5" aria-labelledby="list">
       <div class="sec-head">
         <h2 id="list" class="text-2xl">
-          Latest {type.label.toLowerCase()}
+          Latest {what}
         </h2>
         {page.total > 1 && (
           <span class="text-[13px] text-muted">
@@ -95,7 +128,7 @@ const latest = hub ? all.filter((i) => i.hub === hub.slug) : all;
           ))}
         </div>
       ) : (
-        <EmptyState what={type.label.toLowerCase()} />
+        <EmptyState what={what} />
       )}
       <Pagination page={page} base={listing.path} />
     </section>

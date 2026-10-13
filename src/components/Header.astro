@@ -11,7 +11,10 @@ import ThemeToggle from './ThemeToggle.astro';
 <header class="relative z-40 border-b border-border bg-bg" data-site-header>
   <div class="bg-inverse text-xs text-on-inverse-muted">
     <div class="wrap flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-1 py-1">
-      <span>{site.tagline} · Prices in ₹</span>
+      <span>
+        {site.tagline} · Prices in <span data-region-only="in">₹</span>
+        <span data-region-only="ae">AED</span>
+      </span>
       <span class="hidden gap-4 sm:flex">
         <a
           href="/how-we-test/"

@@ -5,6 +5,7 @@
  * with "Deal ended" in place of the buy button; a week later it leaves the lists and the page
  * turns noindex. The deals island re-checks the end time in the browser.
  */
+import { AFFILIATE_NOTICE } from '~/lib/disclosure';
 import type { GetStaticPaths } from 'astro';
 import { Image } from 'astro:assets';
 import { render, type CollectionEntry } from 'astro:content';
@@ -19,7 +20,7 @@ import { contentTypePath, contentTypes } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import { articleSeo } from '~/lib/seo';
 import { dealProduct } from '~/lib/structured-data';
-import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import { AFFILIATE_REL, affiliateHref, getRetailer, priceButtonLabel } from '~/lib/affiliate';
 import { getArticles } from '~/lib/articles';
 import { searchData } from '~/lib/search-index';
 import type { CardItem, DealInfo } from '~/lib/cards';
@@ -103,7 +104,7 @@ const badgeClass = { 'lowest-price': 'badge-ec', 'great-value': 'badge-bv', 'edi
 ---
 
 <BaseLayout
-  title={data.title}
+  title={data.seoTitle ?? data.title}
   description={data.description}
   noindex={data.noindex || status === 'gone'}
   {...seo.head}
@@ -121,6 +122,9 @@ const badgeClass = { 'lowest-price': 'badge-ec', 'great-value': 'badge-bv', 'edi
         publishDate={data.publishDate}
         updatedDate={data.updatedDate}
       />
+      <p class="text-[13px] text-muted">
+        {AFFILIATE_NOTICE} <a href="/affiliate-disclosure/">How this works</a>
+      </p>
     </header>
 
     <div class="wrap flex flex-col gap-12 pb-12 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -209,7 +213,7 @@ const badgeClass = { 'lowest-price': 'badge-ec', 'great-value': 'badge-bv', 'edi
               rel={AFFILIATE_REL}
               target="_blank"
             >
-              Buy at {store} for {formatInr(data.dealPrice)}
+              {priceButtonLabel(data.retailer)}
               <span class="sr-only">: {data.product}, opens in a new tab</span>
             </a>
             <span class="btn btn-ended hidden self-start group-data-[ended]:inline-flex">

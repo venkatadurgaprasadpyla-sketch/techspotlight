@@ -90,6 +90,8 @@ export interface OfferInput {
   price: number;
   url: string;
   seller: string;
+  /** Defaults to the site currency (INR). */
+  currency?: 'INR' | 'AED' | undefined;
   /** When the price ends (deals): the instant from `dealEndsAt()`. */
   validUntil?: Date | undefined;
   /** Stock we know about; review prices leave it out (we only know the last checked price). */
@@ -99,7 +101,7 @@ export interface OfferInput {
 const offer = (o: OfferInput) => ({
   '@type': 'Offer',
   price: o.price,
-  priceCurrency: site.currency,
+  priceCurrency: o.currency ?? site.currency,
   url: o.url,
   seller: { '@type': 'Organization', name: o.seller },
   ...(o.availability && { availability: `https://schema.org/${o.availability}` }),

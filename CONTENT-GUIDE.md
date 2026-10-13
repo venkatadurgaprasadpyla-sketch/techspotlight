@@ -53,20 +53,27 @@ yet. `npm run gates` fails if a published, non-sample article credits a sample a
 
 ## Rules the build and gates enforce
 
-- `description`: 160 characters or fewer (it is the meta description).
+- `description`: under 155 characters (it is the meta description). Optional `seoTitle`: a
+  shorter title for Google, under 60 characters once " | TechSpotlight" is added.
 - `heroAlt`: required; describe what is in the image.
 - `hub`, `category`, `subcategory`: must be one leaf of `src/config/taxonomy.ts`. Leave
   `subcategory` out when the category has none.
 - `rating` and every `score`: 0 to 5 in half steps (3, 3.5, 4 …).
-- Prices are whole rupees (`74990`, not `₹74,990`).
-- Retailer links: `name` is `amazon-in` or `flipkart`, the URL must be `https://` and on that
-  retailer's own domain (`amazon.in`, `amzn.to`, `flipkart.com`). Add a retailer in
-  `src/config/site.ts` first if you need another.
+- Prices are whole numbers in the store's currency: rupees for India stores (`74990`, not
+  `₹74,990`), dirhams for UAE stores. A review's UAE launch price goes in `product.msrpAed`.
+  Amazon prices are never shown (the button says "Check latest price"), so they can be left out.
+- Retailer links: `name` is one of `amazon-in`, `flipkart`, `croma`, `reliance-digital` (India)
+  or `amazon-ae`, `noon` (UAE). The URL must be `https://` and on that retailer's own domain
+  (`amazon.in`, `amzn.to`, `flipkart.com`, `amazon.ae`, `noon.com` …). Add a retailer in
+  `src/config/site.ts` first if you need another. India visitors see the India stores; UAE
+  visitors see the UAE stores, or the India stores except Flipkart when there is no UAE link.
+- News: `newsCategory` is `software-updates`, `ai`, `launches`, `apps` or `hot-news`. Give
+  `publishDate` a time (`2026-10-13T09:30:00+05:30`) so the post shows when it went up.
 - Reviews: 3 to 6 pros and 3 to 6 cons, at least one spec and one retailer.
 - Guides: `picks` in rank order 1, 2, 3 …
 - Face-offs: at least three rounds; each `winner` is `a`, `b` or `tie`.
 - How-tos: a step with an `image` needs `imageAlt`.
-- Deals: `dealPrice` lower than `originalPrice`.
+- Deals: `dealPrice` lower than `originalPrice`, at an India store.
 - `author`, `brands`, `product.brand`, `reviewRef` and `relatedReviews` must name files that
   exist. Astro only logs this as an error, so it is enforced by `npm run gates` (G1), not by
   `npm run build` alone.
@@ -123,28 +130,28 @@ ratings out of 5, so convert as you paste:
 1. Run `npm run new -- review "<product>" --topic <leaf>` and open the new file.
 2. Copy fields across:
 
-   | Skill output                       | Site frontmatter                                                                                 |
-   | ---------------------------------- | ------------------------------------------------------------------------------------------------ |
-   | `title`                            | `title`                                                                                          |
-   | `slug` (`brand-model-review`)      | the file name, without `-review`                                                                 |
-   | `metaDescription`                  | `description`                                                                                    |
-   | `category`                         | `--topic` (pick the matching leaf, e.g. `phones` → `android-phones` or `iphones`)                |
-   | `score` (out of 10)                | `rating`: score ÷ 2, rounded to the nearest half (8.7 → 4.5, 7.4 → 3.5)                          |
-   | Rating breakdown rows              | `scores`: each score ÷ 2 to the nearest half; put "vs <rival>" in `note`                         |
-   | The Spotlight Verdict              | `verdict`                                                                                        |
-   | Best for / Skip if                 | `cheatSheet.whoIsItFor` / `cheatSheet.dislikes`                                                  |
-   | Pros / Cons                        | `pros` / `cons` (the site needs at least 3 cons; add one from the body)                          |
-   | India rows of "Where to buy"       | `retailers` (`name`, `url`, `price`, `lastChecked`); drop other markets                          |
-   | Specifications table               | `specs` (`label`, `value`; put "measured" values in `value`)                                     |
-   | Key test results                   | `benchmarks` when there are numbers for rivals too, otherwise keep the table in the body         |
-   | `youtubeVideoId` / `[YOUTUBE: id]` | `youtubeId`                                                                                      |
-   | `heroImage` and its alt text       | `heroImage` (copy the file into `src/assets/reviews/<slug>/`) and `heroAlt`                      |
-   | Other images                       | `gallery` (`src`, `alt`, `caption`)                                                              |
-   | `testedDays`, `testingStatus`      | `testingNotes`, e.g. "Used for 14 days as my main phone"; write "Hands-on testing pending" if so |
-   | Frequently asked questions         | `faq` (`q`, `a`)                                                                                 |
-   | Buy it if / Don't buy it if        | `buyIf` / `dontBuyIf` (short lines; shown under "Should you buy …?")                             |
-   | `publishedAt`                      | `publishDate`                                                                                    |
-   | `reviewType: first look`           | not a review: use `npm run new -- news` instead (reviews need a rating)                          |
+   | Skill output                         | Site frontmatter                                                                                 |
+   | ------------------------------------ | ------------------------------------------------------------------------------------------------ |
+   | `title`                              | `title`                                                                                          |
+   | `slug` (`brand-model-review`)        | the file name, without `-review`                                                                 |
+   | `metaDescription`                    | `description`                                                                                    |
+   | `category`                           | `--topic` (pick the matching leaf, e.g. `phones` → `android-phones` or `iphones`)                |
+   | `score` (out of 10)                  | `rating`: score ÷ 2, rounded to the nearest half (8.7 → 4.5, 7.4 → 3.5)                          |
+   | Rating breakdown rows                | `scores`: each score ÷ 2 to the nearest half; put "vs <rival>" in `note`                         |
+   | The Spotlight Verdict                | `verdict`                                                                                        |
+   | Best for / Skip if                   | `cheatSheet.whoIsItFor` / `cheatSheet.dislikes`                                                  |
+   | Pros / Cons                          | `pros` / `cons` (the site needs at least 3 cons; add one from the body)                          |
+   | India and UAE rows of "Where to buy" | `retailers` (`name`, `url`, `price`, `lastChecked`); drop other markets                          |
+   | Specifications table                 | `specs` (`label`, `value`; put "measured" values in `value`)                                     |
+   | Key test results                     | `benchmarks` when there are numbers for rivals too, otherwise keep the table in the body         |
+   | `youtubeVideoId` / `[YOUTUBE: id]`   | `youtubeId`                                                                                      |
+   | `heroImage` and its alt text         | `heroImage` (copy the file into `src/assets/reviews/<slug>/`) and `heroAlt`                      |
+   | Other images                         | `gallery` (`src`, `alt`, `caption`)                                                              |
+   | `testedDays`, `testingStatus`        | `testingNotes`, e.g. "Used for 14 days as my main phone"; write "Hands-on testing pending" if so |
+   | Frequently asked questions           | `faq` (`q`, `a`)                                                                                 |
+   | Buy it if / Don't buy it if          | `buyIf` / `dontBuyIf` (short lines; shown under "Should you buy …?")                             |
+   | `publishedAt`                        | `publishDate`                                                                                    |
+   | `reviewType: first look`             | not a review: use `npm run new -- news` instead (reviews need a rating)                          |
 
 3. Paste the body from the first design or setup section onwards. Delete the parts the page
    template already renders from frontmatter: the H1, hero image, verdict, rating line, Best

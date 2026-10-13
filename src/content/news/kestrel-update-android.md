@@ -7,7 +7,8 @@ category: android-phones
 tags: [news, software, sample]
 brands: [kestrel]
 author: rohan-placeholder
-publishDate: 2026-10-07
+publishDate: 2026-10-07T10:30:00+05:30
+newsCategory: software-updates
 heroImage: ../../assets/samples/phone-nova.jpg
 heroAlt: Placeholder illustration of the Kestrel Nova 5G for the sample news story
 sample: true

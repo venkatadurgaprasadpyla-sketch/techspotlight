@@ -8,7 +8,18 @@ export interface Retailer {
   hosts: string[];
   /** Query parameter and value appended to outbound links (empty value = none yet). */
   affiliateParam?: { name: string; value: string };
+  /** Short store name on buttons: "Check price on <buttonName>". */
+  buttonName: string;
+  /** Which visitors see this store's buttons: India (`in`) or the UAE (`ae`). */
+  region: Region;
+  /** Prices for this store are in this currency. */
+  currency: 'INR' | 'AED';
+  /** False for Amazon: its prices change too often to print, so it shows "Check latest price". */
+  showPrice: boolean;
 }
+
+/** Visitor regions. India is the default; UAE visitors are detected in BaseHead. */
+export type Region = 'in' | 'ae';
 
 export const site = {
   name: 'TechSpotlight',
@@ -23,14 +34,59 @@ export const site = {
     {
       id: 'amazon-in',
       name: 'Amazon.in',
-      hosts: ['www.amazon.in', 'amazon.in', 'amzn.to'],
+      buttonName: 'Amazon',
+      hosts: ['www.amazon.in', 'amazon.in', 'amzn.to', 'amzn.in'],
       affiliateParam: { name: 'tag', value: '' },
+      region: 'in',
+      currency: 'INR',
+      showPrice: false,
     },
     {
       id: 'flipkart',
       name: 'Flipkart',
-      hosts: ['www.flipkart.com', 'flipkart.com', 'dl.flipkart.com'],
+      buttonName: 'Flipkart',
+      hosts: ['www.flipkart.com', 'flipkart.com', 'dl.flipkart.com', 'fkrt.it'],
       affiliateParam: { name: 'affid', value: '' },
+      region: 'in',
+      currency: 'INR',
+      showPrice: true,
+    },
+    {
+      id: 'croma',
+      name: 'Croma',
+      buttonName: 'Croma',
+      hosts: ['www.croma.com', 'croma.com'],
+      region: 'in',
+      currency: 'INR',
+      showPrice: true,
+    },
+    {
+      id: 'reliance-digital',
+      name: 'Reliance Digital',
+      buttonName: 'Reliance Digital',
+      hosts: ['www.reliancedigital.in', 'reliancedigital.in'],
+      region: 'in',
+      currency: 'INR',
+      showPrice: true,
+    },
+    {
+      id: 'amazon-ae',
+      name: 'Amazon.ae',
+      buttonName: 'Amazon.ae',
+      hosts: ['www.amazon.ae', 'amazon.ae', 'amzn.to', 'amzn.eu'],
+      affiliateParam: { name: 'tag', value: '' },
+      region: 'ae',
+      currency: 'AED',
+      showPrice: false,
+    },
+    {
+      id: 'noon',
+      name: 'noon',
+      buttonName: 'noon',
+      hosts: ['www.noon.com', 'noon.com'],
+      region: 'ae',
+      currency: 'AED',
+      showPrice: true,
     },
   ] satisfies readonly Retailer[],
   /**

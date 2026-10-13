@@ -3,6 +3,7 @@
  * Review page: /<leaf>/<id>-review/, where leaf is the subcategory (or category without
  * subcategories). Section order follows the Review and MobileReview boards.
  */
+import { AFFILIATE_NOTICE } from '~/lib/disclosure';
 import type { GetStaticPaths } from 'astro';
 import { Image } from 'astro:assets';
 import { render, type CollectionEntry } from 'astro:content';
@@ -29,14 +30,21 @@ import { findTopic } from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import { articleSeo } from '~/lib/seo';
 import { faqPage, review } from '~/lib/structured-data';
-import { AFFILIATE_REL, affiliateHref, getRetailer, lowestOffer } from '~/lib/affiliate';
+import {
+  AFFILIATE_REL,
+  affiliateHref,
+  getRetailer,
+  headlineOffers,
+  priceButtonLabel,
+  showsPrice,
+} from '~/lib/affiliate';
 import { authorPath } from '~/lib/archives';
 import { getArticles } from '~/lib/articles';
 import { searchData } from '~/lib/search-index';
 import { leafSlug } from '~/lib/content-schema';
 import { assertNoHeadingClash } from '~/lib/headings';
 import { getPublished, getPublishedEntry } from '~/lib/content';
-import { formatDate, formatInr, isoDate } from '~/lib/format';
+import { formatDate, formatPrice, isoDate } from '~/lib/format';
 import { topicCrumbs } from '~/lib/listings';
 import { articlePath } from '~/lib/urls';
 
@@ -66,8 +74,19 @@ const crumbs = [...topicCrumbs(topic), { label: `${productName} review`, href: u
 
 const author = await getPublishedEntry('authors', data.author.id);
 const offers = data.retailers;
-const lowest = lowestOffer(offers);
-const best = lowest && { retailer: lowest.name, url: lowest.url, price: lowest.price };
+// One store button per visitor region for "At a glance" and the jump bar.
+const headline = headlineOffers(offers).map(({ offer, region }) => {
+  const retailer = getRetailer(offer.name);
+  return {
+    retailer: offer.name,
+    url: affiliateHref(offer.name, offer.url),
+    region,
+    price:
+      offer.price && showsPrice(offer.name)
+        ? formatPrice(offer.price, retailer?.currency ?? 'INR')
+        : undefined,
+  };
+});
 const seo = await articleSeo(data, url, author);
 const brand = await getPublishedEntry('brands', data.product.brand.id);
 const jsonLd = [
@@ -77,10 +96,11 @@ const jsonLd = [
     rating: data.rating,
     verdict: data.verdict,
     offers: offers.flatMap((o) =>
-      o.price
+      o.price && showsPrice(o.name)
         ? [
             {
               price: o.price,
+              currency: getRetailer(o.name)?.currency,
               url: affiliateHref(o.name, o.url),
               seller: getRetailer(o.name)?.name ?? o.name,
             },
@@ -136,7 +156,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
 ---
 
 <BaseLayout
-  title={data.title}
+  title={data.seoTitle ?? data.title}
   description={data.description}
   noindex={data.noindex}
   {...seo.head}
@@ -188,9 +208,8 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
         </p>
       </div>
       <p class="max-w-[780px] text-[13px] text-muted">
-        {data.testingNotes && <span class="hidden sm:inline">{data.testingNotes} </span>}We may earn
-        a commission from links on this page.{' '}
-        <a href="/how-we-test/">Why you can trust TechSpotlight</a>
+        {data.testingNotes && <span class="hidden sm:inline">{data.testingNotes} </span>}
+        {AFFILIATE_NOTICE} <a href="/how-we-test/">Why you can trust TechSpotlight</a>
       </p>
     </header>
 
@@ -206,7 +225,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
       />
     </div>
 
-    <JumpBar sections={sections} best={best} productName={productName} />
+    <JumpBar sections={sections} deals={headline} productName={productName} />
 
     <div class="wrap flex flex-col gap-12 py-8 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
       <div class="flex max-w-[780px] min-w-0 flex-col gap-9">
@@ -220,7 +239,11 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
           productName={productName}
         />
         <CheatSheet sheet={data.cheatSheet} testingNotes={data.testingNotes} />
-        <SpecsTable specs={data.specs} msrp={data.product.msrp || undefined} />
+        <SpecsTable
+          specs={data.specs}
+          msrp={data.product.msrp || undefined}
+          msrpAed={data.product.msrpAed}
+        />
         <div class="prose max-w-none text-[17px] sm:text-lg [&_h2]:scroll-mt-20">
           <Content />
         </div>
@@ -299,19 +322,15 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
           </h2>
           <p class="font-semibold">{productName}</p>
           <Rating value={data.rating} />
-          {best && (
-            <>
-              <p class="font-mono text-xl">{formatInr(best.price)}</p>
-              <a
-                class="btn btn-buy"
-                href={affiliateHref(best.retailer, best.url)}
-                rel={AFFILIATE_REL}
-                target="_blank"
-              >
-                Check price<span class="sr-only">: {productName}, opens in a new tab</span>
+          {headline.map((deal) => (
+            <div class="flex flex-col gap-3" data-region-only={deal.region}>
+              <p class="font-mono text-xl">{deal.price ?? 'Check latest price'}</p>
+              <a class="btn btn-buy" href={deal.url} rel={AFFILIATE_REL} target="_blank">
+                {priceButtonLabel(deal.retailer)}
+                <span class="sr-only">: {productName}, opens in a new tab</span>
               </a>
-            </>
-          )}
+            </div>
+          ))}
         </section>
         <AdSlot size="skyscraper" class="hidden self-center lg:flex" />
         {faceOffs.length > 0 && (

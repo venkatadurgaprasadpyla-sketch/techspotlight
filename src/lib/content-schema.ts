@@ -5,7 +5,7 @@
  */
 import { z } from 'astro/zod';
 import { site } from '~/config/site';
-import { findTopic, getHub, type ContentType } from '~/config/taxonomy';
+import { findTopic, getHub, newsCategories, type ContentType } from '~/config/taxonomy';
 
 export type ReferencedCollection = 'authors' | 'brands' | 'reviews';
 
@@ -61,6 +61,7 @@ export const retailerLink = z
     /** Retailer id from src/config/site.ts, e.g. `amazon-in`. */
     name: z.enum(retailerIds),
     url: z.url({ protocol: /^https$/ }),
+    /** Whole amount in the store's currency (rupees, or dirhams for UAE stores). */
     price: orTodo(rupees).optional(),
     lastChecked: z.coerce.date(),
   })
@@ -83,9 +84,19 @@ export function articleBase<I extends z.ZodType, T extends ContentType['type']>(
     /** Content type; fixed per collection, so it can be left out of frontmatter. */
     type: z.literal(type).default(type),
     title: nonEmpty.max(110),
+    /**
+     * Shorter title for search results and the browser tab. With " | TechSpotlight" added, the
+     * full title must stay under 60 characters.
+     */
+    seoTitle: nonEmpty
+      .refine(
+        (t) => `${t} | ${site.name}`.length < 60,
+        `With " | ${site.name}" added the SEO title must stay under 60 characters`,
+      )
+      .optional(),
     /** Optional URL slug; defaults to the file name. */
     slug: slug.optional(),
-    description: nonEmpty.max(160, 'Meta descriptions must be 160 characters or fewer'),
+    description: nonEmpty.max(154, 'Meta descriptions must be under 155 characters'),
     hub: slug,
     category: slug,
     subcategory: slug.optional(),
@@ -214,6 +225,8 @@ export function reviewSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
           model: z.string().optional(),
           releaseDate: z.coerce.date().optional(),
           msrp: orTodo(rupees),
+          /** UAE launch price in whole dirhams, shown to UAE visitors. */
+          msrpAed: z.number().int().positive().optional(),
           currency: z.literal('INR').default('INR'),
         }),
         rating: orTodo(rating),
@@ -408,6 +421,8 @@ export function newsSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
   return guardTodos(
     articleBase(helpers, 'news')
       .extend({
+        /** News section: software-updates, ai, launches, apps or hot-news. */
+        newsCategory: z.enum(newsCategories.map((c) => c.slug)),
         source: z.object({ name: nonEmpty, url: z.url({ protocol: /^https$/ }) }).optional(),
         /** Credit for a press image, e.g. "Image: Kestrel". */
         heroCredit: z.string().optional(),
@@ -460,6 +475,13 @@ export function dealSchema<I extends z.ZodType>(helpers: SchemaHelpers<I>) {
           });
         }
         checkRetailerHost(value.retailer, value.url, ctx);
+        if (site.retailers.find((r) => r.id === value.retailer)?.region !== 'in') {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['retailer'],
+            message: 'Deals are priced in rupees, so use an India store (Amazon.in, Flipkart …)',
+          });
+        }
         if (value.expiresTime && !value.expiresAt) {
           ctx.addIssue({
             code: 'custom',

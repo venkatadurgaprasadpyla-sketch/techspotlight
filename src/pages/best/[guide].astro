@@ -1,5 +1,6 @@
 ---
 /** Buying guide: /best/<id>/. Section order follows the Guide board. */
+import { AFFILIATE_NOTICE } from '~/lib/disclosure';
 import type { GetStaticPaths } from 'astro';
 import { Image } from 'astro:assets';
 import { render, type CollectionEntry } from 'astro:content';
@@ -117,7 +118,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
 ---
 
 <BaseLayout
-  title={data.title}
+  title={data.seoTitle ?? data.title}
   description={data.description}
   noindex={data.noindex}
   {...seo.head}
@@ -173,8 +174,7 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
       <div class="flex max-w-[780px] min-w-0 flex-col gap-9">
         <div class="flex flex-col gap-3">
           <p class="text-[13px] text-muted">
-            We may earn a commission when you buy through links on this page.{' '}
-            <a href="#how-we-test">How we test and rate</a>
+            {AFFILIATE_NOTICE} <a href="#how-we-test">How we test and rate</a>
           </p>
           <p class="text-lg">{data.description}</p>
         </div>

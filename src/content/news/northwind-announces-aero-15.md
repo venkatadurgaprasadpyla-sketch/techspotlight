@@ -9,6 +9,7 @@ tags: [news, sample]
 brands: [northwind]
 author: asha-testwell
 publishDate: 2026-10-06
+newsCategory: launches
 heroImage: ../../assets/samples/laptop-aero.jpg
 heroAlt: Placeholder illustration of a Northwind laptop for the sample news story
 sample: true

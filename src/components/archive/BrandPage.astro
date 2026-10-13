@@ -10,7 +10,7 @@ import AdSlot from '~/components/AdSlot.astro';
 import BadgeTag from '~/components/cards/BadgeTag.astro';
 import Rating from '~/components/cards/Rating.astro';
 import ListingLayout from '~/components/listing/ListingLayout.astro';
-import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import { AFFILIATE_REL, affiliateHref, getRetailer, soloOfferRegion } from '~/lib/affiliate';
 import { brandPath, brandSummary, verdictLabel } from '~/lib/archives';
 import type { CardItem } from '~/lib/cards';
 import { dealStatus } from '~/lib/deals';
@@ -173,6 +173,7 @@ const cell = 'border-b border-border px-3.5 py-3 text-left align-middle';
                         href={affiliateHref(review.bestOffer.retailer, review.bestOffer.url)}
                         rel={AFFILIATE_REL}
                         target="_blank"
+                        data-region-only={soloOfferRegion(review.bestOffer.retailer)}
                       >
                         <span class="font-mono">{formatInr(review.bestOffer.price)}</span>
                         <span class="sr-only">

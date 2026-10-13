@@ -1,24 +1,28 @@
 ---
 /**
  * Sticky "Jump to" chips for the sections on the page. Once the verdict box scrolls out of view
- * the lowest price appears on the right (desktop) and in a bottom bar (mobile); the island
- * (src/scripts/jumpbar.ts) also marks the section being read. Without JS it is a plain nav.
+ * the store button appears on the right (desktop) and in a bottom bar (mobile), one per visitor
+ * region (headlineOffers); the island (src/scripts/jumpbar.ts) also marks the section being
+ * read. Without JS it is a plain nav.
  */
-import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
-import type { Offer } from '~/lib/cards';
-import { formatInr } from '~/lib/format';
+import type { Region } from '~/config/site';
+import { AFFILIATE_REL, getRetailer, priceButtonLabel } from '~/lib/affiliate';
 
+export interface JumpDeal {
+  retailer: string;
+  /** Final (affiliate) URL. */
+  url: string;
+  /** Formatted price, when the store's price may be shown. */
+  price?: string | undefined;
+  region?: Region | undefined;
+}
 interface Props {
   sections: { id: string; label: string }[];
-  best?: Offer | undefined;
+  deals: JumpDeal[];
   productName: string;
 }
-const { sections, best, productName } = Astro.props;
-const store = best ? (getRetailer(best.retailer)?.name ?? best.retailer) : '';
-const deal = best && {
-  href: affiliateHref(best.retailer, best.url),
-  price: formatInr(best.price),
-};
+const { sections, deals, productName } = Astro.props;
+const store = (deal: JumpDeal) => getRetailer(deal.retailer)?.name ?? deal.retailer;
 ---
 
 <nav
@@ -36,40 +40,46 @@ const deal = best && {
         </li>
       ))}
     </ul>
-    {deal && (
+    {deals.map((deal) => (
       <a
         class="btn btn-buy hidden flex-none data-[shown]:lg:inline-flex"
-        href={deal.href}
+        href={deal.url}
         rel={AFFILIATE_REL}
         target="_blank"
         tabindex="-1"
         aria-hidden="true"
         data-jump-price
+        data-region-only={deal.region}
       >
-        <span class="font-mono">{deal.price}</span> {store}
+        {deal.price ? (
+          <>
+            <span class="font-mono">{deal.price}</span> {store(deal)}
+          </>
+        ) : (
+          priceButtonLabel(deal.retailer)
+        )}
         <span class="sr-only">: {productName}, opens in a new tab</span>
       </a>
-    )}
+    ))}
   </div>
 </nav>
-{deal && (
+{deals.map((deal) => (
   <div
     class="fixed inset-x-0 bottom-0 z-30 hidden items-center justify-between gap-3 border-t border-border bg-bg px-4 py-2.5 data-[shown]:flex lg:data-[shown]:hidden"
     aria-hidden="true"
     data-jump-mobile
+    data-region-only={deal.region}
   >
     <span class="text-[13px] text-muted">
-      Lowest price
-      <b class="block font-mono text-base text-text">{deal.price}</b>
+      {store(deal)}
+      <b class="block font-mono text-base text-text">{deal.price ?? 'Check latest price'}</b>
     </span>
-    <a class="btn btn-buy" href={deal.href} rel={AFFILIATE_REL} target="_blank" tabindex="-1">
-      View deal
-      <span class="sr-only">
-        : {productName} at {store}, opens in a new tab
-      </span>
+    <a class="btn btn-buy" href={deal.url} rel={AFFILIATE_REL} target="_blank" tabindex="-1">
+      {priceButtonLabel(deal.retailer)}
+      <span class="sr-only">: {productName}, opens in a new tab</span>
     </a>
   </div>
-)}
+))}
 
 <script>
   import { initJumpBar } from '~/scripts/jumpbar';

@@ -3,7 +3,7 @@
 import type { CollectionEntry } from 'astro:content';
 import { Image } from 'astro:assets';
 import { authorPath } from '~/lib/archives';
-import { formatDate, isoDate } from '~/lib/format';
+import { formatDate, formatDateTime, hasTime, isoDate } from '~/lib/format';
 
 interface Props {
   author: CollectionEntry<'authors'> | undefined;
@@ -11,8 +11,12 @@ interface Props {
   updatedDate?: Date | undefined;
   /** Shown after the dates, e.g. "Checked on Windows 11". */
   note?: string | undefined;
+  /** News: show the time of day (IST) too, when the date has one. */
+  withTime?: boolean;
 }
-const { author, publishDate, updatedDate, note } = Astro.props;
+const { author, publishDate, updatedDate, note, withTime = false } = Astro.props;
+const show = (date: Date) => (withTime ? formatDateTime(date) : formatDate(date));
+const machine = (date: Date) => (withTime && hasTime(date) ? date.toISOString() : isoDate(date));
 ---
 
 <div class="flex items-center gap-3 text-[14px]" data-pagefind-ignore>
@@ -39,11 +43,11 @@ const { author, publishDate, updatedDate, note } = Astro.props;
       </>
     )}
     <span class="text-muted">
-      Published <time datetime={isoDate(publishDate)}>{formatDate(publishDate)}</time>
+      Published <time datetime={machine(publishDate)}>{show(publishDate)}</time>
       {updatedDate && (
         <>
           <span aria-hidden="true"> · </span>Updated{' '}
-          <time datetime={isoDate(updatedDate)}>{formatDate(updatedDate)}</time>
+          <time datetime={machine(updatedDate)}>{show(updatedDate)}</time>
         </>
       )}
       {note && (
