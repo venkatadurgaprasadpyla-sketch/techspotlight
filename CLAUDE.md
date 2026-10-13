@@ -1,95 +1,135 @@
-# TechSpotlight
+# Publishing Guide for My Tech Review & News Website
 
-Independent tech review and buying-advice site for India (INR, Amazon.in and Flipkart). Static Astro site deployed to Cloudflare Pages.
+I am not technical. Explain things in simple words, and always ask before doing anything I haven't asked for.
 
-## Stack
+---
 
-- Astro 7, TypeScript strict (`astro/tsconfigs/strict`), import alias `~/*` → `src/*`.
-- Tailwind CSS 4 via `@tailwindcss/vite`, `@tailwindcss/typography`. Global stylesheet: `src/styles/global.css`.
-- MDX and sitemap integrations. Trailing slashes everywhere (`trailingSlash: 'always'`).
-- Vitest for unit tests (`tests/**/*.test.ts`), ESLint 9 (typescript-eslint strict, eslint-plugin-astro, jsx-a11y strict), Prettier with the Astro plugin.
-- Zero client JS by default. Small vanilla islands only; each ≤ 5 KB gzip.
+## 1. My writing voice (use for EVERY review and news post)
 
-## Commands
+Write like a thoughtful, grounded person talking to a friend who trusts their advice. Calm, clear, warm and honest. The style is inspired by Satya Nadella's leadership communication, adapted for tech writing. It is MY voice, so never mention Nadella or Microsoft, and never use quotes from him.
 
-| Command                           | What it does                                                                    |
-| --------------------------------- | ------------------------------------------------------------------------------- |
-| `npm run dev`                     | Dev server on http://localhost:4321                                             |
-| `npm run build`                   | Static build into `dist/`                                                       |
-| `npm run check`                   | `astro check` (types)                                                           |
-| `npm run lint` / `npm run format` | ESLint / Prettier write                                                         |
-| `npm test`                        | Vitest                                                                          |
-| `npm run gates`                   | All automated quality gates; writes `gate-reports/summary.md`                   |
-| `npm run gates -- G1 G4`          | Run only the named gates                                                        |
-| `npm run gates:audit`             | Lighthouse + axe + screenshots for pages in `gates.config.json` (needs `dist/`) |
-| `npm run new -- review "Name"`    | Scaffold a draft article, author or brand (see CONTENT-GUIDE.md)                |
+**Five rules for every post:**
+1. **Empathy first.** Start from the reader's real life: their budget, their phone, their daily problems. Ask "what does this mean for the person reading?" before "what are the specs?".
+2. **Clarity and compression.** Explain complex tech in short, simple sentences. One clear idea per paragraph. If a sentence doesn't help the reader decide or understand, cut it.
+3. **Learn-it-all, not know-it-all.** Be curious and humble. Say what we know, what we don't know yet, and what we'll keep watching. Admit when something is unclear or a rumour.
+4. **Calm optimism, no hype.** Never use words like "insane", "mind-blowing", "game-changer", "killer", "crushes the competition". Prefer grounded phrases like "a meaningful step", "worth a closer look", "here's what changes for you".
+5. **Technology serves people.** The product is never the hero; the person using it is. Show how tech helps (or doesn't help) real people.
 
-## Quality gates
+**Tone details:**
+- Use "we" and "you" naturally ("Let's look at what changed", "If you use an iPhone 15...").
+- Respect every company, even when criticising. Be fair and specific, never mocking. Honest criticism stays honest.
+- Keep my opinions, my wording and my verdicts. Polish grammar, but never replace my views with generic text.
+- Simple English that Indian and UAE readers can easily follow.
 
-A change is done only when every gate passes. Thresholds live in `gates.config.json`; never lower them or skip a check to get green.
+**Write like a human, not a template:**
+- Vary sentence length. Mix short punchy lines with longer explanations.
+- No robotic openers ("In today's fast-paced world...", "In conclusion...", "Let's dive in!").
+- No filler lists of features copied from a spec sheet. Explain why a feature matters.
+- Include at least one personal angle in every post (my opinion, my experience, or a question I'm asking myself). If I haven't given one, leave a clear placeholder: `[YOUR TAKE: ...]` and ask me for it before publishing.
 
-- G1 build with no warnings · G2 `astro check` clean · G3 ESLint 0 warnings + Prettier · G4 Vitest
-- G5 Lighthouse mobile: performance ≥ 95, accessibility 100, best practices ≥ 95, SEO 100, CLS ≤ 0.05 (median of 3)
-- G6 axe: 0 serious/critical at 1280 and 390, light and dark (screenshots go to `gate-reports/screens/` for G9)
-- G7 no broken internal links or anchors · G8 JS/CSS budgets · G11 `npm audit --omit=dev` clean
-- G12 SEO: `scripts/seo-check.mjs` checks every built page for title, description, canonical, og:image, unique titles on indexable pages, and JSON-LD that parses, has the required fields per `@type` and matches the page type.
-- G9 visual match against the layout boards, G10 code review and G11 security review are manual PO checks; so is the rest of G12 (Rich Results spot checks).
+---
 
-When a task adds a page type, add a representative URL to `gates.config.json` → `pages`.
+## 2. Daily drafts (created automatically every morning)
 
-## Workflow
+A scheduled task researches 5 hot tech topics every morning and saves drafts on the GitHub branch `claude/daily-drafts`, in the folder `drafts/YYYY-MM-DD/` (one file per topic: `topic-1.md` to `topic-5.md`). Drafts are NOT live on the website.
 
-- One branch per backlog task: `task/<id>-<slug>`, one PR into `main`. CI (`.github/workflows/gates.yml`) runs `npm run gates` on every PR.
-- Look up current Astro/Tailwind APIs before using them (Context7 or the official docs).
-- Never commit secrets. Config that is public (site URL, AdSense publisher ID, affiliate tags) goes in `src/config/site.ts`.
-- Deploys: Cloudflare Pages builds `main` with `PUBLIC_HIDE_SAMPLES=true` (README → Deploying). `public/_headers` sets response headers; the audit server applies its path rules too. CI's `launch-build` job checks that production build (G1, G7, G8, G12, and `scripts/launch-check.mjs`: no links to sample entries).
+Each draft starts with a "NEEDS FROM YOU" checklist, then the full article.
 
-## Design system
+### When I say "show today's drafts" (or "today's topics")
+1. Get the latest `claude/daily-drafts` branch and open today's folder.
+2. Show me a short list: topic number, headline, one-line summary, and what each topic still needs from me (pictures, Amazon.in / Flipkart / Amazon.ae links, YouTube link, my take).
+3. Then wait for me.
 
-- Tokens live in `src/styles/global.css` as `light-dark()` pairs on `:root` (`--ts-*`), exposed to Tailwind as `bg-surface`, `text-muted`, `border-border`, `bg-accent`, `bg-buy`, `text-rating`, etc. Never hard-code hex values in components.
-- Theme: `<html data-theme>` is set before first paint (inline script in `BaseHead.astro`) from `localStorage['ts-theme']` or the OS; `src/scripts/theme.ts` handles toggles.
-- Fonts: IBM Plex Sans (body), Space Grotesk (headings, `font-heading`), IBM Plex Mono (`font-mono`, specs and prices), self-hosted via Astro's Fonts API from `@fontsource/*` latin files (`astro.config.mjs`).
-- Shared component classes: `.wrap`, `.lbl`, `.btn` (+ `.btn-ghost`, `.btn-buy`), `.chip`, `.badge` (+ `.badge-ec`, `.badge-bv`), `.icon-btn`, `.sec-head`, `.placeholder`, `.ad-slot` (+ `.ad-in-article`), `prose` (article bodies, mapped to the tokens).
-- `/styleguide/` (noindex) shows every token and component for visual checks against the DesignSystem board.
+### When I share details for a topic (e.g. "topic 2: here are the links...")
+1. Add the details to that draft: images into the images folder (with alt text), affiliate buttons, YouTube embed, my opinion.
+2. Tell me what is still missing for that topic, if anything.
+3. Wait. Do NOT publish yet.
 
-## Taxonomy and routes
+### When I say "publish topic X" (or "publish topics 1, 3 and 4")
+1. Check the "NEEDS FROM YOU" checklist. If anything required is still missing (especially `[YOUR TAKE]` placeholders), tell me and ask whether to publish without it.
+2. Show me the final article (or a preview) and wait for my "OK".
+3. Move the article into the correct live folder (news or reviews), remove the checklist and draft markers, and set today's date and time.
+4. Check the site builds with no errors.
+5. Commit with a clear message, like "Publish news: Apple HomeView launch".
+6. Push to the main branch on GitHub. Cloudflare will publish it automatically.
+7. Tell me the live page address.
 
-- `src/config/taxonomy.ts` is the single source of truth for hubs → categories → subcategories and content types. Leaf slugs (subcategories, or categories without subcategories) are unique site-wide.
-- `src/pages/[...path].astro` builds every section page: listings from `src/lib/listings.ts` (live hubs, categories, subcategories, per-hub and site-wide content types; 12 per page, page n at `<base>page/<n>/`), placeholders for hubs with `mvp: false` (`src/config/routes.ts`), and placeholders for article URLs whose templates have not shipped (`awaitingTemplate`; remove a collection there when its route ships). It throws if two pages want the same URL.
-- Reviews: `src/pages/[leaf]/[review].astro` (`/<leaf>/<id>-review/`), built from `src/components/review/*` (VerdictBox, CheatSheet, SpecsTable, ScoreCard, BenchmarkTable, Gallery, YouTubeFacade, BuyIf, PriceWidget, AuthorBio, JumpBar). Islands: `src/scripts/jumpbar.ts`, `gallery.ts` (native `<dialog>` lightbox), `youtube.ts` (youtube-nocookie facade); each works as plain links without JS.
-- Guides: `src/pages/best/[guide].astro` (`/best/<id>/`), built from `src/components/guide/*` (QuickList, PickEntry, CompareTable, AlsoTested), the shared `HowWeTest` block and the review `ScoreCard`/`Faq`. Both article templates call `assertNoHeadingClash()` (`src/lib/headings.ts`) so a body heading can't reuse a section id.
-- Face-offs `src/pages/vs/[versus].astro` (`src/components/versus/*`, scoring in `src/lib/versus.ts`), how-tos `src/pages/how-to/[howto].astro`, news `src/pages/news/[news].astro`, deals `src/pages/deals/[deal].astro`. Deal listings (`/deals/`, `/<hub>/deals/`) render `listing/DealsPage` with `deals/DealCard`; status, % off and ordering live in `src/lib/deals.ts` (ended deals show for a week, then `getArticles()` drops them). Island: `src/scripts/deals.ts` (filters, sort, coupon copy, ended re-check).
-- JS-only controls carry `data-needs-js`: they are in the HTML from the start (no layout shift) and a `<noscript>` rule in `BaseHead` hides them without JS. "More like this" lists use `closestTo()` (`src/lib/related.ts`). Bylines use `ArticleByline`.
-- Homepage `src/pages/index.astro`: what goes where (hero from `featured: true`, type rows, live deals, hub rows, trending) is `homeSections()` in `src/lib/home.ts`; rows use `home/HomeRow`.
-- Archives: brand pages `/brands/<id>/` (`archive/BrandPage`, one per file in `src/content/brands`; menu brands without a file stay placeholders), author pages `/authors/<id>/` (`archive/AuthorPage`, Person JSON-LD), tag pages `/tags/<tag>/` and months `/archive/<yyyy>/<mm>/` (`archive/ArchivePage`), plus `/brands/`, `/tags/`, `/archive/` indexes. All paginated like listings; logic in `src/lib/archives.ts`. Articles link to them through bylines, `AuthorBio` and `ArticleTopics` (brand and tag chips under the body).
-- Search: `/search/` uses Pagefind's JS API from the island `src/scripts/search.ts`. `src/integrations/pagefind.ts` indexes only pages with `data-pagefind-body` (each article root) after `astro build`; `SearchData` adds an article's filters and result metadata (`src/lib/search.ts`). Mark non-content inside articles `data-pagefind-ignore`; `.sr-only` and `.ad-slot` are excluded automatically. Search does not work in `npm run dev` (the index exists only in builds). G8 gives Pagefind's runtime its own budget (`searchRuntimeKbGzip`).
-- Article URLs come from `articlePath()` in `src/lib/urls.ts`; listings render `CardItem`s (`src/lib/cards.ts`) loaded once by `getArticles()` (`src/lib/articles.ts`).
-- SEO: `BaseHead` prints the title template, canonical, Open Graph/Twitter tags (share image from `articleSeo()`/`ogImage()` in `src/lib/seo.ts`, else `public/og-default.png`), the RSS link and any `jsonLd`. Builders live in `src/lib/structured-data.ts` (Organization + WebSite on the home page, Review, Article/NewsArticle, ItemList, FAQPage, deal Product; `Breadcrumbs` adds BreadcrumbList, `AuthorPage` Person). `npm run images:og` regenerates `og-default.png` and `logo.png`. Feeds: `/rss.xml` and `/<hub>/rss.xml` (`src/lib/feeds.ts`).
-- Ads: `AdSlot` reserves a fixed, labelled box per placement (leaderboard, sidebar, in-feed, skyscraper, in-article, sticky-mobile); in-article slots come from `src/lib/ad-slots.ts`. With `site.ads.publisherId` and unit ids set (`src/config/site.ts`), `<body data-ads>` (from `src/lib/ads.ts`) lets the island `src/scripts/ads.ts` fill slots near the viewport, only after the visitor accepts cookies in `ConsentBanner` (`src/scripts/consent.ts`, `localStorage['ts-consent']`; footer "Cookie settings" reopens it). Banner, sticky ad and AdSense code exist only when ads are configured; filled slots keep a visible label, and the sticky bar shows only once its unit fills. Empty listings and the style guide pass `noAds`. `/ads.txt` follows the publisher id. Cloudflare Web Analytics loads when `site.analytics.cloudflareToken` is set.
-- Trust pages (About board): `TrustLayout` with the side menu from `src/config/trust.ts`; about, how-we-test, review-policy, affiliate-disclosure, privacy, terms, contact. They pass `noAds`. Promises, test plans, rating scale and award rules live in `src/config/editorial.ts`; the privacy page describes ads, analytics and the newsletter only as live when configured.
-- Placeholders and empty listings are noindex. The sitemap leaves out any page whose built HTML is noindex and page 2+ of listings, and takes `lastmod` from `article:modified_time` (`astro.config.mjs`), so there is no second list to keep in sync.
-- Components: `cards/ArticleCard` (standard, compact, hero, review), `Rating`, `BadgeTag`, `Breadcrumbs` (with BreadcrumbList JSON-LD), `Pagination`, `AdSlot`, `listing/*` (page templates, `ExploreGrid`, `Sidebar`). Outbound retailer links go through `affiliateHref()` with `rel={AFFILIATE_REL}`.
+If I say "skip topic X", leave it unpublished and don't ask about it again today.
 
-## Content
+---
 
-- Markdown runs through Astro 7's default Sätteri processor. Plugins are Sätteri hast/mdast plugins passed to `satteri({ hastPlugins })` in `astro.config.mjs`, not `markdown.rehypePlugins`. `src/lib/ad-slots.ts` reserves in-article ad slots (after paragraph 3, then every ~600 words) in files under `src/content/`.
-- Collections (`src/content.config.ts`): reviews, guides, versus, howtos, news, deals (Markdown/MDX) and authors, brands (YAML) under `src/content/<name>/`. Schemas are factories in `src/lib/content-schema.ts`, unit tested with stand-in `image()`/`reference()` helpers (`tests/helpers/content.ts`).
-- Schemas validate topics against `taxonomy.ts`, retailer links against `site.retailers` hosts, and refuse `TODO` in anything that is not a draft.
-- Read content only through `getPublished()` / `getPublishedEntry()` in `src/lib/content.ts`: drafts are dropped in production and `sample: true` entries when `PUBLIC_HIDE_SAMPLES=true`.
-- `npm run new -- <type> "Name" [--topic <leaf>]` scaffolds a draft (`scripts/new-content.mjs`). `CONTENT-GUIDE.md` is the writer-facing guide, including how to paste output from the review-writer skill.
-- Sample content uses fictional brands (Northwind, Kestrel, Orbit) and images from `npm run images:samples`.
+## 3. When I say "publish a review" (or "new review")
 
-## Layout
+Do NOT start writing right away. Ask me these questions ONE GROUP AT A TIME and wait for my answers. I can type "skip" for anything that doesn't apply.
 
-```
-src/config/     site.ts (public config), taxonomy.ts, routes.ts (placeholder registry), trust.ts, editorial.ts
-src/layouts/    BaseLayout (head, header, footer, consent, ads), TrustLayout, Placeholder
-src/components/ Header, MegaMenu, MobileDrawer, Footer, NewsletterForm, ThemeToggle, Logo, Icon
-src/scripts/    nav.ts (mega-menu + drawer), theme.ts, consent.ts, ads.ts, review islands (jumpbar, gallery, youtube)
-src/pages/      routes
-src/styles/     global.css (Tailwind + design tokens)
-src/lib/        pure helpers (unit tested): format, content-schema, visibility, listing(s), cards, urls, affiliate, ads, ad-slots, headings; content.ts reads collections
-src/content/    articles and data (see CONTENT-GUIDE.md); src/assets/ images
-scripts/        gates.mjs, audit-pages.mjs, new-content.mjs (scaffolder), make-sample-images.mjs
-tests/          Vitest specs
-```
+**Group 1 – Product basics**
+1. Product name and brand
+2. Category (Phones, Laptops, Audio, Wearables, Gadgets, or a new one)
+3. Launch price or MRP (in ₹) and variants (e.g. 8GB/128GB)
+4. UAE launch price (in AED), if sold in the UAE
+
+**Group 2 – My opinion**
+5. My review notes or full review text (rough notes are fine)
+6. Pros (3–5 points)
+7. Cons (2–4 points)
+8. My rating out of 10
+9. Who should buy it, and who should skip it
+10. Key specs to show in a table (or ask if I want you to list them for me to confirm)
+
+**Group 3 – Links**
+11. Amazon.in affiliate link
+12. Flipkart affiliate link
+13. Amazon.ae affiliate link (for UAE visitors)
+14. Any other store links (Croma, Reliance Digital, Noon, brand website)
+15. YouTube video link to embed
+
+**Group 4 – Images and SEO**
+16. Product images (I will attach them or give file names)
+17. Main keyword people would search (e.g. "Redmi Note 15 review")
+18. Similar products to compare with or link to
+
+After I answer, show me a summary and ask "Is this correct?" before writing. Then follow the "publish topic X" steps above (preview → OK → build check → commit → push).
+
+---
+
+## 4. When I say "publish news" (one-off news post, not from daily drafts)
+
+News categories: Software Updates, AI, Launches, Apps, Hot News.
+
+Ask me one group at a time:
+1. Headline idea and category
+2. What happened, and my own take
+3. Source links (official or trusted sites)
+4. For software updates: version number, devices, how to update (I can say "find it for me")
+5. Related review on my site to link to
+6. YouTube link (optional)
+7. Images (optional; official press images or my own)
+
+---
+
+## 5. Rules for facts and sources
+
+- Never copy text from any source. Write fresh in my voice and link to the original source.
+- Check facts (dates, version numbers, prices) against official sources. Clearly label rumours and leaks.
+- News posts: 400–700 words, with a "What this means for you" section.
+- Show the publish date and time on every news post.
+
+## 6. Rules for links and buttons
+
+- Add `rel="sponsored nofollow"` to every affiliate link.
+- Buttons: "Check price on Amazon", "Check price on Flipkart", "Check price on Amazon.ae".
+- Do NOT show a fixed Amazon price next to Amazon buttons. Use "Check latest price".
+- Pages with affiliate links show near the top: "This post contains affiliate links. I may earn a small commission at no extra cost to you."
+- Country-based buttons: India visitors see Amazon.in + Flipkart and the ₹ price. UAE visitors see Amazon.ae (plus UAE store links) and the AED price. If there's no UAE link, UAE visitors see the India buttons. Flipkart is never shown to UAE visitors.
+- Embed YouTube videos so they resize properly on mobile.
+- Check every link I give you is correctly formatted; tell me if one looks broken.
+
+## 7. Rules for images and SEO
+
+- Use only images I provide. Never download images from other websites.
+- Add alt text to every image.
+- SEO title under 60 characters, meta description under 155 characters, using the main keyword.
+
+## 8. If anything fails
+
+Explain the error in plain words and tell me what to do next.
