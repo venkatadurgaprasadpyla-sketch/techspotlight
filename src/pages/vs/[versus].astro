@@ -1,5 +1,6 @@
 ---
 /** Face-off: /vs/<id>/. Section order follows the Versus board. */
+import { AFFILIATE_NOTICE } from '~/lib/disclosure';
 import type { GetStaticPaths } from 'astro';
 import { render, type CollectionEntry } from 'astro:content';
 import AdSlot from '~/components/AdSlot.astro';
@@ -99,7 +100,7 @@ const chip = {
 ---
 
 <BaseLayout
-  title={data.title}
+  title={data.seoTitle ?? data.title}
   description={data.description}
   noindex={data.noindex}
   {...seo.head}
@@ -119,7 +120,7 @@ const chip = {
           updatedDate={data.updatedDate}
         />
         <p class="text-[13px] text-muted">
-          We may earn a commission from links on this page. <a href="/how-we-test/">How we test</a>
+          {AFFILIATE_NOTICE} <a href="/how-we-test/">How we test</a>
         </p>
       </header>
 

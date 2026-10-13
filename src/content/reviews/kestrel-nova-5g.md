@@ -16,6 +16,7 @@ product:
   name: Kestrel Nova 5G
   brand: kestrel
   msrp: 24999
+  msrpAed: 1149
 rating: 4
 badge: best-value
 verdict: The Nova 5G is the sample budget phone to recommend. It lasts two days, runs clean software and feels well made, as long as you rarely shoot at night.
@@ -53,6 +54,13 @@ retailers:
     lastChecked: 2026-10-08
   - name: amazon-in
     url: https://www.amazon.in/dp/SAMPLE00003
+    lastChecked: 2026-10-08
+  - name: amazon-ae
+    url: https://www.amazon.ae/dp/SAMPLE00003
+    lastChecked: 2026-10-08
+  - name: noon
+    url: https://www.noon.com/uae-en/sample-kestrel-nova-5g/SAMPLE/p/
+    price: 1099
     lastChecked: 2026-10-08
 buyIf:
   - You want a phone that lasts two days

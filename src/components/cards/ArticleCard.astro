@@ -7,7 +7,7 @@
  * - review: review row with verdict, key specs and buy buttons (subcategory pages)
  */
 import { Image } from 'astro:assets';
-import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import { AFFILIATE_REL, affiliateHref, getRetailer, soloOfferRegion } from '~/lib/affiliate';
 import { typeLabel, type CardItem } from '~/lib/cards';
 import { dealStatus } from '~/lib/deals';
 import { formatInr, formatMonthYear } from '~/lib/format';
@@ -180,6 +180,7 @@ const dealEnded = item.deal !== undefined && dealStatus(item.deal.endsAt, new Da
               href={affiliateHref(offer.retailer, offer.url)}
               rel={AFFILIATE_REL}
               target="_blank"
+              data-region-only={soloOfferRegion(offer.retailer)}
             >
               <span class="font-mono">{formatInr(offer.price)}</span>
               {retailerName(offer.retailer)}

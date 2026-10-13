@@ -64,9 +64,14 @@ describe('review schema', () => {
     expect(parse({ heroAlt: undefined }).join()).toMatch(/heroAlt/);
   });
 
-  it('caps the meta description at 160 characters', () => {
-    expect(parse({ description: 'x'.repeat(160) })).toEqual([]);
-    expect(parse({ description: 'x'.repeat(161) }).join()).toMatch(/160 characters/);
+  it('keeps the meta description under 155 characters', () => {
+    expect(parse({ description: 'x'.repeat(154) })).toEqual([]);
+    expect(parse({ description: 'x'.repeat(155) }).join()).toMatch(/under 155 characters/);
+  });
+
+  it('keeps the full SEO title under 60 characters', () => {
+    expect(parse({ seoTitle: 'x'.repeat(43) })).toEqual([]);
+    expect(parse({ seoTitle: 'x'.repeat(44) }).join()).toMatch(/under 60 characters/);
   });
 
   it('checks hub, category and subcategory against the taxonomy', () => {
@@ -99,8 +104,13 @@ describe('review schema', () => {
       /retailers/,
     );
     expect(
-      parse({ retailers: [{ ...link, name: 'croma', url: 'https://www.croma.com/x' }] }).join(),
+      parse({
+        retailers: [{ ...link, name: 'vijay-sales', url: 'https://www.vijaysales.com/x' }],
+      }).join(),
     ).toMatch(/retailers/);
+    expect(
+      parse({ retailers: [{ ...link, name: 'amazon-ae', url: 'https://www.amazon.ae/dp/X' }] }),
+    ).toEqual([]);
   });
 
   it('refuses TODO placeholders unless the entry is a draft', () => {

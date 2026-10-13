@@ -3,7 +3,13 @@
 import type { ImageMetadata } from 'astro';
 import { Image } from 'astro:assets';
 import Rating from '~/components/cards/Rating.astro';
-import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import {
+  AFFILIATE_REL,
+  affiliateHref,
+  getRetailer,
+  priceButtonLabel,
+  soloOfferRegion,
+} from '~/lib/affiliate';
 import { formatInr } from '~/lib/format';
 
 interface Props {
@@ -54,8 +60,10 @@ const shownPrice = offer?.price ?? price;
         href={affiliateHref(offer.name, offer.url)}
         rel={AFFILIATE_REL}
         target="_blank"
+        data-region-only={soloOfferRegion(offer.name)}
       >
-        Check price<span class="sr-only">: {name}, opens in a new tab</span>
+        {priceButtonLabel(offer.name)}
+        <span class="sr-only">: {name}, opens in a new tab</span>
       </a>
     )}
     {reviewUrl && (

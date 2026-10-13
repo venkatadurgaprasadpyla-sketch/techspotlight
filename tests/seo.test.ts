@@ -162,7 +162,10 @@ describe('G12 check', () => {
     expect(expectedTypes('/best/best-ultrabooks/')).toEqual(
       expect.arrayContaining(['BreadcrumbList', 'Article', 'ItemList']),
     );
-    expect(expectedTypes('/news/x/')).toContain('NewsArticle');
+    const articleHead = '<meta property="og:type" content="article" />';
+    expect(expectedTypes('/news/x/', articleHead)).toContain('NewsArticle');
+    // News section listings (/news/ai/) are not articles.
+    expect(expectedTypes('/news/ai/')).toEqual(['BreadcrumbList']);
     expect(expectedTypes('/deals/x/')).toContain('Product');
     expect(expectedTypes('/computing/')).toEqual(['BreadcrumbList']);
   });

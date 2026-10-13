@@ -79,7 +79,7 @@ const adAfter = data.steps.length > 3 ? 2 : -1;
 ---
 
 <BaseLayout
-  title={data.title}
+  title={data.seoTitle ?? data.title}
   description={data.description}
   noindex={data.noindex}
   {...seo.head}

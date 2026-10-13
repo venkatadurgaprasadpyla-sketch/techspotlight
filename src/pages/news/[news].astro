@@ -10,7 +10,16 @@ import SearchData from '~/components/SearchData.astro';
 import ArticleTopics from '~/components/ArticleTopics.astro';
 import ArticleCard from '~/components/cards/ArticleCard.astro';
 import Rating from '~/components/cards/Rating.astro';
-import { categoryPath, contentTypePath, contentTypes, findTopic, hubPath } from '~/config/taxonomy';
+import {
+  categoryPath,
+  contentTypePath,
+  contentTypes,
+  findTopic,
+  getNewsCategory,
+  hubPath,
+  newsCategories,
+  newsCategoryPath,
+} from '~/config/taxonomy';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import { articleSeo } from '~/lib/seo';
 import { article } from '~/lib/structured-data';
@@ -87,11 +96,12 @@ const topics = [
     ? [{ label: `${topic.hub.label} news`, href: contentTypePath(newsType, topic.hub) }]
     : []),
 ];
+const section = getNewsCategory(data.newsCategory) ?? newsCategories[0];
 const linkClass = 'font-semibold text-text no-underline hover:text-text hover:underline';
 ---
 
 <BaseLayout
-  title={data.title}
+  title={data.seoTitle ?? data.title}
   description={data.description}
   noindex={data.noindex}
   {...seo.head}
@@ -102,13 +112,16 @@ const linkClass = 'font-semibold text-text no-underline hover:text-text hover:un
       <SearchData data={search} />
       <header class="flex flex-col gap-3.5">
         <Breadcrumbs crumbs={crumbs} />
-        <span class="lbl">News</span>
+        <a class="lbl" href={newsCategoryPath(section)}>
+          {section.label}
+        </a>
         <h1 class="text-[30px] sm:text-[40px]">{data.title}</h1>
         <p class="text-lg text-muted">{data.description}</p>
         <ArticleByline
           author={author}
           publishDate={data.publishDate}
           updatedDate={data.updatedDate}
+          withTime
         />
         <figure class="flex flex-col gap-1.5 pt-2">
           <Image

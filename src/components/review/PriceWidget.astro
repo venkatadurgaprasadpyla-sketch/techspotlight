@@ -1,10 +1,18 @@
 ---
 /**
  * Retailer prices with affiliate links. `compact` sits inside the verdict box; the full widget
- * closes the review. Offers without a price still link through ("Check price").
+ * closes the review. Amazon and offers without a price say "Check latest price". India and UAE
+ * visitors each see their own stores (offerRegions).
  */
-import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
-import { formatDate, formatInr, isoDate } from '~/lib/format';
+import {
+  AFFILIATE_REL,
+  affiliateHref,
+  getRetailer,
+  offerRegions,
+  priceButtonLabel,
+  showsPrice,
+} from '~/lib/affiliate';
+import { formatDate, formatPrice, isoDate } from '~/lib/format';
 
 export interface RetailerOffer {
   name: string;
@@ -18,24 +26,37 @@ interface Props {
   compact?: boolean;
 }
 const { offers, productName, compact = false } = Astro.props;
-const priceOf = (o: RetailerOffer) => (o.price ? o.price : Number.POSITIVE_INFINITY);
-const sorted = [...offers].sort((a, b) => priceOf(a) - priceOf(b));
+const shownPrice = (o: RetailerOffer) => (o.price && showsPrice(o.name) ? o.price : undefined);
+const priceOf = (o: RetailerOffer) => shownPrice(o) ?? Number.POSITIVE_INFINITY;
+const regions = offerRegions(offers);
+const sorted = offers
+  .map((offer, i) => ({ offer, region: regions[i] }))
+  .sort((a, b) => priceOf(a.offer) - priceOf(b.offer));
 // The oldest check, so a stale price is never presented as freshly checked.
-const checked = new Date(Math.min(...offers.map((o) => o.lastChecked.getTime())));
+const priced = offers.filter((o) => shownPrice(o) !== undefined);
+const checked =
+  priced.length > 0 ? new Date(Math.min(...priced.map((o) => o.lastChecked.getTime()))) : undefined;
 ---
 
 <div class:list={[!compact && 'flex flex-col gap-3']}>
   <ul class:list={['divide-y divide-border', !compact && 'rounded-[10px] border border-border']}>
-    {sorted.map((offer) => {
-      const store = getRetailer(offer.name)?.name ?? offer.name;
+    {sorted.map(({ offer, region }) => {
+      const retailer = getRetailer(offer.name);
+      const store = retailer?.name ?? offer.name;
+      const price = shownPrice(offer);
       return (
-        <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <li
+          class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6"
+          data-region-only={region === 'all' ? undefined : region}
+        >
           <b>{store}</b>
           <span class="flex flex-wrap items-center gap-3">
-            {offer.price ? (
-              <b class="font-mono text-[17px] font-medium">{formatInr(offer.price)}</b>
+            {price ? (
+              <b class="font-mono text-[17px] font-medium">
+                {formatPrice(price, retailer?.currency ?? 'INR')}
+              </b>
             ) : (
-              <span class="text-[13px] text-muted">Price varies</span>
+              <span class="text-[13px] text-muted">Check latest price</span>
             )}
             <a
               class="btn btn-buy"
@@ -43,7 +64,7 @@ const checked = new Date(Math.min(...offers.map((o) => o.lastChecked.getTime()))
               rel={AFFILIATE_REL}
               target="_blank"
             >
-              {offer.price ? 'View deal' : 'Check price'}
+              {priceButtonLabel(offer.name)}
               <span class="sr-only">
                 : {productName} at {store}, opens in a new tab
               </span>
@@ -54,7 +75,12 @@ const checked = new Date(Math.min(...offers.map((o) => o.lastChecked.getTime()))
     })}
   </ul>
   <p class:list={['text-[13px] text-muted', compact && 'px-4 pb-4 sm:px-6']}>
-    Prices checked <time datetime={isoDate(checked)}>{formatDate(checked)}</time>. We may earn a
-    commission when you buy through these links. <a href="/affiliate-disclosure/">How this works</a>
+    {checked && (
+      <>
+        Prices checked <time datetime={isoDate(checked)}>{formatDate(checked)}</time>.{' '}
+      </>
+    )}
+    We may earn a commission when you buy through these links.{' '}
+    <a href="/affiliate-disclosure/">How this works</a>
   </p>
 </div>

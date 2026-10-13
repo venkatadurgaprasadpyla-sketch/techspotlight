@@ -8,7 +8,7 @@
  */
 import { Image } from 'astro:assets';
 import Rating from '~/components/cards/Rating.astro';
-import { AFFILIATE_REL, affiliateHref, getRetailer } from '~/lib/affiliate';
+import { AFFILIATE_REL, affiliateHref, priceButtonLabel, soloOfferRegion } from '~/lib/affiliate';
 import type { CardItem, DealInfo } from '~/lib/cards';
 import { dealBadgeLabel, dealEndLabel, dealStatus, percentOff } from '~/lib/deals';
 import { formatDate, formatInr } from '~/lib/format';
@@ -24,7 +24,6 @@ const { deal } = item;
 const Heading = `h${headingLevel}` as const;
 const ended = dealStatus(deal.endsAt, now) !== 'live';
 const off = percentOff(deal.originalPrice, deal.dealPrice);
-const store = getRetailer(deal.retailer)?.name ?? deal.retailer;
 const badgeClass = { 'lowest-price': 'badge-ec', 'great-value': 'badge-bv', 'editors-pick': '' };
 ---
 
@@ -92,8 +91,9 @@ const badgeClass = { 'lowest-price': 'badge-ec', 'great-value': 'badge-bv', 'edi
       href={affiliateHref(deal.retailer, deal.url)}
       rel={AFFILIATE_REL}
       target="_blank"
+      data-region-only={soloOfferRegion(deal.retailer)}
     >
-      Buy at {store}
+      {priceButtonLabel(deal.retailer)}
       <span class="sr-only">: {deal.product}, opens in a new tab</span>
     </a>
     <span class="btn btn-ended hidden group-data-[ended]:inline-flex">Deal ended</span>

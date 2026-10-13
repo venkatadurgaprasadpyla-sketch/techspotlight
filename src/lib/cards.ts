@@ -3,8 +3,13 @@
  * Pure (type-only imports), so listings can be unit tested without Astro.
  */
 import type { CollectionEntry } from 'astro:content';
-import { contentTypes, findTopic, type ContentType } from '~/config/taxonomy';
-import { lowestOffer } from './affiliate';
+import {
+  contentTypes,
+  findTopic,
+  type ContentType,
+  type NewsCategorySlug,
+} from '~/config/taxonomy';
+import { lowestOffer, showsInrPrice } from './affiliate';
 import { leafSlug } from './content-schema';
 import { dealEndsAt, type DealBadge } from './deals';
 import { articlePath, type ArticleCollection } from './urls';
@@ -68,6 +73,8 @@ export interface CardItem {
   offers?: Offer[];
   /** Cheapest priced offer (reviews and deals). */
   bestOffer?: Offer;
+  // News only.
+  newsCategory?: NewsCategorySlug;
   // Deals only.
   deal?: DealInfo;
 }
@@ -128,7 +135,7 @@ export function toCardItem(entry: ArticleEntry, authors: ReadonlyMap<string, str
   if (entry.collection === 'reviews') {
     const review = entry.data as CollectionEntry<'reviews'>['data'];
     const offers = review.retailers.flatMap((r) =>
-      r.price ? [{ retailer: r.name, url: r.url, price: r.price }] : [],
+      r.price && showsInrPrice(r.name) ? [{ retailer: r.name, url: r.url, price: r.price }] : [],
     );
     const best = lowestOffer(offers);
     Object.assign(item, {
@@ -144,6 +151,8 @@ export function toCardItem(entry: ArticleEntry, authors: ReadonlyMap<string, str
       ...(best && { bestOffer: best }),
     });
     if (review.brands.length === 0) item.brands = [review.product.brand.id];
+  } else if (entry.collection === 'news') {
+    item.newsCategory = (entry.data as CollectionEntry<'news'>['data']).newsCategory;
   } else if (entry.collection === 'deals') {
     const deal = entry.data as CollectionEntry<'deals'>['data'];
     const offer = { retailer: deal.retailer, url: deal.url, price: deal.dealPrice };
